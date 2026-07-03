@@ -4,8 +4,20 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0, 1, and 2 complete. Rings 0 and 1 are deployed; Ring 2 is built and
-verified on the branch, ready to merge. Ring 2 is the wellness tracker: a
+Rings 0, 1, 2, and 3 complete. Rings 0, 1, and 2 are on main; Ring 3 is built
+and verified on the branch, ready to merge. Ring 3 is Coach AI: a floating
+Coach button on the coach shell opens a drawer where Gabe summarizes a client
+or drafts a workout (Coach drafts from the exercise library, it opens pre-filled
+in the plan builder, Gabe reviews and activates, nothing auto-goes-live).
+Clients leave text or voice check-ins on their Log surface; Coach structures
+them into a fast read Gabe keeps. Every Claude call goes through one chokepoint
+that budgets ($25/mo cap), sweeps the Wild Wanderers voice, and logs to sealed
+ledgers (ai_calls, voice_violations). Coach lights up when ANTHROPIC_API_KEY is
+set in Vercel; voice needs DEEPGRAM_API_KEY. Until then everything degrades to a
+friendly not-configured state. The ledgers, check-in, and voice-audio paths are
+verified under RLS on the live project.
+
+Ring 2 is the wellness tracker: a
 client consents once (plain, not-medical), then logs weight and measurements,
 checks off habits, logs movement, and logs food from their phone on the Log
 surface. Progress shows the graphs and a transparent wellness score (a warm
@@ -38,8 +50,9 @@ profile, goal, and a coaching group.
 - Ring 2: the wellness tracker. Measurements, graphs, habits, the wellness score,
   food and activity logging. Done, on the branch. PWA install deferred to a
   later pass so it can be tested on a device.
-- Ring 3: Coach AI. Workout drafting, check-in structuring, coach nudges. Not
-  started.
+- Ring 3: Coach AI. The chokepoint (budget, voice sweep, sealed ledgers), the
+  coach-only Coach FAB and drawer, client summaries, workout drafting (draft to
+  approve), text and voice check-in structuring. Done, on the branch.
 - Ring 4: the business switch. Command dashboard, clients and pipeline, offerings,
   Stripe revenue, expenses, tasks, goals. Not started.
 - Ring 5: the boys program management and the road to resale. Not started.
@@ -52,10 +65,15 @@ profile, goal, and a coaching group.
 
 ## Open
 - PWA install shell (manifest, service worker, icons), a later pass.
-- Set FDC_API_KEY and SUPABASE_SERVICE_ROLE_KEY in Vercel (food search, audit,
-  invite-by-email).
+- Vercel env vars: ANTHROPIC_API_KEY (Coach), DEEPGRAM_API_KEY (voice check-ins),
+  FDC_API_KEY (food search), SUPABASE_SERVICE_ROLE_KEY (audit writes, voice
+  playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-03 Ring 3 built (six commits): sealed AI ledgers + chokepoint (budget,
+  voice sweep), the coach-only Coach FAB and drawer, client summaries, workout
+  drafting, text and voice (Deepgram) check-in structuring, final pass. Ledgers
+  sealed and check-in/voice-audio paths verified under RLS on the live DB.
 - 2026-07-03 Ring 2 built (six commits): wellness schema + RLS + score function
   + demo seed, consent gate and Log, Progress graphs and score, Coach Fitness,
   food logging (USDA + Open Food Facts), final pass. Verified on the live DB.
