@@ -66,7 +66,92 @@ begin
       select 1 from public.client_groups cg where cg.client_id = c.id and cg.group_id = grp
     );
 
-  -- Ring 2+: measurements, habits, wellness score. Added as each ring builds.
+  -- Ring 2+: measurements, habits, wellness score. See the Ring 2 block below.
+end $$;
+
+-- ── Ring 2: consent, measurements, habits, movement, food, a score ──
+-- Rebuilds the demo client's tracking data into a rich, mid-journey
+-- showcase: a consented client eight weeks in, weight trending down,
+-- habits mostly kept, movement logged, one food entry, and a wellness
+-- snapshot for the trend. Scoped to the demo client only. Idempotent.
+do $$
+declare
+  ww uuid; demo_user uuid; demo_c uuid; gabe uuid;
+  h_steps uuid; h_water uuid; h_sleep uuid; fi uuid;
+  d int;
+begin
+  select id into ww from public.organizations where slug = 'wild-wanderers-fitness';
+  select id into demo_user from auth.users where email = 'demo.client@wildwanderers.life';
+  select id into gabe from auth.users where email = 'brewha07@gmail.com';
+  select c.id into demo_c from public.clients c where c.user_id = demo_user;
+  if demo_c is null then return; end if;
+
+  -- Reset the demo client's Ring 2 tracking data.
+  delete from public.wellness_scores where client_id = demo_c;
+  delete from public.food_logs where client_id = demo_c;
+  delete from public.habit_logs where client_id = demo_c;
+  delete from public.habits where client_id = demo_c;
+  delete from public.activity_logs where client_id = demo_c;
+  delete from public.measurements where client_id = demo_c;
+  delete from public.check_ins where client_id = demo_c;
+  delete from public.consents where client_id = demo_c;
+
+  -- Consent, granted at onboarding.
+  insert into public.consents (org_id, client_id, granted_by, granted_at)
+  values (ww, demo_c, demo_user, now() - interval '56 days');
+
+  -- Weight and waist trending down over eight weekly check-ins.
+  insert into public.measurements (org_id, client_id, taken_at, weight_kg, waist_cm, notes)
+  select ww, demo_c, now() - (w || ' weeks')::interval,
+         86.0 - (7 - w) * 0.6,          -- 86.0 down to ~81.8
+         94.0 - (7 - w) * 0.5,          -- 94.0 down to ~90.5
+         case when w = 0 then 'Feeling stronger on the trails.' else null end
+  from generate_series(7, 0, -1) as w;
+
+  -- Three habits Gabe assigned.
+  insert into public.habits (org_id, client_id, title, cadence, target_per_week, created_by)
+  values (ww, demo_c, 'Walk 8k steps', 'daily', 7, gabe) returning id into h_steps;
+  insert into public.habits (org_id, client_id, title, cadence, target_per_week, created_by)
+  values (ww, demo_c, 'Drink 2.5L water', 'daily', 7, gabe) returning id into h_water;
+  insert into public.habits (org_id, client_id, title, cadence, target_per_week, created_by)
+  values (ww, demo_c, 'Sleep 7+ hours', 'daily', 5, gabe) returning id into h_sleep;
+
+  -- Two weeks of check-offs, kept most days (some honest gaps).
+  for d in 0..13 loop
+    if d <> 3 then
+      insert into public.habit_logs (org_id, client_id, habit_id, logged_on)
+      values (ww, demo_c, h_steps, (now() at time zone 'utc')::date - d)
+      on conflict do nothing;
+    end if;
+    if d % 2 = 0 then
+      insert into public.habit_logs (org_id, client_id, habit_id, logged_on)
+      values (ww, demo_c, h_water, (now() at time zone 'utc')::date - d)
+      on conflict do nothing;
+    end if;
+    if d < 5 then
+      insert into public.habit_logs (org_id, client_id, habit_id, logged_on)
+      values (ww, demo_c, h_sleep, (now() at time zone 'utc')::date - d)
+      on conflict do nothing;
+    end if;
+  end loop;
+
+  -- Movement this week: a couple of trail runs and a mobility session.
+  insert into public.activity_logs (org_id, client_id, logged_at, kind, duration_minutes, estimated_energy_kcal)
+  values
+    (ww, demo_c, now() - interval '1 day',  'Trail run',   42, 430),
+    (ww, demo_c, now() - interval '3 days', 'Trail run',   35, 360),
+    (ww, demo_c, now() - interval '4 days', 'Mobility',    20, 90);
+
+  -- One cached food item and a log against it (the cache the API fills).
+  insert into public.food_items (org_id, source, external_id, name, brand, serving, calories, protein_g, carb_g, fat_g)
+  values (ww, 'usda', 'demo-oats', 'Rolled oats, dry', null, '1/2 cup (40 g)', 150, 5, 27, 3)
+  on conflict (org_id, source, external_id) do update set name = excluded.name
+  returning id into fi;
+  insert into public.food_logs (org_id, client_id, logged_at, meal, food_item_id, description, quantity, calories, protein_g, carb_g, fat_g)
+  values (ww, demo_c, now() - interval '6 hours', 'breakfast', fi, 'Rolled oats, dry', 1, 150, 5, 27, 3);
+
+  -- The wellness snapshot is written in the final block below, after
+  -- Ring 1 seeds the training plan the consistency component reads.
 end $$;
 
 -- ── Ring 1: an active plan, a session, a conversation, some progress ──
@@ -138,4 +223,22 @@ begin
     (ww, thread, gabe, 'owner', 'Welcome aboard. Your Foundations plan is live, start with Lower Body today.', now() - interval '2 days'),
     (ww, thread, demo_user, 'client', 'Amazing, thank you. Just finished it, the squats felt great.', now() - interval '1 day'),
     (ww, thread, gabe, 'owner', 'Love it. Add a little load next session and let me know how it moves.', now() - interval '20 hours');
+end $$;
+
+-- ── Ring 2 wellness snapshot (runs last, after the plan exists) ──
+-- One transparent snapshot for the demo client's Progress trend line.
+-- compute_wellness_score guards on the caller, so borrow the demo
+-- client's identity for this one call inside the seed transaction.
+do $$
+declare
+  demo_user uuid; demo_c uuid;
+begin
+  select id into demo_user from auth.users where email = 'demo.client@wildwanderers.life';
+  select c.id into demo_c from public.clients c where c.user_id = demo_user;
+  if demo_c is null then return; end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', demo_user, 'role', 'authenticated')::text, true);
+  perform public.snapshot_wellness_score(demo_c);
+  perform set_config('request.jwt.claims', '', true);
 end $$;
