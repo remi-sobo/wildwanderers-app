@@ -27,15 +27,22 @@ export async function login(
   try {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // A returned error means the credentials did not match. Keep the reason
-      // vague on purpose, and never blame the person.
-      return {
-        error: "That email and password did not match. Give it another try.",
-      };
+      // Only an actual credential mismatch should point at the email and
+      // password, and even then never blame the person. Anything else (a
+      // server error, rate limit, unreachable host) gets the generic message
+      // so we do not wrongly tell someone their password is wrong.
+      const badCredentials =
+        error.code === "invalid_credentials" || error.status === 400;
+      if (badCredentials) {
+        return {
+          error: "That email and password did not match. Give it another try.",
+        };
+      }
+      failed = true;
     }
   } catch {
     // A thrown error means the request never completed (server unreachable,
-    // network dropped). Say so plainly rather than blaming the credentials.
+    // network dropped).
     failed = true;
   }
 
