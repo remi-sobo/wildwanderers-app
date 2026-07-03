@@ -4,13 +4,39 @@ import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
 import { getClientWellness } from "@/lib/data/coach-fitness";
+import { getExerciseLibrary } from "@/lib/data/exercises";
 import { auditLog } from "@/lib/audit/log";
 import {
   callCoachText,
+  callCoachStructured,
   CoachNotConfiguredError,
   CoachBudgetError,
 } from "@/lib/ai/call";
-import { SUMMARY_MODEL, coachConfigured } from "@/lib/ai/config";
+import { SUMMARY_MODEL, DRAFT_MODEL, coachConfigured } from "@/lib/ai/config";
+
+// The plan-builder draft shape Coach fills, ready for Gabe to review and
+// activate. All string fields, matching the builder's inputs.
+export type DraftExercise = {
+  title: string;
+  kind: string;
+  sets: string;
+  reps: string;
+  load: string;
+  libraryItemId: string | null;
+  mediaUrl: string;
+};
+export type DraftWorkout = {
+  weekNumber: number;
+  dayNumber: number;
+  title: string;
+  exercises: DraftExercise[];
+};
+export type WorkoutPlanDraft = {
+  title: string;
+  goal: string;
+  durationWeeks: string;
+  workouts: DraftWorkout[];
+};
 
 export type CoachResult = { text: string | null; error: string | null };
 
@@ -119,5 +145,148 @@ Write Gabe a short summary he can read in fifteen seconds: where the client is, 
   } catch (e) {
     if (isConfigError(e)) return { text: null, error: e.message };
     return { text: null, error: "Coach could not answer just now. Try again." };
+  }
+}
+
+const KINDS = ["strength", "cardio", "mobility", "warmup", "cooldown", "skill"];
+
+// What Coach returns for a draft (before we match it to the library).
+type CoachPlanShape = {
+  title: string;
+  goal: string;
+  duration_weeks: number;
+  workouts: {
+    title: string;
+    week_number: number;
+    day_number: number;
+    exercises: { title: string; kind: string; sets: number; reps: string; load: string }[];
+  }[];
+};
+
+const PLAN_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    title: { type: "string" },
+    goal: { type: "string" },
+    duration_weeks: { type: "integer" },
+    workouts: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          title: { type: "string" },
+          week_number: { type: "integer" },
+          day_number: { type: "integer" },
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                title: { type: "string" },
+                kind: { type: "string", enum: KINDS },
+                sets: { type: "integer" },
+                reps: { type: "string" },
+                load: { type: "string" },
+              },
+              required: ["title", "kind", "sets", "reps", "load"],
+            },
+          },
+        },
+        required: ["title", "week_number", "day_number", "exercises"],
+      },
+    },
+  },
+  required: ["title", "goal", "duration_weeks", "workouts"],
+};
+
+export type DraftResult = { draft: WorkoutPlanDraft | null; error: string | null };
+
+// Coach drafts a training plan from Gabe's request and the client's context,
+// built to lean on the exercise library. Returns a draft that pre-fills the
+// plan builder; nothing is saved or activated until Gabe approves it there.
+export async function draftWorkoutPlan(clientId: string, ask: string): Promise<DraftResult> {
+  const session = await getSessionProfile();
+  if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
+    return { draft: null, error: "You are signed out." };
+  }
+  if (!coachConfigured()) {
+    return { draft: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+  }
+  if (!ask.trim()) return { draft: null, error: "Tell Coach what to draft." };
+
+  const [client, library] = await Promise.all([
+    getClientById(clientId),
+    getExerciseLibrary(),
+  ]);
+  if (!client) return { draft: null, error: "That client was not found." };
+
+  // Group the library so Coach knows what it can pull from.
+  const libraryList = library.map((l) => `${l.title} (${l.kind})`).join(", ");
+
+  const system = `${COACH_SYSTEM}
+
+You are drafting a training plan for Gabe to review, edit, and approve. It is a draft, never final, and never goes live without Gabe. Build it from the exercise library where you can, using the exact library titles so they link. You may add an exercise not in the library if the plan needs it. Keep loads and reps sensible and general. Never give medical or nutrition advice.`;
+
+  const prompt = `Client: ${clientName(client)}.${client.goal ? ` Their goal: ${client.goal}.` : ""}
+
+Exercise library you can pull from (use these exact titles where they fit):
+${libraryList || "(empty)"}
+
+Gabe's request: ${ask.trim()}
+
+Draft the plan.`;
+
+  try {
+    const plan = await callCoachStructured<CoachPlanShape>({
+      task: "coach.draft_plan",
+      model: DRAFT_MODEL,
+      system,
+      messages: [{ role: "user", content: prompt }],
+      schema: PLAN_SCHEMA,
+      maxTokens: 4000,
+      context: { actorId: session.userId, orgId: session.profile.org_id },
+    });
+
+    // Match Coach's exercises to the library by title, filling the link and media.
+    const byTitle = new Map(library.map((l) => [l.title.toLowerCase().trim(), l]));
+    const draft: WorkoutPlanDraft = {
+      title: plan.title ?? "",
+      goal: plan.goal ?? "",
+      durationWeeks: plan.duration_weeks ? String(plan.duration_weeks) : "",
+      workouts: (plan.workouts ?? []).map((w) => ({
+        weekNumber: w.week_number || 1,
+        dayNumber: w.day_number || 1,
+        title: w.title ?? "",
+        exercises: (w.exercises ?? []).map((e) => {
+          const match = byTitle.get((e.title ?? "").toLowerCase().trim());
+          return {
+            title: e.title ?? "",
+            kind: match?.kind ?? (KINDS.includes(e.kind) ? e.kind : "strength"),
+            sets: e.sets ? String(e.sets) : "",
+            reps: e.reps ?? "",
+            load: e.load ?? "",
+            libraryItemId: match?.id ?? null,
+            mediaUrl: match?.media_url ?? "",
+          };
+        }),
+      })),
+    };
+
+    await auditLog({
+      actorId: session.userId,
+      orgId: session.profile.org_id,
+      action: "coach.draft_plan",
+      entityTable: "clients",
+      entityId: clientId,
+      metadata: { model: DRAFT_MODEL, workouts: draft.workouts.length },
+    });
+
+    return { draft, error: null };
+  } catch (e) {
+    if (isConfigError(e)) return { draft: null, error: e.message };
+    return { draft: null, error: "Coach could not draft that just now. Try again." };
   }
 }
