@@ -148,3 +148,107 @@ export async function getTrackingHub(): Promise<TrackingHub> {
     movementMinutes7d,
   };
 }
+
+export type WellnessScore = {
+  score: number | null;
+  consistency: number | null;
+  movement: number | null;
+  habits: number | null;
+  inputs: {
+    required_exercises: number;
+    required_done: number;
+    movement_minutes_7d: number;
+    movement_target: number;
+    active_habits: number;
+  };
+};
+
+export type WeightPoint = { date: string; label: string; lb: number };
+
+export type HabitAdherence = {
+  id: string;
+  title: string;
+  target_per_week: number;
+  logs_this_week: number;
+};
+
+export type Progress = {
+  hasConsent: boolean;
+  score: WellnessScore | null;
+  weightSeries: WeightPoint[];
+  habits: HabitAdherence[];
+  hasAnyData: boolean;
+};
+
+// Everything the Progress surface renders for the signed-in client: the live
+// wellness score with its components, weight over time, and habit adherence.
+export async function getMyProgress(): Promise<Progress> {
+  const client = await getMyClient();
+  if (!client) {
+    return { hasConsent: false, score: null, weightSeries: [], habits: [], hasAnyData: false };
+  }
+
+  const supabase = await createClient();
+  const weekAgoDate = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+
+  const [{ data: consent }, scoreRes, { data: meas }, { data: habits }, { data: hlogs }] =
+    await Promise.all([
+      supabase
+        .from("consents")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("kind", "health_tracking")
+        .limit(1)
+        .maybeSingle(),
+      supabase.rpc("compute_wellness_score", { p_client_id: client.id }),
+      supabase
+        .from("measurements")
+        .select("taken_at, weight_kg")
+        .eq("client_id", client.id)
+        .not("weight_kg", "is", null)
+        .order("taken_at", { ascending: true }),
+      supabase
+        .from("habits")
+        .select("id, title, target_per_week")
+        .eq("client_id", client.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("habit_logs")
+        .select("habit_id")
+        .eq("client_id", client.id)
+        .gte("logged_on", weekAgoDate),
+    ]);
+
+  const weightSeries: WeightPoint[] = (meas ?? []).map((m) => {
+    const kg = m.weight_kg as number;
+    return {
+      date: m.taken_at as string,
+      label: new Date(m.taken_at as string).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
+      lb: Math.round((kg / 0.45359237) * 10) / 10,
+    };
+  });
+
+  const logs = hlogs ?? [];
+  const habitAdherence: HabitAdherence[] = (habits ?? []).map((h) => ({
+    id: h.id as string,
+    title: h.title as string,
+    target_per_week: h.target_per_week as number,
+    logs_this_week: logs.filter((l) => l.habit_id === h.id).length,
+  }));
+
+  const score = (scoreRes.data as WellnessScore | null) ?? null;
+  const hasAnyData =
+    weightSeries.length > 0 || habitAdherence.length > 0 || (score?.score != null);
+
+  return {
+    hasConsent: Boolean(consent),
+    score,
+    weightSeries,
+    habits: habitAdherence,
+    hasAnyData,
+  };
+}
