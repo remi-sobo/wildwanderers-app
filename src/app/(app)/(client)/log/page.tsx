@@ -1,5 +1,6 @@
 import { getTrackingHub } from "@/lib/data/wellness";
 import { getMyCheckIns } from "@/lib/data/checkins";
+import { voiceConfigured } from "@/lib/voice/transcribe";
 import { ConsentScreen } from "@/components/client/ConsentScreen";
 import { LogHub } from "@/components/client/LogHub";
 
@@ -30,6 +31,7 @@ export default async function LogPage() {
         todaysFood={hub.todaysFood}
         todaysCalories={hub.todaysCalories}
         recentCheckIns={recentCheckIns}
+        voiceEnabled={voiceConfigured()}
       />
     </div>
   );

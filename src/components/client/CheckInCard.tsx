@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Check } from "lucide-react";
-import { submitTextCheckIn } from "@/lib/wellness/checkin-actions";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Check, Mic, Square } from "lucide-react";
+import { submitTextCheckIn, submitVoiceCheckIn } from "@/lib/wellness/checkin-actions";
 import type { CheckIn } from "@/lib/data/checkins";
 
-// A client leaves a short reflection for Gabe. Voice is added in the next
-// commit; this captures text. Coach structures it on Gabe's side, with his
-// approval, never automatically.
-export function CheckInCard({ recent }: { recent: CheckIn[] }) {
+// A client leaves a short reflection for Gabe, by text or voice. Coach
+// structures it on Gabe's side, with his approval, never automatically.
+export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voiceEnabled: boolean }) {
+  const router = useRouter();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   function send() {
     setError(null);
@@ -27,6 +33,43 @@ export function CheckInCard({ recent }: { recent: CheckIn[] }) {
     });
   }
 
+  async function startRecording() {
+    setError(null);
+    setSent(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        setTranscribing(true);
+        const fd = new FormData();
+        fd.append("audio", blob, "checkin.webm");
+        const res = await submitVoiceCheckIn(fd);
+        setTranscribing(false);
+        if (res.error) setError(res.error);
+        else {
+          setSent(true);
+          router.refresh();
+        }
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      setError("Could not reach your microphone. Check permissions, or use text.");
+    }
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+    setRecording(false);
+  }
+
   return (
     <>
       <textarea
@@ -39,7 +82,7 @@ export function CheckInCard({ recent }: { recent: CheckIn[] }) {
         placeholder="How did the week go? What felt good, what got in the way?"
         className="w-full rounded-xl border border-[color:var(--border-strong)] bg-canvas p-3 text-[14.5px] text-ink"
       />
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={send}
@@ -48,6 +91,31 @@ export function CheckInCard({ recent }: { recent: CheckIn[] }) {
         >
           {pending ? "Sending" : "Send check-in"}
         </button>
+
+        {voiceEnabled ? (
+          recording ? (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-state-error)]/40 bg-[color:var(--color-state-error)]/8 px-4 py-2.5 text-[13.5px] font-semibold text-[color:var(--color-state-error)]"
+            >
+              <Square size={13} fill="currentColor" aria-hidden="true" />
+              Stop and send
+              <span className="ml-1 h-2 w-2 animate-pulse rounded-full bg-[color:var(--color-state-error)]" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={startRecording}
+              disabled={transcribing}
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] px-4 py-2.5 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70"
+            >
+              <Mic size={15} aria-hidden="true" />
+              {transcribing ? "Transcribing" : "Record instead"}
+            </button>
+          )
+        ) : null}
+
         {sent ? (
           <span className="flex items-center gap-1 text-[13px] text-fern">
             <Check size={15} /> Sent to Gabe

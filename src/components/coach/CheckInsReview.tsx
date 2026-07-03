@@ -85,8 +85,23 @@ function Row({ checkIn }: { checkIn: CheckIn }) {
           </button>
         ) : null}
       </div>
+      {checkIn.kind === "voice" && checkIn.voice_signed_url ? (
+        <audio
+          controls
+          src={checkIn.voice_signed_url}
+          className="mt-2 h-9 w-full"
+          preload="none"
+        />
+      ) : null}
       {checkIn.body ? (
-        <p className="mt-2 text-[14px] leading-[1.55] text-[color:var(--color-text)]">{checkIn.body}</p>
+        <p className="mt-2 text-[14px] leading-[1.55] text-[color:var(--color-text)]">
+          {checkIn.kind === "voice" ? (
+            <span className="mr-1 text-[11px] uppercase tracking-[0.12em] text-[color:var(--color-text-faint)]">
+              Transcript
+            </span>
+          ) : null}
+          {checkIn.body}
+        </p>
       ) : null}
       {error ? (
         <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">

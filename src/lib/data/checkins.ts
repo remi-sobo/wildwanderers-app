@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMyClient } from "@/lib/data/training";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type CheckInStructured = {
   summary?: string;
@@ -15,6 +16,8 @@ export type CheckIn = {
   kind: "text" | "voice";
   body: string | null;
   voice_url: string | null;
+  // A short-lived playback URL, resolved for the coach view when configured.
+  voice_signed_url?: string | null;
   structured: CheckInStructured;
   status: "open" | "reviewed" | "archived";
 };
@@ -33,7 +36,10 @@ export async function getMyCheckIns(limit = 5): Promise<CheckIn[]> {
   return (data as CheckIn[] | null) ?? [];
 }
 
-// A client's check-ins for the coach (RLS scopes to the coach's org).
+// A client's check-ins for the coach (RLS scopes to the coach's org). Voice
+// entries get a short-lived signed playback URL, resolved through the admin
+// chokepoint since the audio bucket is client-owned. Best-effort: without a
+// service key the transcript still shows, just no playback.
 export async function getClientCheckIns(clientId: string, limit = 10): Promise<CheckIn[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -42,5 +48,24 @@ export async function getClientCheckIns(clientId: string, limit = 10): Promise<C
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(limit);
-  return (data as CheckIn[] | null) ?? [];
+
+  const rows = (data as CheckIn[] | null) ?? [];
+  const voicePaths = rows.filter((r) => r.kind === "voice" && r.voice_url).map((r) => r.voice_url!);
+  if (voicePaths.length === 0 || !process.env.SUPABASE_SERVICE_ROLE_KEY) return rows;
+
+  try {
+    const admin = createAdminClient();
+    const signed = new Map<string, string>();
+    await Promise.all(
+      voicePaths.map(async (path) => {
+        const { data: s } = await admin.storage.from("checkin-audio").createSignedUrl(path, 3600);
+        if (s?.signedUrl) signed.set(path, s.signedUrl);
+      }),
+    );
+    return rows.map((r) =>
+      r.voice_url && signed.has(r.voice_url) ? { ...r, voice_signed_url: signed.get(r.voice_url) } : r,
+    );
+  } catch {
+    return rows;
+  }
 }
