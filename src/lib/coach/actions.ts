@@ -167,3 +167,45 @@ export async function createAndActivatePlan(
   revalidatePath(`/program/clients/${clientId}`);
   redirect(`/program/clients/${clientId}`);
 }
+
+// --- Sessions ---
+
+export type ScheduleSessionState = { error: string | null; ok: boolean };
+
+export async function scheduleSession(
+  _prev: ScheduleSessionState,
+  formData: FormData,
+): Promise<ScheduleSessionState> {
+  const { profile, userId } = await requireOwnerOrCoach();
+  const clientId = String(formData.get("client_id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "training");
+  const date = String(formData.get("date") ?? "");
+  const time = String(formData.get("time") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!title) return { error: "Give the session a title.", ok: false };
+  if (!date || !time) return { error: "Pick a date and time.", ok: false };
+
+  const startAt = new Date(`${date}T${time}`);
+  if (Number.isNaN(startAt.getTime())) {
+    return { error: "That date and time did not read. Try again.", ok: false };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("sessions").insert({
+    org_id: profile.org_id,
+    coach_id: userId,
+    client_id: clientId,
+    title,
+    kind,
+    start_at: startAt.toISOString(),
+    notes: notes || null,
+    created_by: userId,
+  });
+
+  if (error) return { error: "We could not schedule that session. Try again.", ok: false };
+
+  revalidatePath(`/program/clients/${clientId}`);
+  return { error: null, ok: true };
+}
