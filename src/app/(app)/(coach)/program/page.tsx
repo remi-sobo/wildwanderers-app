@@ -1,11 +1,83 @@
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Plus, Users } from "lucide-react";
+import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export default function ProgramPage() {
+const STATUS_STYLE: Record<ClientStatus, string> = {
+  active: "bg-[color:var(--color-state-good)]/12 text-[color:var(--color-state-good)]",
+  paused: "bg-[color:var(--color-state-caution)]/15 text-[color:var(--color-state-caution)]",
+  archived: "bg-inset text-[color:var(--color-text-muted)]",
+};
+
+function StatusPill({ status }: { status: ClientStatus }) {
   return (
-    <EmptyState icon={Users} title="Your clients gather here.">
-      Add your first client and their training plans, workouts, and progress show
-      up in Program. That work starts in the next build.
-    </EmptyState>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLE[status]}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+export default async function ProgramPage() {
+  const clients = await getClients();
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-[color:var(--color-text-muted)]">
+          {clients.length === 0
+            ? "No clients yet"
+            : `${clients.length} ${clients.length === 1 ? "client" : "clients"}`}
+        </p>
+        <Link
+          href="/program/clients/new"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+        >
+          <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
+          Add client
+        </Link>
+      </div>
+
+      {clients.length === 0 ? (
+        <EmptyState icon={Users} title="Your clients gather here.">
+          Add your first client and their training plans, workouts, and progress
+          show up in Program.
+        </EmptyState>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {clients.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/program/clients/${c.id}`}
+                className="group flex items-center gap-4 rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 py-4 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-[color:var(--border-strong)]"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-inset font-[family-name:var(--font-display)] text-[15px] text-forest">
+                  {(c.first_name[0] ?? "") + (c.last_name[0] ?? "")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2.5">
+                    <p className="truncate font-[family-name:var(--font-display)] text-[17px] text-forest-deep">
+                      {clientName(c)}
+                    </p>
+                    <StatusPill status={c.status} />
+                  </div>
+                  <p className="truncate text-[13px] text-[color:var(--color-text-muted)]">
+                    {c.active_plan_title
+                      ? c.active_plan_title
+                      : c.goal || "No active plan yet"}
+                  </p>
+                </div>
+                <ChevronRight
+                  size={18}
+                  aria-hidden="true"
+                  className="shrink-0 text-[color:var(--color-text-faint)] transition-transform group-hover:translate-x-0.5"
+                />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
