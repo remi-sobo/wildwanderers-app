@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
+import { getExerciseLibrary } from "@/lib/data/exercises";
 import { PlanBuilder } from "@/components/coach/PlanBuilder";
 
 export const metadata = { title: "Build a plan — Wild Wanderers" };
@@ -14,6 +15,8 @@ export default async function NewPlanPage({
   const { id } = await params;
   const client = await getClientById(id);
   if (!client) notFound();
+
+  const library = await getExerciseLibrary();
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,7 +32,7 @@ export default async function NewPlanPage({
           Build a plan
         </h1>
       </div>
-      <PlanBuilder clientId={id} />
+      <PlanBuilder clientId={id} library={library} />
     </div>
   );
 }

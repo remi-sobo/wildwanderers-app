@@ -103,6 +103,8 @@ export type PlanDraft = {
       load: string;
       instructions: string;
       is_optional: boolean;
+      library_item_id: string | null;
+      media_url: string;
     }[];
   }[];
 };
@@ -145,6 +147,8 @@ export async function createAndActivatePlan(
       instructions: e.instructions,
       sort_order: i,
       is_optional: e.is_optional,
+      library_item_id: e.library_item_id,
+      media_url: e.media_url,
     })),
   }));
 
