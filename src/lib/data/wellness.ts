@@ -35,6 +35,16 @@ export type ActivityLog = {
   estimated_energy_kcal: number | null;
 };
 
+export type FoodLog = {
+  id: string;
+  logged_at: string;
+  meal: "breakfast" | "lunch" | "dinner" | "snack";
+  description: string | null;
+  quantity: number;
+  calories: number | null;
+  protein_g: number | null;
+};
+
 export type TrackingHub = {
   clientId: string | null;
   hasConsent: boolean;
@@ -42,6 +52,8 @@ export type TrackingHub = {
   latestMeasurement: Measurement | null;
   recentActivity: ActivityLog[];
   movementMinutes7d: number;
+  todaysFood: FoodLog[];
+  todaysCalories: number;
 };
 
 // Has the signed-in client granted health-tracking consent?
@@ -72,6 +84,8 @@ export async function getTrackingHub(): Promise<TrackingHub> {
       latestMeasurement: null,
       recentActivity: [],
       movementMinutes7d: 0,
+      todaysFood: [],
+      todaysCalories: 0,
     };
   }
 
@@ -139,6 +153,19 @@ export async function getTrackingHub(): Promise<TrackingHub> {
     0,
   );
 
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const { data: foods } = await supabase
+    .from("food_logs")
+    .select("id, logged_at, meal, description, quantity, calories, protein_g")
+    .eq("client_id", client.id)
+    .gte("logged_at", dayStart.toISOString())
+    .order("logged_at", { ascending: true });
+  const todaysFood = (foods ?? []) as FoodLog[];
+  const todaysCalories = Math.round(
+    todaysFood.reduce((sum, f) => sum + (f.calories ?? 0), 0),
+  );
+
   return {
     clientId: client.id,
     hasConsent: Boolean(consent),
@@ -146,6 +173,8 @@ export async function getTrackingHub(): Promise<TrackingHub> {
     latestMeasurement: (meas?.[0] as Measurement | undefined) ?? null,
     recentActivity,
     movementMinutes7d,
+    todaysFood,
+    todaysCalories,
   };
 }
 

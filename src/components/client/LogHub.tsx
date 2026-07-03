@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Scale, Activity, CircleCheck, Circle } from "lucide-react";
+import { Check, Scale, Activity, CircleCheck, Circle, UtensilsCrossed } from "lucide-react";
 import {
   toggleHabitToday,
   logMeasurement,
@@ -10,7 +10,8 @@ import {
   type ActivityInput,
 } from "@/lib/wellness/actions";
 import { kgToLb, cmToIn, round1 } from "@/lib/wellness/units";
-import type { HabitToday, Measurement, ActivityLog } from "@/lib/data/wellness";
+import { FoodCard } from "@/components/client/FoodCard";
+import type { HabitToday, Measurement, ActivityLog, FoodLog } from "@/lib/data/wellness";
 
 function Card({
   icon: Icon,
@@ -331,10 +332,14 @@ export function LogHub({
   habits,
   latestMeasurement,
   recentActivity,
+  todaysFood,
+  todaysCalories,
 }: {
   habits: HabitToday[];
   latestMeasurement: Measurement | null;
   recentActivity: ActivityLog[];
+  todaysFood: FoodLog[];
+  todaysCalories: number;
 }) {
   return (
     <div className="flex flex-col gap-5">
@@ -350,6 +355,9 @@ export function LogHub({
       </Card>
       <Card icon={Activity} title="Movement" hint="Log a walk, a run, anything.">
         <ActivityCard recent={recentActivity} />
+      </Card>
+      <Card icon={UtensilsCrossed} title="Food" hint="Search a food and log it.">
+        <FoodCard todaysFood={todaysFood} todaysCalories={todaysCalories} />
       </Card>
     </div>
   );
