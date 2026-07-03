@@ -128,15 +128,23 @@ Each commit: build green, one change at a time, RLS on every new table, no clien
 or org reaching another's data, no medical claim or fabricated value, shown before
 it lands.
 
-## Decisions to confirm before build
-1. **Nutrition API** — (a) USDA FoodData Central + Open Food Facts, free, natural
-   for MVP; (b) Nutritionix, paid, best natural-language and barcode UX; or (c)
-   defer food logging to Ring 2b and ship the rest first (recommended: build the
-   core tracker now, decide the food provider at 2b).
-2. **Wellness score weighting** — consistency 0.5 / movement 0.25 / habits 0.25, or
-   adjust.
-3. **Encryption** — rely on Supabase at-rest encryption plus strict RLS and audit
-   (recommended), or add column-level encryption for body data now (heavier).
+## Decisions locked (2026-07-03)
+1. **Nutrition API** — USDA FoodData Central + Open Food Facts, both free. Food
+   logging ships in Ring 2, not deferred. USDA falls back to `DEMO_KEY`; set
+   `FDC_API_KEY` in Vercel for reliable search.
+2. **Wellness score weighting** — consistency 0.5, movement 0.25, habits 0.25. A
+   component with no data yet is treated as absent and its weight is spread across
+   the present ones, so a client is never dinged for a channel they have not
+   started.
+3. **Encryption** — Supabase at-rest encryption plus strict RLS and the sealed
+   audit ledger. No column-level encryption this ring.
 4. **Measurements set** — weight, waist, hip, chest, arm, thigh, body-fat percent.
-   Trim or add?
-5. **PWA** — include in Ring 2 per the master spec (recommended), or defer.
+   Entered in lb/in, stored canonical metric.
+5. **PWA** — deferred. Built the tracker phone-first; the install shell (manifest,
+   service worker, icons) is its own later pass so it can be tested on a device.
+
+## Build status
+Shipped in six commits on `claude/ring-0-foundation-shell-r619dg`: the migration
+and seed, the consent gate and Log, Progress, Coach Fitness, food logging, and
+this final pass. RLS isolation, the score function, and the food cache-and-log
+path all verified on the live project.
