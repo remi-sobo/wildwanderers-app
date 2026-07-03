@@ -4,16 +4,21 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Ring 0 and Ring 1 complete and deployed. Sign-in works. Ring 1 is the spine:
-Gabe adds a client and builds a training plan from an exercise library (Ring
-1.5), the client sees today's workout on Home and ticks each exercise done in
-Training, coach and client message in realtime, and the next session shows up.
-Owner (Gabe), the first client (Remi), and a rich mid-plan demo client are
-seeded. All verified on the live project: RLS isolation (client-to-client,
-self, owner), the plan-creation RPC, client sends, and completion writes.
-Note: inviting a client login from the app needs SUPABASE_SERVICE_ROLE_KEY in
-Vercel; adding a client without a login works regardless. Coach AI (Ring 3)
-will draft workouts from the exercise library.
+Rings 0, 1, and 2 complete. Rings 0 and 1 are deployed; Ring 2 is built and
+verified on the branch, ready to merge. Ring 2 is the wellness tracker: a
+client consents once (plain, not-medical), then logs weight and measurements,
+checks off habits, logs movement, and logs food from their phone on the Log
+surface. Progress shows the graphs and a transparent wellness score (a warm
+fern-to-amber ring, consistency 0.5 / movement 0.25 / habits 0.25, always with
+its progress-not-medical note). Gabe coaches off it on Fitness, per client,
+with a summary on each client's Program page. Food search hits two free
+providers (USDA FoodData Central + Open Food Facts) and caches to food_items.
+All body/food tables have strict RLS from the first migration, access appends
+to a sealed audit ledger, and isolation is verified on the live project
+(other client sees zero and is blocked from the score; owner sees the org).
+Notes: inviting a client login and writing audit rows both need
+SUPABASE_SERVICE_ROLE_KEY in Vercel; set FDC_API_KEY for reliable food search.
+Coach AI (Ring 3) will draft workouts and structure the check_ins captured here.
 
 ## Demo client (standing practice)
 `demo.client@wildwanderers.life` is a clearly-labeled demo account so Gabe can
@@ -31,7 +36,8 @@ profile, goal, and a coaching group.
   completion, messaging, the next session. Done, deployed. Plus Ring 1.5, an
   exercise library the plan builder pulls from.
 - Ring 2: the wellness tracker. Measurements, graphs, habits, the wellness score,
-  food and activity logging, PWA install. Not started.
+  food and activity logging. Done, on the branch. PWA install deferred to a
+  later pass so it can be tested on a device.
 - Ring 3: Coach AI. Workout drafting, check-in structuring, coach nudges. Not
   started.
 - Ring 4: the business switch. Command dashboard, clients and pipeline, offerings,
@@ -45,9 +51,14 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
-- Nutrition API provider and cost, to confirm at Ring 2.
+- PWA install shell (manifest, service worker, icons), a later pass.
+- Set FDC_API_KEY and SUPABASE_SERVICE_ROLE_KEY in Vercel (food search, audit,
+  invite-by-email).
 
 ## Log
+- 2026-07-03 Ring 2 built (six commits): wellness schema + RLS + score function
+  + demo seed, consent gate and Log, Progress graphs and score, Coach Fitness,
+  food logging (USDA + Open Food Facts), final pass. Verified on the live DB.
 - 2026-07-03 Ring 0 built: foundation migration (applied + verified), auth
   plumbing, login screen with the golden-hour trail hero, coach and client
   shells with role routing, owner and first-client seeded. Deployed to Vercel.
