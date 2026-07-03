@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarClock, ChevronLeft, ClipboardList, Dumbbell, MessageCircle } from "lucide-react";
+import { Activity } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
 import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
+import { getClientWellness } from "@/lib/data/coach-fitness";
 import { openThreadWithClient } from "@/lib/messaging/actions";
 import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -28,9 +30,10 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, sessions] = await Promise.all([
+  const [plan, sessions, wellness] = await Promise.all([
     getPlanForClient(id),
     getUpcomingSessionsForClient(id),
+    getClientWellness(id),
   ]);
 
   const openThread = openThreadWithClient.bind(null, id);
@@ -75,6 +78,33 @@ export default async function ClientDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Wellness summary */}
+      {wellness.hasConsent ? (
+        <Link
+          href={`/fitness?c=${id}`}
+          className="group flex items-center gap-4 rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 py-4 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-[color:var(--border-strong)]"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-inset text-forest">
+            <Activity size={18} strokeWidth={1.9} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-bark">
+              Wellness score
+            </p>
+            <p className="text-[13px] text-[color:var(--color-text-muted)]">
+              {wellness.score?.score != null
+                ? "A progress signal, not a medical assessment. Open the full view."
+                : "Consented, building as they log. Open the full view."}
+            </p>
+          </div>
+          {wellness.score?.score != null ? (
+            <span className="shrink-0 font-[family-name:var(--font-display)] text-[30px] leading-none text-forest-deep">
+              {wellness.score.score}
+            </span>
+          ) : null}
+        </Link>
+      ) : null}
 
       {/* Sessions */}
       <section className="flex flex-col gap-3">
