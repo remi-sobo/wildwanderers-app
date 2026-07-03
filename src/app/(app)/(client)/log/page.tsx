@@ -24,6 +24,8 @@ export default async function LogPage() {
         habits={hub.habits}
         latestMeasurement={hub.latestMeasurement}
         recentActivity={hub.recentActivity}
+        todaysFood={hub.todaysFood}
+        todaysCalories={hub.todaysCalories}
       />
     </div>
   );
