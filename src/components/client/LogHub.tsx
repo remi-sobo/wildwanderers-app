@@ -337,6 +337,7 @@ export function LogHub({
   todaysFood,
   todaysCalories,
   recentCheckIns,
+  voiceEnabled,
 }: {
   habits: HabitToday[];
   latestMeasurement: Measurement | null;
@@ -344,11 +345,12 @@ export function LogHub({
   todaysFood: FoodLog[];
   todaysCalories: number;
   recentCheckIns: CheckIn[];
+  voiceEnabled: boolean;
 }) {
   return (
     <div className="flex flex-col gap-5">
       <Card icon={MessageSquareHeart} title="Check in with Gabe" hint="A quick reflection, whenever.">
-        <CheckInCard recent={recentCheckIns} />
+        <CheckInCard recent={recentCheckIns} voiceEnabled={voiceEnabled} />
       </Card>
       <Card icon={Check} title="Today's habits" hint="Tap to check one off.">
         <HabitsCard habits={habits} />
