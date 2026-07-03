@@ -4,13 +4,16 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Ring 0 nearly complete and deployed. Foundation migration applied and verified
-on the live project (six tables, RLS on all, org isolation, hardened helpers,
-signup trigger, Wild Wanderers Fitness org seeded). Auth plumbing and the
-login screen are live. Coach and client shells are built with role routing and
-encouraging empty states. Owner (Gabe) and the first client (Remi) are seeded.
-Open item: end-to-end login could not be exercised from the build sandbox
-(egress policy blocks the Supabase host); verify sign-in on the deployed app.
+Ring 0 and Ring 1 complete and deployed. Sign-in works. Ring 1 is the spine:
+Gabe adds a client and builds a training plan from an exercise library (Ring
+1.5), the client sees today's workout on Home and ticks each exercise done in
+Training, coach and client message in realtime, and the next session shows up.
+Owner (Gabe), the first client (Remi), and a rich mid-plan demo client are
+seeded. All verified on the live project: RLS isolation (client-to-client,
+self, owner), the plan-creation RPC, client sends, and completion writes.
+Note: inviting a client login from the app needs SUPABASE_SERVICE_ROLE_KEY in
+Vercel; adding a client without a login works regardless. Coach AI (Ring 3)
+will draft workouts from the exercise library.
 
 ## Demo client (standing practice)
 `demo.client@wildwanderers.life` is a clearly-labeled demo account so Gabe can
@@ -25,7 +28,8 @@ profile, goal, and a coaching group.
 - Ring 0: the shell. Fork schema, retarget names, seed one org, auth, RLS, role
   routing, app shell in the Wild Wanderers aesthetic. Nearly done, deployed.
 - Ring 1: the spine. One client, a hand-built training plan, today's workout,
-  completion, messaging, the next session. Not started.
+  completion, messaging, the next session. Done, deployed. Plus Ring 1.5, an
+  exercise library the plan builder pulls from.
 - Ring 2: the wellness tracker. Measurements, graphs, habits, the wellness score,
   food and activity logging, PWA install. Not started.
 - Ring 3: Coach AI. Workout drafting, check-in structuring, coach nudges. Not
