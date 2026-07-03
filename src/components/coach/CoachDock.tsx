@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sparkles, X, ClipboardList, Send } from "lucide-react";
-import { summarizeClient } from "@/lib/ai/coach-actions";
+import { useRouter } from "next/navigation";
+import { Sparkles, X, ClipboardList, Dumbbell, Send } from "lucide-react";
+import { summarizeClient, draftWorkoutPlan } from "@/lib/ai/coach-actions";
+import { COACH_DRAFT_KEY } from "@/components/coach/PlanBuilder";
 
 export type CoachClient = { id: string; name: string };
 
@@ -10,11 +12,21 @@ export type CoachClient = { id: string; name: string };
 // drawer. Coach is Gabe's tool, so it never renders on the client surfaces.
 // Commit 2 wires "summarize a client" end to end; drafting lands next.
 export function CoachDock({ clients, configured }: { clients: CoachClient[]; configured: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [answer, setAnswer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [ask, setAsk] = useState("");
+  const [drafting, startDraft] = useTransition();
+  const [draftError, setDraftError] = useState<string | null>(null);
+
+  function resetOutputs() {
+    setAnswer(null);
+    setError(null);
+    setDraftError(null);
+  }
 
   function runSummary() {
     if (!clientId) return;
@@ -24,6 +36,25 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
       const res = await summarizeClient(clientId);
       if (res.error) setError(res.error);
       else setAnswer(res.text);
+    });
+  }
+
+  function runDraft() {
+    if (!clientId || !ask.trim()) return;
+    setDraftError(null);
+    startDraft(async () => {
+      const res = await draftWorkoutPlan(clientId, ask);
+      if (res.error || !res.draft) {
+        setDraftError(res.error ?? "Coach could not draft that.");
+        return;
+      }
+      // Hand the draft to the plan builder for Gabe to review and approve.
+      sessionStorage.setItem(
+        COACH_DRAFT_KEY,
+        JSON.stringify({ clientId, draft: res.draft }),
+      );
+      setOpen(false);
+      router.push(`/program/clients/${clientId}/plan/new`);
     });
   }
 
@@ -87,32 +118,25 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                 </div>
               ) : null}
 
-              <section className="mt-1">
-                <div className="mb-2 flex items-center gap-2">
-                  <ClipboardList size={15} className="text-forest" aria-hidden="true" />
-                  <h3 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-bark">
-                    Summarize a client
-                  </h3>
-                </div>
-                <p className="mb-3 text-[13px] text-[color:var(--color-text-muted)]">
-                  A fast read on where a client is, from their training and
-                  wellness. It is a progress read, never a medical assessment.
+              {clients.length === 0 ? (
+                <p className="text-[13.5px] text-[color:var(--color-text-muted)]">
+                  Add a client first, then Coach can summarize them or draft a
+                  workout.
                 </p>
-
-                {clients.length === 0 ? (
-                  <p className="text-[13.5px] text-[color:var(--color-text-muted)]">
-                    Add a client first, then Coach can summarize them.
-                  </p>
-                ) : (
-                  <div className="flex gap-2">
+              ) : (
+                <>
+                  {/* Shared client picker */}
+                  <label className="mb-5 block">
+                    <span className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.12em] text-bark">
+                      Client
+                    </span>
                     <select
                       value={clientId}
                       onChange={(e) => {
                         setClientId(e.target.value);
-                        setAnswer(null);
-                        setError(null);
+                        resetOutputs();
                       }}
-                      className="h-11 flex-1 rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[14.5px] text-ink"
+                      className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[14.5px] text-ink"
                     >
                       {clients.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -120,36 +144,84 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                         </option>
                       ))}
                     </select>
+                  </label>
+
+                  {/* Summarize */}
+                  <section className="border-t border-[color:var(--border-hair)] pt-5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <ClipboardList size={15} className="text-forest" aria-hidden="true" />
+                      <h3 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-bark">
+                        Summarize
+                      </h3>
+                    </div>
+                    <p className="mb-3 text-[13px] text-[color:var(--color-text-muted)]">
+                      A fast read on where they are, from their training and
+                      wellness. A progress read, never a medical assessment.
+                    </p>
                     <button
                       type="button"
                       onClick={runSummary}
                       disabled={pending}
-                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-amber px-4 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-70"
                     >
-                      {pending ? "Reading" : "Summarize"}
-                      {!pending ? <Send size={15} aria-hidden="true" /> : null}
+                      {pending ? "Reading" : "Summarize this client"}
+                      {!pending ? <Send size={14} aria-hidden="true" /> : null}
                     </button>
-                  </div>
-                )}
+                    {error ? (
+                      <p role="alert" className="mt-3 text-[13px] text-[color:var(--color-state-error)]">
+                        {error}
+                      </p>
+                    ) : null}
+                    {answer ? (
+                      <div className="mt-4 rounded-2xl border border-[color:var(--border-hair)] bg-card p-5 shadow-[var(--shadow-card)]">
+                        <p className="whitespace-pre-wrap text-[14.5px] leading-[1.6] text-[color:var(--color-text)]">
+                          {answer}
+                        </p>
+                        <p className="mt-3 text-[11.5px] text-[color:var(--color-text-faint)]">
+                          For you, not the client. A progress read, not a medical
+                          assessment.
+                        </p>
+                      </div>
+                    ) : null}
+                  </section>
 
-                {error ? (
-                  <p role="alert" className="mt-3 text-[13px] text-[color:var(--color-state-error)]">
-                    {error}
-                  </p>
-                ) : null}
-
-                {answer ? (
-                  <div className="mt-4 rounded-2xl border border-[color:var(--border-hair)] bg-card p-5 shadow-[var(--shadow-card)]">
-                    <p className="whitespace-pre-wrap text-[14.5px] leading-[1.6] text-[color:var(--color-text)]">
-                      {answer}
+                  {/* Draft a workout */}
+                  <section className="mt-6 border-t border-[color:var(--border-hair)] pt-5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <Dumbbell size={15} className="text-forest" aria-hidden="true" />
+                      <h3 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-bark">
+                        Draft a workout
+                      </h3>
+                    </div>
+                    <p className="mb-3 text-[13px] text-[color:var(--color-text-muted)]">
+                      Coach drafts a plan from the exercise library. It opens in
+                      the plan builder for you to review, edit, and activate.
+                      Nothing goes live until you approve it.
                     </p>
-                    <p className="mt-3 text-[11.5px] text-[color:var(--color-text-faint)]">
-                      Drafted by Coach for you, not the client. A progress read,
-                      not a medical assessment.
-                    </p>
-                  </div>
-                ) : null}
-              </section>
+                    <textarea
+                      value={ask}
+                      onChange={(e) => setAsk(e.target.value)}
+                      rows={3}
+                      placeholder="What should Coach draft? e.g. a 3-day full-body week for a beginner, or add a mobility day to their plan."
+                      className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14px] text-ink"
+                    />
+                    <button
+                      type="button"
+                      onClick={runDraft}
+                      disabled={drafting || !ask.trim()}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
+                    >
+                      {drafting ? "Drafting" : "Draft with Coach"}
+                      {!drafting ? <Sparkles size={14} aria-hidden="true" /> : null}
+                    </button>
+                    {draftError ? (
+                      <p role="alert" className="mt-3 text-[13px] text-[color:var(--color-state-error)]">
+                        {draftError}
+                      </p>
+                    ) : null}
+                  </section>
+                </>
+              )}
             </div>
           </aside>
         </div>

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { createAndActivatePlan, type PlanDraft } from "@/lib/coach/actions";
 import type { LibraryItem } from "@/lib/data/exercises";
+
+// Where the Coach drawer stashes a drafted plan before sending Gabe here.
+export const COACH_DRAFT_KEY = "ww:coach-plan-draft";
 
 type ExerciseForm = {
   title: string;
@@ -48,7 +51,48 @@ export function PlanBuilder({
   const [workouts, setWorkouts] = useState<WorkoutForm[]>([emptyWorkout(1)]);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fromCoach, setFromCoach] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // If Coach drafted a plan for this client, seed the builder from it, then
+  // clear the stash. Gabe reviews and edits before activating; nothing here
+  // goes live on its own.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(COACH_DRAFT_KEY);
+      if (!raw) return;
+      const stash = JSON.parse(raw) as {
+        clientId: string;
+        draft: {
+          title: string;
+          goal: string;
+          durationWeeks: string;
+          workouts: WorkoutForm[];
+        };
+      };
+      if (stash.clientId !== clientId) return;
+      sessionStorage.removeItem(COACH_DRAFT_KEY);
+      setTitle(stash.draft.title || "");
+      setGoal(stash.draft.goal || "");
+      setDurationWeeks(stash.draft.durationWeeks || "");
+      if (stash.draft.workouts?.length) {
+        setWorkouts(
+          stash.draft.workouts.map((w) => ({
+            weekNumber: w.weekNumber || 1,
+            dayNumber: w.dayNumber || 1,
+            title: w.title || "",
+            exercises:
+              w.exercises?.length > 0
+                ? w.exercises.map((e) => ({ ...emptyExercise(), ...e }))
+                : [emptyExercise()],
+          })),
+        );
+      }
+      setFromCoach(true);
+    } catch {
+      // ignore a malformed stash
+    }
+  }, [clientId]);
 
   function updateWorkout(i: number, patch: Partial<WorkoutForm>) {
     setWorkouts((ws) => ws.map((w, idx) => (idx === i ? { ...w, ...patch } : w)));
@@ -108,6 +152,16 @@ export function PlanBuilder({
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
+      {fromCoach ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-fern)]/30 bg-[color:var(--color-fern)]/10 px-5 py-4">
+          <Sparkles size={17} className="mt-0.5 shrink-0 text-forest" aria-hidden="true" />
+          <p className="text-[13.5px] leading-[1.55] text-forest-deep">
+            Coach drafted this plan. Review and edit anything, then create and
+            activate it when it is ready. Nothing goes live until you do.
+          </p>
+        </div>
+      ) : null}
+
       {error ? (
         <p
           role="alert"
