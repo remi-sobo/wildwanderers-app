@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { createAndActivatePlan, type PlanDraft } from "@/lib/coach/actions";
+import type { LibraryItem } from "@/lib/data/exercises";
 
 type ExerciseForm = {
   title: string;
@@ -11,6 +12,8 @@ type ExerciseForm = {
   sets: string;
   reps: string;
   load: string;
+  libraryItemId: string | null;
+  mediaUrl: string;
 };
 
 type WorkoutForm = {
@@ -23,9 +26,8 @@ type WorkoutForm = {
 const KINDS = ["strength", "cardio", "mobility", "warmup", "cooldown", "skill"];
 
 function emptyExercise(): ExerciseForm {
-  return { title: "", kind: "strength", sets: "", reps: "", load: "" };
+  return { title: "", kind: "strength", sets: "", reps: "", load: "", libraryItemId: null, mediaUrl: "" };
 }
-
 function emptyWorkout(day: number): WorkoutForm {
   return { weekNumber: 1, dayNumber: day, title: "", exercises: [emptyExercise()] };
 }
@@ -33,11 +35,18 @@ function emptyWorkout(day: number): WorkoutForm {
 const fieldClass =
   "h-11 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
 
-export function PlanBuilder({ clientId }: { clientId: string }) {
+export function PlanBuilder({
+  clientId,
+  library,
+}: {
+  clientId: string;
+  library: LibraryItem[];
+}) {
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
   const [durationWeeks, setDurationWeeks] = useState("");
   const [workouts, setWorkouts] = useState<WorkoutForm[]>([emptyWorkout(1)]);
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -52,6 +61,17 @@ export function PlanBuilder({ clientId }: { clientId: string }) {
           : w,
       ),
     );
+  }
+  function pickLibrary(wi: number, ei: number, item: LibraryItem) {
+    updateExercise(wi, ei, {
+      title: item.title,
+      kind: item.kind,
+      sets: item.default_sets != null ? String(item.default_sets) : "",
+      reps: item.default_reps ?? "",
+      libraryItemId: item.id,
+      mediaUrl: item.media_url ?? "",
+    });
+    setOpenKey(null);
   }
 
   function submit() {
@@ -75,6 +95,8 @@ export function PlanBuilder({ clientId }: { clientId: string }) {
             load: e.load,
             instructions: "",
             is_optional: false,
+            library_item_id: e.libraryItemId,
+            media_url: e.mediaUrl,
           })),
       })),
     };
@@ -169,59 +191,114 @@ export function PlanBuilder({ clientId }: { clientId: string }) {
           </div>
 
           <div className="mt-4 flex flex-col gap-2.5">
-            {w.exercises.map((ex, ei) => (
-              <div key={ei} className="flex flex-wrap items-center gap-2">
-                <input
-                  value={ex.title}
-                  onChange={(e) => updateExercise(wi, ei, { title: e.target.value })}
-                  placeholder="Exercise"
-                  className={`${fieldClass} min-w-[180px] flex-1`}
-                />
-                <select
-                  value={ex.kind}
-                  onChange={(e) => updateExercise(wi, ei, { kind: e.target.value })}
-                  className={`${fieldClass} w-[130px] capitalize`}
-                >
-                  {KINDS.map((k) => (
-                    <option key={k} value={k}>
-                      {k}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={ex.sets}
-                  onChange={(e) => updateExercise(wi, ei, { sets: e.target.value.replace(/[^0-9]/g, "") })}
-                  placeholder="Sets"
-                  className={`${fieldClass} w-[72px]`}
-                />
-                <input
-                  value={ex.reps}
-                  onChange={(e) => updateExercise(wi, ei, { reps: e.target.value })}
-                  placeholder="Reps"
-                  className={`${fieldClass} w-[88px]`}
-                />
-                <input
-                  value={ex.load}
-                  onChange={(e) => updateExercise(wi, ei, { load: e.target.value })}
-                  placeholder="Load"
-                  className={`${fieldClass} w-[96px]`}
-                />
-                {w.exercises.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateWorkout(wi, {
-                        exercises: w.exercises.filter((_, j) => j !== ei),
-                      })
-                    }
-                    className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
-                    aria-label="Remove exercise"
+            {w.exercises.map((ex, ei) => {
+              const key = `${wi}-${ei}`;
+              const q = ex.title.trim().toLowerCase();
+              const matches =
+                openKey === key
+                  ? library
+                      .filter(
+                        (it) =>
+                          !q ||
+                          it.title.toLowerCase().includes(q) ||
+                          (it.muscle_group ?? "").toLowerCase().includes(q),
+                      )
+                      .slice(0, 8)
+                  : [];
+              return (
+                <div key={ei} className="flex flex-wrap items-center gap-2">
+                  <div className="relative min-w-[200px] flex-1">
+                    <Search
+                      size={15}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--color-text-faint)]"
+                    />
+                    <input
+                      value={ex.title}
+                      onChange={(e) => {
+                        updateExercise(wi, ei, { title: e.target.value, libraryItemId: null });
+                        setOpenKey(key);
+                      }}
+                      onFocus={() => setOpenKey(key)}
+                      onBlur={() => setTimeout(() => setOpenKey((k) => (k === key ? null : k)), 150)}
+                      placeholder="Search the library or type an exercise"
+                      className={`${fieldClass} w-full pl-9`}
+                    />
+                    {matches.length > 0 ? (
+                      <ul className="absolute left-0 top-[calc(100%+4px)] z-30 max-h-64 w-[320px] max-w-[80vw] overflow-auto rounded-xl border border-[color:var(--border-strong)] bg-card p-1 shadow-[0_12px_30px_rgba(42,33,24,.14)]">
+                        {matches.map((it) => (
+                          <li key={it.id}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                pickLibrary(wi, ei, it);
+                              }}
+                              className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-inset"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-[13.5px] font-medium text-ink">
+                                  {it.title}
+                                </span>
+                                {it.muscle_group ? (
+                                  <span className="block truncate text-[11.5px] text-[color:var(--color-text-muted)]">
+                                    {it.muscle_group}
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="shrink-0 rounded-full bg-inset px-2 py-0.5 text-[10.5px] font-semibold capitalize text-bark">
+                                {it.kind}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                  <select
+                    value={ex.kind}
+                    onChange={(e) => updateExercise(wi, ei, { kind: e.target.value })}
+                    className={`${fieldClass} w-[130px] capitalize`}
                   >
-                    <Trash2 size={15} />
-                  </button>
-                ) : null}
-              </div>
-            ))}
+                    {KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={ex.sets}
+                    onChange={(e) => updateExercise(wi, ei, { sets: e.target.value.replace(/[^0-9]/g, "") })}
+                    placeholder="Sets"
+                    className={`${fieldClass} w-[72px]`}
+                  />
+                  <input
+                    value={ex.reps}
+                    onChange={(e) => updateExercise(wi, ei, { reps: e.target.value })}
+                    placeholder="Reps"
+                    className={`${fieldClass} w-[96px]`}
+                  />
+                  <input
+                    value={ex.load}
+                    onChange={(e) => updateExercise(wi, ei, { load: e.target.value })}
+                    placeholder="Load"
+                    className={`${fieldClass} w-[96px]`}
+                  />
+                  {w.exercises.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateWorkout(wi, { exercises: w.exercises.filter((_, j) => j !== ei) })
+                      }
+                      className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                      aria-label="Remove exercise"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
 
           <button
@@ -243,23 +320,13 @@ export function PlanBuilder({ clientId }: { clientId: string }) {
       </button>
 
       <div className="flex items-center gap-4 border-t border-[color:var(--border-hair)] pt-6">
-        <button
-          type="button"
-          onClick={submit}
-          disabled={pending}
-          className="submit !mt-0 max-w-[260px]"
-        >
-          <span className="submit-label">
-            {pending ? "Saving" : "Create and activate plan"}
-          </span>
+        <button type="button" onClick={submit} disabled={pending} className="submit !mt-0 max-w-[260px]">
+          <span className="submit-label">{pending ? "Saving" : "Create and activate plan"}</span>
           <span aria-hidden="true" className="submit-arrow">
             &rarr;
           </span>
         </button>
-        <Link
-          href={`/program/clients/${clientId}`}
-          className="ww-link text-sm font-semibold text-forest"
-        >
+        <Link href={`/program/clients/${clientId}`} className="ww-link text-sm font-semibold text-forest">
           Cancel
         </Link>
       </div>
