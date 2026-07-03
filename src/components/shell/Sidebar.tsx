@@ -29,17 +29,17 @@ const WORKSPACE: NavSection = {
   ],
 };
 
-const COACH_SECTIONS: NavSection[] = [
-  {
-    label: "Surface",
-    items: [
-      { href: "/program", label: "Program", icon: ClipboardList, hint: "Clients and training" },
-      { href: "/fitness", label: "Fitness", icon: Activity, hint: "Wellness and tracking" },
-      { href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" },
-    ],
-  },
-  WORKSPACE,
-];
+// Business is Gabe's back office, owner-only. A coach sees Program and Fitness.
+function coachSections(role: Role): NavSection[] {
+  const surface: NavItem[] = [
+    { href: "/program", label: "Program", icon: ClipboardList, hint: "Clients and training" },
+    { href: "/fitness", label: "Fitness", icon: Activity, hint: "Wellness and tracking" },
+  ];
+  if (role === "owner") {
+    surface.push({ href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" });
+  }
+  return [{ label: "Surface", items: surface }, WORKSPACE];
+}
 
 const CLIENT_SECTIONS: NavSection[] = [
   {
@@ -74,7 +74,7 @@ export function Sidebar({
   const pathname = usePathname();
   const current = activePath ?? pathname;
   const sections =
-    role === "owner" || role === "coach" ? COACH_SECTIONS : CLIENT_SECTIONS;
+    role === "owner" || role === "coach" ? coachSections(role) : CLIENT_SECTIONS;
 
   return (
     <aside className="sticky top-0 z-20 flex h-dvh w-16 shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:w-[248px]">

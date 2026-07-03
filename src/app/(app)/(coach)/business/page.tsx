@@ -1,11 +1,7 @@
-import { Briefcase } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { getBusinessDashboard } from "@/lib/data/business";
+import { BusinessDashboardView } from "@/components/coach/BusinessDashboardView";
 
-export default function BusinessPage() {
-  return (
-    <EmptyState icon={Briefcase} title="The business switch.">
-      Revenue, offerings, the client pipeline, and tasks come together here when
-      the business ring is built. For now the shell is ready and waiting.
-    </EmptyState>
-  );
+export default async function BusinessDashboardPage() {
+  const data = await getBusinessDashboard();
+  return <BusinessDashboardView data={data} />;
 }
