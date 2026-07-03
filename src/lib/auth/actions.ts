@@ -23,6 +23,23 @@ export async function login(
 
   const supabase = await createClient();
 
+  // TEMP diagnostic: no secrets, only presence + host + error shape. Remove
+  // once the production sign-in issue is resolved.
+  const diag = () => {
+    let host = "unset";
+    try {
+      host = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host || "empty";
+    } catch {
+      host = "invalid-url";
+    }
+    return {
+      hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      urlHost: host,
+      hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      anonKeyLen: (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").length,
+    };
+  };
+
   let failed = false;
   try {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -38,11 +55,21 @@ export async function login(
           error: "That email and password did not match. Give it another try.",
         };
       }
+      console.error("[login] supabase returned error", {
+        status: error.status,
+        code: error.code,
+        message: error.message,
+        ...diag(),
+      });
       failed = true;
     }
-  } catch {
+  } catch (e) {
     // A thrown error means the request never completed (server unreachable,
     // network dropped).
+    console.error("[login] sign-in threw", {
+      err: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+      ...diag(),
+    });
     failed = true;
   }
 
