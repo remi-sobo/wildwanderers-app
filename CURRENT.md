@@ -12,6 +12,15 @@ encouraging empty states. Owner (Gabe) and the first client (Remi) are seeded.
 Open item: end-to-end login could not be exercised from the build sandbox
 (egress policy blocks the Supabase host); verify sign-in on the deployed app.
 
+## Demo client (standing practice)
+`demo.client@wildwanderers.life` is a clearly-labeled demo account so Gabe can
+walk the client side and see a fully built-out, mid-plan client. It is the one
+place we seed sample data; real client records are never fabricated. Every ring,
+extend `supabase/seed/demo_client.sql` to fill the demo client's new surfaces
+with that ring's functionality (training plan and workouts at Ring 1;
+measurements, habits, wellness score at Ring 2; and so on). Ring 0 populated its
+profile, goal, and a coaching group.
+
 ## The rings (from docs/master-spec.md)
 - Ring 0: the shell. Fork schema, retarget names, seed one org, auth, RLS, role
   routing, app shell in the Wild Wanderers aesthetic. Nearly done, deployed.
