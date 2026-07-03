@@ -104,14 +104,20 @@ text Coach is proven. Ring 3 ships the text assist first.
 Each commit: build green, one change at a time, every AI call logged and
 budgeted, nothing client-facing, no medical claim, shown before it lands.
 
-## Decisions to confirm before build
-1. **Model + budget** — Sonnet 5 for drafting, Haiku 4.5 for summaries/nudges, and
-   a monthly cap `AI_MONTHLY_BUDGET_USD` (suggest 25). Adjust the tiers or the cap?
-2. **`ANTHROPIC_API_KEY`** — do you have a key to set in Vercel? I can build the
-   whole chokepoint and drawer so it lights up the moment the key lands (friendly
-   "not configured" state until then).
-3. **Check-in structuring this ring** — ship it in Ring 3 (recommended, the
-   tables are ready), or hold it with voice for a 3b?
-4. **Voice check-ins (Deepgram)** — defer to a later pass (recommended), or in now?
-5. **FAB scope** — coach shell only, per the guardrail that Coach is Gabe's tool
-   and never client-facing. Confirm.
+## Decisions locked (2026-07-03)
+1. **Model + budget** — Sonnet 5 drafts workouts, Haiku 4.5 handles summaries and
+   check-in structuring. Monthly cap `AI_MONTHLY_BUDGET_USD`, default 25.
+2. **`ANTHROPIC_API_KEY`** — set in Vercel by Gabe. The whole chokepoint and drawer
+   are built; Coach lights up the moment the key lands, with a friendly
+   "not configured" state until then.
+3. **Check-in structuring** — shipped in Ring 3.
+4. **Voice check-ins (Deepgram)** — shipped in Ring 3. Needs `DEEPGRAM_API_KEY` in
+   Vercel; the mic only appears when it is set, and text works regardless.
+5. **FAB scope** — coach shell only. Coach is Gabe's tool and never client-facing.
+
+## Build status
+Shipped in six commits on `claude/ring-0-foundation-shell-r619dg`: the sealed
+ledgers and chokepoint, the FAB and drawer with client summaries, workout
+drafting, text check-in structuring, voice check-ins, and this final pass. The
+ledgers are sealed and the check-in and voice-audio paths are verified under RLS
+on the live project. The live model calls light up once the keys are set.
