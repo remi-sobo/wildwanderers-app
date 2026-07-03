@@ -22,7 +22,7 @@ export default async function AppLayout({
   return (
     <div className="relative flex min-h-dvh bg-canvas">
       {/* Persistent brand scenery, bottom-right, behind the workspace cards. */}
-      <TrailTexture className="pointer-events-none fixed bottom-0 right-0 z-0 h-auto w-[420px] max-w-[62vw]" />
+      <TrailTexture className="pointer-events-none fixed bottom-0 right-0 z-0 h-auto w-[80vw] max-w-[1100px]" />
       <Sidebar role={profile.role} displayName={displayName} email={email} />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <TopBar />
