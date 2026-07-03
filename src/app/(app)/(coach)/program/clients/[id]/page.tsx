@@ -6,8 +6,10 @@ import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
 import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
 import { getClientWellness } from "@/lib/data/coach-fitness";
+import { getClientCheckIns } from "@/lib/data/checkins";
 import { openThreadWithClient } from "@/lib/messaging/actions";
 import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
+import { CheckInsReview } from "@/components/coach/CheckInsReview";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatWhen(iso: string): string {
@@ -30,10 +32,11 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, sessions, wellness] = await Promise.all([
+  const [plan, sessions, wellness, checkIns] = await Promise.all([
     getPlanForClient(id),
     getUpcomingSessionsForClient(id),
     getClientWellness(id),
+    getClientCheckIns(id),
   ]);
 
   const openThread = openThreadWithClient.bind(null, id);
@@ -133,6 +136,9 @@ export default async function ClientDetailPage({
         )}
         <ScheduleSessionForm clientId={id} />
       </section>
+
+      {/* Check-ins */}
+      <CheckInsReview checkIns={checkIns} />
 
       {/* Plan */}
       {plan ? (

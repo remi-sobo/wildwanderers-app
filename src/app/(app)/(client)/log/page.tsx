@@ -1,4 +1,5 @@
 import { getTrackingHub } from "@/lib/data/wellness";
+import { getMyCheckIns } from "@/lib/data/checkins";
 import { ConsentScreen } from "@/components/client/ConsentScreen";
 import { LogHub } from "@/components/client/LogHub";
 
@@ -8,6 +9,8 @@ export default async function LogPage() {
   if (!hub.hasConsent) {
     return <ConsentScreen />;
   }
+
+  const recentCheckIns = await getMyCheckIns();
 
   return (
     <div className="flex flex-col gap-5">
@@ -26,6 +29,7 @@ export default async function LogPage() {
         recentActivity={hub.recentActivity}
         todaysFood={hub.todaysFood}
         todaysCalories={hub.todaysCalories}
+        recentCheckIns={recentCheckIns}
       />
     </div>
   );

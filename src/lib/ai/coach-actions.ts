@@ -1,5 +1,6 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
@@ -288,5 +289,85 @@ Draft the plan.`;
   } catch (e) {
     if (isConfigError(e)) return { draft: null, error: e.message };
     return { draft: null, error: "Coach could not draft that just now. Try again." };
+  }
+}
+
+export type CheckInStructure = {
+  summary: string;
+  mood: string;
+  wins: string[];
+  blockers: string[];
+  focus: string;
+};
+
+const CHECKIN_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    summary: { type: "string" },
+    mood: { type: "string" },
+    wins: { type: "array", items: { type: "string" } },
+    blockers: { type: "array", items: { type: "string" } },
+    focus: { type: "string" },
+  },
+  required: ["summary", "mood", "wins", "blockers", "focus"],
+};
+
+export type StructureResult = { structured: CheckInStructure | null; error: string | null };
+
+// Coach turns a client's raw check-in into a fast structured read for Gabe, and
+// marks it reviewed. Runs as Gabe (RLS), so the write uses the staff update
+// policy on check_ins. Structuring and summarizing only, never advice.
+export async function structureCheckIn(checkInId: string): Promise<StructureResult> {
+  const session = await getSessionProfile();
+  if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
+    return { structured: null, error: "You are signed out." };
+  }
+  if (!coachConfigured()) {
+    return { structured: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+  }
+
+  const supabase = await createClient();
+  const { data: checkIn } = await supabase
+    .from("check_ins")
+    .select("id, body")
+    .eq("id", checkInId)
+    .maybeSingle();
+  if (!checkIn?.body) return { structured: null, error: "That check-in has no text to structure." };
+
+  const system = `${COACH_SYSTEM}
+
+You are structuring a client's check-in into a fast read for Gabe. Summarize only. Pull out mood in a couple of words, concrete wins, and any blockers, and name one focus for Gabe to consider. Never give the client medical or nutrition advice, and never frame them as failing.`;
+
+  try {
+    const structured = await callCoachStructured<CheckInStructure>({
+      task: "coach.structure_checkin",
+      model: SUMMARY_MODEL,
+      system,
+      messages: [{ role: "user", content: `The client wrote:\n\n${checkIn.body}` }],
+      schema: CHECKIN_SCHEMA,
+      maxTokens: 900,
+      context: { actorId: session.userId, orgId: session.profile.org_id },
+    });
+
+    const { error: upErr } = await supabase
+      .from("check_ins")
+      .update({ structured, status: "reviewed" })
+      .eq("id", checkInId);
+    if (upErr) return { structured: null, error: "Structured, but saving it failed. Try again." };
+
+    await auditLog({
+      actorId: session.userId,
+      orgId: session.profile.org_id,
+      action: "coach.structure_checkin",
+      entityTable: "check_ins",
+      entityId: checkInId,
+      metadata: { model: SUMMARY_MODEL },
+    });
+
+    return { structured, error: null };
+  } catch (e) {
+    if (isConfigError(e)) return { structured: null, error: e.message };
+    return { structured: null, error: "Coach could not structure that just now. Try again." };
   }
 }
