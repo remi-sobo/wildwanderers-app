@@ -120,25 +120,32 @@ Eyebrow                      12, .28em, uppercase
 
 ---
 
-## 4. The two shells
+## 4. The shell
 
-### Coach and business shell (desktop-first)
-- Left rail in `--surface-chrome` forest-deep, bone text, Lucide icons. A very
-  faint Contours watermark in the rail, low opacity, never behind data.
-- At the top of the rail, the surface switch: Program, Fitness, Business. This is
-  the one place Gabe changes hats. Active surface marked with an amber indicator
-  and a subtle lift. Fraunces label.
-- Top bar: page title in Fraunces, breadcrumb or context in Jakarta muted, and the
-  account on the right. Thin `--border-hair` under it.
-- Workspace: bone canvas, paper cards, calm.
+Both surfaces share one shell: a forest-deep left rail wrapping a bone workspace,
+in the spirit of the tools Gabe already lives in (HubSpot, Function Health).
+Navigation is always on the left, never a bottom bar. (This supersedes the
+earlier client bottom-tab pattern, changed at Gabe's direction.)
 
-### Client shell (mobile-first, installable PWA)
-- Bottom tab bar, warm paper with a hairline top border, amber active tab. Tabs:
-  Home, Training, Log, Progress, Messages.
-- Bone canvas, paper cards, big touch targets (44px minimum), one primary action
-  per screen in amber.
-- A short Ridgeline strip can crown the Home header, the one bit of scenery, then
-  the data stays clean below it.
+### The left rail (`--surface-chrome` forest-deep)
+- Bone text, Lucide icons, a very faint Contours watermark, low opacity, never
+  behind data.
+- Coach and owner see the surface switch at the top: Program, Fitness, Business,
+  the one place Gabe changes hats, Fraunces labels with a short hint. Active
+  surface marked with an amber indicator and a subtle lift.
+- Client sees the menu: Home, Training, Log, Progress.
+- Both see a Workspace section: Messages, Settings. The account and sign-out sit
+  at the foot of the rail.
+- Full width with labels on desktop; collapses to a narrow icon rail on mobile,
+  labels hidden, 44px touch targets.
+
+### Top bar and workspace
+- Top bar: page title in Fraunces, context in Jakarta muted, thin
+  `--border-hair` under it.
+- Workspace: bone canvas, paper cards, calm. The client column stays a
+  comfortable reading width; the coach can go full width for dense data.
+- A short Ridgeline strip can crown the client Home header, the one bit of
+  scenery, then the data stays clean below it.
 
 ---
 
