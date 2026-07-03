@@ -31,7 +31,7 @@ child tables.
 | `transformation_plans` | `training_plans` | one plan per client; drop MBHS pillars, evaluation link, AI fields |
 | `plan_days` | `workouts` | a day/session in the plan |
 | `plan_activities` | `workout_exercises` | movements: title, sets, reps, rest, load, demo media |
-| `activity_completions` | `workout_completions` | client marks a whole workout done (see decision 1) |
+| `activity_completions` | `exercise_completions` | client ticks each exercise done; a workout is done when all required exercises are |
 | `schedule_events` | `sessions` | the next session with Gabe; 1:1 or group |
 | `message_threads` + `messages` | same names | two-way coach and client messaging, realtime |
 | `create_plan_atomic`, `activate_plan_atomic` | same names | build a full plan in one transaction; one active plan per client |
@@ -71,10 +71,12 @@ here), the business switch (Ring 4), the boys program (Ring 5).
   load text, media_url text, sort_order int not null, is_optional boolean default
   false, created_at.
 
-`workout_completions` (was activity_completions)
-- id, org_id, workout_id → workouts (not null), client_id → clients (not null),
-  completed_at timestamptz default now(), notes text.
-- `unique (workout_id, client_id)`.
+`exercise_completions` (was activity_completions)
+- id, org_id, workout_exercise_id → workout_exercises (not null), client_id →
+  clients (not null), completed_at timestamptz default now(), notes text.
+- `unique (workout_exercise_id, client_id)`.
+- A workout is "done" when every non-optional exercise in it has a completion by
+  the client. Derived in query, not stored.
 
 `sessions` (was schedule_events)
 - id, org_id, coach_id → profiles, client_id → clients (null), group_id → groups
@@ -126,7 +128,7 @@ Org isolation on every row. Owner and coach manage; a client reads only their ow
   workouts.)
 - `workout_exercises`: same delegation, one level down via
   `workout_id in (select id from workouts)`.
-- `workout_completions`: client manages own (`client_id = any(current_user_client_id())`
+- `exercise_completions`: client manages own (`client_id = any(current_user_client_id())`
   and org match); staff SELECT within org.
 - `sessions`: staff manage within org; client SELECT within org where
   `client_id = any(current_user_client_id())` or
@@ -164,8 +166,9 @@ updates live for both sides.
 - `/home` — the next session with Gabe and today's workout (the workout whose day
   maps to today, or the next incomplete one), with a link into Training. Logs and
   habits are placeholders until Ring 2.
-- `/training` — today's workout and its exercises, and a "Mark workout done"
-  action writing a `workout_completion`. The plan overview (all workouts) below.
+- `/training` — today's workout and its exercises; the client ticks each exercise
+  done (writing an `exercise_completion`), and the workout reads done when all its
+  required exercises are. The plan overview (all workouts) below.
 - `/messages` — the conversation with Gabe, realtime.
 - `/progress` and `/log` stay encouraging empty states until Ring 2.
 
@@ -200,16 +203,14 @@ mid-plan client. Clearly a demo.
 Each commit: `npm run build` green, one change at a time, RLS covering every new
 table, no client or org able to reach another's data, shown before it lands.
 
-## Decisions to confirm before build
-1. **Completion granularity** — mark the whole **workout** done (recommended,
-   simplest, matches "sees today's workout and marks it done"), or tick each
-   exercise and roll up? Per-exercise is a Ring 2 refinement if we start with the
-   workout.
-2. **Atomic plan RPC** — use `create_plan_atomic` / `activate_plan_atomic`
-   (recommended, robust, one-active-plan guaranteed) versus plain app-side inserts?
-3. **Add-client login** — when Gabe adds a client, also invite a login by email
-   (recommended, so the client can actually sign in and train), or create just the
-   `clients` record now and invite later?
-4. **Sessions scope** — Ring 1 does 1:1 client sessions and org-wide; include
-   group-class sessions (`group_id`) now, or defer group scheduling?
-5. **Nutrition/AI/business** — confirmed out of scope for Ring 1 (Rings 2 to 4).
+## Decisions (locked)
+1. **Completion granularity** — per exercise. The client ticks each exercise; a
+   workout reads done when all required exercises are.
+2. **Atomic plan RPC** — yes, fork `create_plan_atomic` / `activate_plan_atomic`.
+3. **Add-client login** — invite a login by email. Adding a client creates the
+   auth user + profile (role client) in the org via a server action using the
+   Supabase service role key (`SUPABASE_SERVICE_ROLE_KEY`, server only). Gabe gets
+   a set-password link or credentials to pass on.
+4. **Sessions scope** — 1:1 and org-wide now; `group_id` column kept, group
+   scheduling deferred.
+5. **Nutrition/AI/business** — out of scope for Ring 1 (Rings 2 to 4).
