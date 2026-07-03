@@ -1,11 +1,30 @@
-import { NotebookPen } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { getTrackingHub } from "@/lib/data/wellness";
+import { ConsentScreen } from "@/components/client/ConsentScreen";
+import { LogHub } from "@/components/client/LogHub";
 
-export default function LogPage() {
+export default async function LogPage() {
+  const hub = await getTrackingHub();
+
+  if (!hub.hasConsent) {
+    return <ConsentScreen />;
+  }
+
   return (
-    <EmptyState icon={NotebookPen} title="Log what you did.">
-      Weight, meals, movement, and habits will go here. The tracking tools arrive
-      in a later build, and everything you log stays private to you and Gabe.
-    </EmptyState>
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="eyebrow text-bark">Your log</p>
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[26px] leading-tight text-forest-deep">
+          Log what you did.
+        </h1>
+        <p className="mt-1 text-[14px] text-[color:var(--color-text-muted)]">
+          Everything here stays private to you and Gabe.
+        </p>
+      </div>
+      <LogHub
+        habits={hub.habits}
+        latestMeasurement={hub.latestMeasurement}
+        recentActivity={hub.recentActivity}
+      />
+    </div>
   );
 }
