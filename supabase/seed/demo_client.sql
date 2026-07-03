@@ -150,6 +150,21 @@ begin
   insert into public.food_logs (org_id, client_id, logged_at, meal, food_item_id, description, quantity, calories, protein_g, carb_g, fat_g)
   values (ww, demo_c, now() - interval '6 hours', 'breakfast', fi, 'Rolled oats, dry', 1, 150, 5, 27, 3);
 
+  -- Two check-ins: one Coach has already structured for Gabe, one still open.
+  insert into public.check_ins (org_id, client_id, kind, body, structured, status, created_at)
+  values (
+    ww, demo_c, 'text',
+    'Really good week. Both trail runs felt strong and I kept my water up. Sleep slipped on Wednesday and Thursday with a work deadline, so energy dipped, but I still got the sessions in.',
+    '{"summary":"Strong training week with consistent movement and hydration; sleep dipped midweek from work but sessions still happened.","mood":"Motivated","wins":["Both trail runs felt strong","Kept water up all week"],"blockers":["Two short-sleep nights from a work deadline"],"focus":"Protect sleep on busy work days"}'::jsonb,
+    'reviewed', now() - interval '2 days'
+  );
+  insert into public.check_ins (org_id, client_id, kind, body, status, created_at)
+  values (
+    ww, demo_c, 'text',
+    'Legs are a little sore from the lunges but in a good way. Thinking about adding a short mobility day, what do you think?',
+    'open', now() - interval '4 hours'
+  );
+
   -- The wellness snapshot is written in the final block below, after
   -- Ring 1 seeds the training plan the consistency component reads.
 end $$;
