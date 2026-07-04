@@ -1,34 +1,33 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, Plus, Lock } from "lucide-react";
-import {
-  recordSelfAssessment,
-  grantBodyCompositionConsent,
-  revokeBodyCompositionConsent,
-} from "@/lib/wellness/actions";
+import { Activity, Plus, Settings2 } from "lucide-react";
+import { recordClientAssessment } from "@/lib/longevity/actions";
 import type { Longevity } from "@/lib/data/wellness";
 import { BandChip, Trend, fmtValue } from "@/components/longevity/LongevityBits";
 
-export function LongevityCard({ longevity }: { longevity: Longevity }) {
+export function ClientLongevityPanel({
+  clientId,
+  longevity,
+}: {
+  clientId: string;
+  longevity: Longevity;
+}) {
   const router = useRouter();
   const [showRecord, setShowRecord] = useState(false);
   const [assessmentId, setAssessmentId] = useState("");
   const [value, setValue] = useState("");
+  const [source, setSource] = useState<"coach_observed" | "device_estimate">("coach_observed");
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
-  const [bodyPending, startBody] = useTransition();
 
-  const allTests = useMemo(
-    () => longevity.pillars.flatMap((p) => p.tests),
-    [longevity.pillars],
-  );
+  const allTests = longevity.pillars.flatMap((p) => p.tests);
   const selected = allTests.find((t) => t.assessmentId === assessmentId) ?? null;
   const isObservation = selected ? ["pass", "photo"].includes(selected.unit) : false;
 
-  // Only pillars with at least one recorded result show in the profile body.
   const testedPillars = longevity.pillars
     .map((p) => ({ ...p, tests: p.tests.filter((t) => t.latestValue !== null || t.latestValueText) }))
     .filter((p) => p.tests.length > 0);
@@ -41,26 +40,17 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
     setErr(null);
     setSaved(false);
     start(async () => {
-      const res = await recordSelfAssessment(
-        isObservation
-          ? { assessmentId, valueText: value }
-          : { assessmentId, value },
-      );
+      const res = await recordClientAssessment(clientId, {
+        assessmentId,
+        source,
+        ...(isObservation ? { valueText: value } : { value }),
+      });
       if (res.error) setErr(res.error);
       else {
         setValue("");
         setSaved(true);
         router.refresh();
       }
-    });
-  }
-
-  function toggleBody(on: boolean) {
-    startBody(async () => {
-      const res = on
-        ? await grantBodyCompositionConsent()
-        : await revokeBodyCompositionConsent();
-      if (!res.error) router.refresh();
     });
   }
 
@@ -72,14 +62,19 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-[family-name:var(--font-display)] text-[17px] text-forest-deep">
-            Longevity profile
+            Longevity
           </h2>
           <p className="text-[12.5px] text-[color:var(--color-text-muted)]">
-            {longevity.testedCount > 0
-              ? `${longevity.testedCount} of ${longevity.totalCount} tests tried`
-              : "Your capacity over time"}
+            Capacity over time. A starting point for a conversation, not a medical read.
           </p>
         </div>
+        <Link
+          href="/fitness/assessments"
+          className="hidden items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset sm:inline-flex"
+        >
+          <Settings2 size={14} aria-hidden="true" />
+          Tests
+        </Link>
         <button
           type="button"
           onClick={() => setShowRecord((s) => !s)}
@@ -115,7 +110,7 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
             </select>
             <div className="flex gap-2">
               <input
-                className="ww-input w-full sm:w-40"
+                className="ww-input w-full sm:w-36"
                 inputMode={isObservation ? "text" : "decimal"}
                 placeholder={selected ? (isObservation ? "What you saw" : selected.unit) : "Result"}
                 value={value}
@@ -131,6 +126,22 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
               </button>
             </div>
           </div>
+          <div className="mt-2.5 flex items-center gap-2">
+            {(["coach_observed", "device_estimate"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSource(s)}
+                className={`rounded-full px-3 py-1 text-[12px] font-medium transition ${
+                  source === s
+                    ? "bg-forest text-bone"
+                    : "border border-[color:var(--border-strong)] text-[color:var(--color-text-muted)] hover:bg-inset"
+                }`}
+              >
+                {s === "coach_observed" ? "Observed" : "Device estimate"}
+              </button>
+            ))}
+          </div>
           {selected?.howTo ? (
             <p className="mt-2 text-[12.5px] leading-[1.5] text-[color:var(--color-text-muted)]">
               {selected.howTo}
@@ -141,13 +152,7 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
               {err}
             </p>
           ) : null}
-          {saved ? (
-            <p className="mt-2 text-[13px] text-forest">Saved. Nice work.</p>
-          ) : null}
-          <p className="mt-3 text-[11.5px] leading-[1.5] text-[color:var(--color-text-muted)]">
-            A fitness self-assessment, not a medical measurement. A band is a
-            starting point for a conversation with your coach, never a grade.
-          </p>
+          {saved ? <p className="mt-2 text-[13px] text-forest">Recorded.</p> : null}
         </div>
       ) : null}
 
@@ -177,25 +182,9 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
         </div>
       ) : (
         <div className="px-5 py-6 text-[13.5px] leading-[1.55] text-[color:var(--color-text-muted)]">
-          No results yet. Record a test and watch your capacity build over time,
-          alongside your daily wellness score.
+          No assessments yet. Record a test to start their longevity profile.
         </div>
       )}
-
-      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-hair)] px-5 py-3.5">
-        <span className="flex items-center gap-2 text-[12.5px] text-[color:var(--color-text-muted)]">
-          <Lock size={13} strokeWidth={1.9} aria-hidden="true" />
-          Body composition {longevity.showBodyComposition ? "is on" : "is off"}
-        </span>
-        <button
-          type="button"
-          onClick={() => toggleBody(!longevity.showBodyComposition)}
-          disabled={bodyPending}
-          className="ww-link text-[12.5px] font-medium text-forest disabled:opacity-60"
-        >
-          {longevity.showBodyComposition ? "Turn off" : "Turn on"}
-        </button>
-      </div>
     </section>
   );
 }
