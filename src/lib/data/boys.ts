@@ -187,6 +187,16 @@ export type Enrollment = {
   notes: string | null;
 };
 export type BoysOffering = { id: string; name: string; price_cents: number | null };
+export type AdventureEntryKind = "journal" | "check_in" | "mentor_note";
+export type AdventureEntry = {
+  id: string;
+  participant_id: string;
+  kind: AdventureEntryKind;
+  title: string | null;
+  body: string;
+  entry_date: string;
+  visible_to_family: boolean;
+};
 
 export type ProgramDetail = {
   program: Program;
@@ -206,6 +216,7 @@ export type ProgramDetail = {
   acks: FormAck[];
   enrollments: Enrollment[];
   offerings: BoysOffering[];
+  adventure: AdventureEntry[];
 };
 
 // A full program for the detail surface: cohorts, roster, sessions, the badge
@@ -257,7 +268,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
 
   const participantIds = (participants ?? []).map((p) => p.id as string);
   const emptyResult = Promise.resolve({ data: [] as unknown[] });
-  const [{ data: awards }, { data: attendance }, { data: results }, { data: links }, { data: medical }, { data: emergency }, { data: acks }] =
+  const [{ data: awards }, { data: attendance }, { data: results }, { data: links }, { data: medical }, { data: emergency }, { data: acks }, { data: adventure }] =
     await Promise.all([
       participantIds.length
         ? supabase
@@ -298,6 +309,13 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
             .from("form_acknowledgements")
             .select("id, form_id, form_version, participant_id, signed_name, acknowledged_at")
             .in("participant_id", participantIds)
+        : emptyResult,
+      participantIds.length
+        ? supabase
+            .from("adventure_entries")
+            .select("id, participant_id, kind, title, body, entry_date, visible_to_family")
+            .in("participant_id", participantIds)
+            .order("entry_date", { ascending: false })
         : emptyResult,
     ]);
 
@@ -370,5 +388,6 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     acks: (acks ?? []) as FormAck[],
     enrollments: (enrollRows ?? []) as Enrollment[],
     offerings: (offeringRows ?? []) as BoysOffering[],
+    adventure: (adventure ?? []) as AdventureEntry[],
   };
 }

@@ -21,9 +21,10 @@ import { BAND_DOT } from "@/components/longevity/LongevityBits";
 import { FamiliesTab } from "@/components/coach/FamiliesTab";
 import { FormsTab, isSigned } from "@/components/coach/FormsTab";
 import { EnrollmentTab } from "@/components/coach/EnrollmentTab";
+import { AdventureTab } from "@/components/coach/AdventureTab";
 
 const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
-const TABS = ["Families", "Roster", "Forms", "Enrollment", "Schedule", "Attendance", "Badges", "Experiences"] as const;
+const TABS = ["Families", "Roster", "Forms", "Enrollment", "Schedule", "Attendance", "Badges", "Experiences", "Adventure"] as const;
 type Tab = (typeof TABS)[number];
 
 function fullName(p: Participant) {
@@ -554,6 +555,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
       {tab === "Attendance" ? <AttendanceTab detail={detail} /> : null}
       {tab === "Badges" ? <BadgesTab detail={detail} /> : null}
       {tab === "Experiences" ? <ExperiencesTab detail={detail} /> : null}
+      {tab === "Adventure" ? <AdventureTab detail={detail} /> : null}
     </div>
   );
 }
