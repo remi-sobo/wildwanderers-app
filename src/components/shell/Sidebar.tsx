@@ -75,11 +75,13 @@ export function Sidebar({
   role,
   displayName,
   email,
+  orgName = "Wild Wanderers",
   activePath,
 }: {
   role: Role;
   displayName: string;
   email: string | null;
+  orgName?: string;
   activePath?: string;
 }) {
   const pathname = usePathname();
@@ -98,11 +100,11 @@ export function Sidebar({
       {/* Brand */}
       <div className="relative z-10 flex items-center justify-center px-3 pb-2 pt-6 md:justify-start md:px-6 md:pt-7">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-bone/[0.08] font-[family-name:var(--font-display)] text-[15px] text-cream md:hidden">
-          WW
+          {initials(orgName)}
         </span>
         <div className="hidden md:block">
           <p className="font-[family-name:var(--font-display)] text-[19px] font-medium leading-none text-bone">
-            Wild Wanderers
+            {orgName}
           </p>
           <p className="eyebrow mt-1.5 text-[9.5px] tracking-[0.28em] text-bone/60">
             Fitness
