@@ -51,7 +51,7 @@ export function ConsentScreen({
           {[
             [
               "What you log",
-              "Weight and body measurements, habits, movement, and food, whenever you choose. Every field is optional. Log what you have.",
+              "Weight and body measurements, habits, movement, food, and simple fitness tests, whenever you choose. Every field is optional. Log what you have.",
             ],
             [
               "Who can see it",
@@ -59,7 +59,7 @@ export function ConsentScreen({
             ],
             [
               "How it is used",
-              `To shape your training and habits and to show your progress over time. Your wellness score is a motivating progress number, not a medical or health assessment, and ${coach} coaches as a certified trainer, not a clinician.`,
+              `To shape your training and habits and to show your progress over time. Your wellness score and your fitness test bands are motivating progress signals, not a medical or health assessment, and ${coach} coaches as a certified trainer, not a clinician. For medical questions, see your own doctor.`,
             ],
           ].map(([title, body]) => (
             <li key={title} className="flex gap-3">

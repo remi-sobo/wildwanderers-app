@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import { Activity, Settings2 } from "lucide-react";
 import { getClients, clientName } from "@/lib/data/clients";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { ClientWellnessDashboard } from "@/components/coach/ClientWellnessDashboard";
@@ -28,11 +28,20 @@ export default async function FitnessPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="eyebrow text-bark">Fitness</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[26px] leading-tight text-forest-deep">
-          Coach off real data.
-        </h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow text-bark">Fitness</p>
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-[26px] leading-tight text-forest-deep">
+            Coach off real data.
+          </h1>
+        </div>
+        <Link
+          href="/fitness/assessments"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+        >
+          <Settings2 size={15} aria-hidden="true" />
+          Assessment tests
+        </Link>
       </div>
 
       {/* Client picker */}

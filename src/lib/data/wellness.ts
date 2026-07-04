@@ -1,5 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMyClient } from "@/lib/data/training";
+import {
+  PILLAR_ORDER,
+  PILLAR_LABEL,
+  type PillarKey,
+  type Band,
+} from "@/lib/longevity/pillars";
+
+// Re-exported so existing server-side imports from this module keep working.
+export { PILLAR_ORDER, PILLAR_LABEL };
+export type { PillarKey, Band };
 
 // UTC day key, matching the habit_logs.logged_on default in the migration.
 export function todayKey(): string {
@@ -280,4 +290,164 @@ export async function getMyProgress(): Promise<Progress> {
     habits: habitAdherence,
     hasAnyData,
   };
+}
+
+// ── Ring 6: the longevity profile (capacity, beside the daily ring) ──
+
+export type LongevityPoint = { date: string; value: number };
+
+export type LongevityTest = {
+  assessmentId: string;
+  name: string;
+  slug: string;
+  pillar: PillarKey;
+  unit: string;
+  higherIsBetter: boolean;
+  howTo: string | null;
+  isBodyComposition: boolean;
+  latestValue: number | null;
+  latestValueText: string | null;
+  latestBand: Band | null;
+  latestOn: string | null;
+  previousValue: number | null;
+  history: LongevityPoint[];
+};
+
+export type LongevityPillar = {
+  pillar: PillarKey;
+  label: string;
+  tests: LongevityTest[];
+};
+
+export type Longevity = {
+  hasConsent: boolean;
+  showBodyComposition: boolean;
+  pillars: LongevityPillar[];
+  testedCount: number;
+  totalCount: number;
+};
+
+export type CatalogRow = {
+  id: string;
+  name: string;
+  slug: string;
+  pillar: PillarKey;
+  unit: string;
+  higher_is_better: boolean;
+  how_to: string | null;
+  is_body_composition: boolean;
+};
+
+export type ResultRow = {
+  assessment_id: string;
+  value: number | null;
+  value_text: string | null;
+  band: Band | null;
+  taken_on: string;
+};
+
+// Pure assembler shared by the client (getMyLongevity) and the coach
+// (getClientLongevity) readers: group the catalog by pillar, attach each
+// test's history and latest result, and hide body composition unless opted in.
+export function assembleLongevity(
+  catalog: CatalogRow[],
+  results: ResultRow[],
+  hasConsent: boolean,
+  showBodyComposition: boolean,
+): Longevity {
+  const byAssessment = new Map<string, ResultRow[]>();
+  for (const r of results) {
+    const list = byAssessment.get(r.assessment_id) ?? [];
+    list.push(r);
+    byAssessment.set(r.assessment_id, list);
+  }
+
+  const tests: LongevityTest[] = catalog
+    .filter((a) => showBodyComposition || !a.is_body_composition)
+    .map((a) => {
+      const rows = byAssessment.get(a.id) ?? [];
+      const withValue = rows.filter((r) => r.value !== null) as (ResultRow & { value: number })[];
+      const latest = rows.length ? rows[rows.length - 1] : null;
+      const lastTwoValued = withValue.slice(-2);
+      return {
+        assessmentId: a.id,
+        name: a.name,
+        slug: a.slug,
+        pillar: a.pillar,
+        unit: a.unit,
+        higherIsBetter: a.higher_is_better,
+        howTo: a.how_to ?? null,
+        isBodyComposition: a.is_body_composition,
+        latestValue: latest?.value ?? null,
+        latestValueText: latest?.value_text ?? null,
+        latestBand: latest?.band ?? null,
+        latestOn: latest?.taken_on ?? null,
+        previousValue: lastTwoValued.length === 2 ? lastTwoValued[0].value : null,
+        history: withValue.map((r) => ({ date: r.taken_on, value: r.value })),
+      };
+    });
+
+  const testedIds = new Set(results.map((r) => r.assessment_id));
+  const pillars: LongevityPillar[] = PILLAR_ORDER.map((p) => ({
+    pillar: p,
+    label: PILLAR_LABEL[p],
+    tests: tests.filter((t) => t.pillar === p),
+  })).filter((grp) => grp.tests.length > 0);
+
+  return {
+    hasConsent,
+    showBodyComposition,
+    pillars,
+    testedCount: tests.filter((t) => testedIds.has(t.assessmentId)).length,
+    totalCount: tests.length,
+  };
+}
+
+// The signed-in client's longevity profile: the seven pillars, each test's
+// latest result and band, and its trend. A separate, periodic view of
+// capacity, alongside (never merged into) the daily wellness ring. Body
+// composition tests appear only if the client has opted in. RLS scopes the
+// results to the client; the catalog is org-wide and read-only to them.
+export async function getMyLongevity(): Promise<Longevity> {
+  const client = await getMyClient();
+  if (!client) {
+    return { hasConsent: false, showBodyComposition: false, pillars: [], testedCount: 0, totalCount: 0 };
+  }
+
+  const supabase = await createClient();
+  const [{ data: consent }, { data: bodyConsent }, { data: catalog }, { data: results }] =
+    await Promise.all([
+      supabase
+        .from("consents")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("kind", "health_tracking")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("consents")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("kind", "body_composition")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("assessments")
+        .select("id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition")
+        .eq("is_active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("assessment_results")
+        .select("assessment_id, value, value_text, band, taken_on")
+        .eq("client_id", client.id)
+        .eq("subject", "client")
+        .order("taken_on", { ascending: true }),
+    ]);
+
+  return assembleLongevity(
+    (catalog ?? []) as CatalogRow[],
+    (results ?? []) as ResultRow[],
+    Boolean(consent),
+    Boolean(bodyConsent),
+  );
 }
