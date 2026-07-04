@@ -109,15 +109,19 @@ Each commit: build green, one change at a time, owner-only RLS on every new tabl
 no coach or client reaching business data, no fabricated financials, shown before
 it lands.
 
-## Decisions to confirm before build
-1. **Business access** — owner-only now (recommended, matches "Gabe's back
-   office"), or owner and coach both.
-2. **Stripe** — build the schema with Stripe columns and ship manual revenue entry
-   now, add the webhook ingest as a later 4b (recommended, no Stripe keys needed
-   yet), or wire the Stripe webhook this ring (needs keys and a live account).
-3. **Payroll and commissions** — keep deferred, schema room only (recommended), or
-   include the tables now (off in the UI).
-4. **Website inquiry ingest** — defer the public lead-capture endpoint, enter leads
-   by hand now (recommended), or build the public endpoint this ring.
-5. **Surface scope** — all four surfaces (dashboard, pipeline, finance, tasks) this
-   ring (recommended), or a leaner first cut (dashboard plus one).
+## Decisions locked (2026-07-04)
+1. **Business access** — owner-only. Every business table is RLS-gated to the
+   owner; coaches and clients never see it.
+2. **Stripe** — manual revenue entry ships now; the revenue schema carries the
+   Stripe columns, reserved for the webhook ingest as a later 4b. No keys needed.
+3. **Payroll and commissions** — deferred, schema room only.
+4. **Website inquiry ingest** — deferred; leads are entered by hand for now.
+5. **Surface scope** — all four: dashboard, pipeline/CRM, finance, tasks/goals.
+
+## Build status
+Shipped in six commits on `claude/ring-0-foundation-shell-r619dg`: the schema
+and owner-only RLS with the offerings seed, the business shell and command
+dashboard, the pipeline and CRM, finance, tasks and goals, and this final pass.
+Owner-only isolation and every write path are verified on the live project (a
+client sees zero of every business table). No demo seeding: business is Gabe's
+real data, and no financial value is fabricated.

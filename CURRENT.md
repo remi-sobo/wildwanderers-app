@@ -4,8 +4,18 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0, 1, 2, and 3 complete. Rings 0, 1, and 2 are on main; Ring 3 is built
-and verified on the branch, ready to merge. Ring 3 is Coach AI: a floating
+Rings 0 through 4 complete. Rings 0, 1, 2, and 3 are on main; Ring 4 is built
+and verified on the branch, ready to merge. Ring 4 is the business switch,
+Gabe's owner-only back office: a command dashboard (active clients, revenue this
+month, open pipeline, follow-ups due, goals with live progress), a light CRM and
+pipeline (add a lead, move it through stages, convert to a customer), finance
+(offerings with prices Gabe sets, revenue and expenses with month totals), and
+tasks with pin-for-today plus goals the dashboard measures. Every business table
+is RLS-gated to the owner from the first migration; a client sees zero of all of
+them, verified on the live DB. No fabricated financials: business opens empty
+and only the offerings catalog is seeded, with placeholder prices.
+
+Ring 3 is Coach AI: a floating
 Coach button on the coach shell opens a drawer where Gabe summarizes a client
 or drafts a workout (Coach drafts from the exercise library, it opens pre-filled
 in the plan builder, Gabe reviews and activates, nothing auto-goes-live).
@@ -53,8 +63,10 @@ profile, goal, and a coaching group.
 - Ring 3: Coach AI. The chokepoint (budget, voice sweep, sealed ledgers), the
   coach-only Coach FAB and drawer, client summaries, workout drafting (draft to
   approve), text and voice check-in structuring. Done, on the branch.
-- Ring 4: the business switch. Command dashboard, clients and pipeline, offerings,
-  Stripe revenue, expenses, tasks, goals. Not started.
+- Ring 4: the business switch. Owner-only command dashboard, CRM and pipeline,
+  offerings, revenue and expenses (manual now, Stripe reserved), tasks with
+  pin-for-today, and goals. Done, on the branch. Deferred: the Stripe webhook
+  ingest, the public website-inquiry lead capture, payroll and commissions.
 - Ring 5: the boys program management and the road to resale. Not started.
 
 ## Decisions locked
@@ -70,6 +82,11 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-04 Ring 4 built (six commits): business schema + owner-only RLS +
+  offerings seed, the owner-guarded business shell and command dashboard, the
+  pipeline and CRM, finance, tasks and goals, final pass. Owner-only isolation
+  and every write path verified on the live DB. No demo seeding (Gabe's real
+  data); no fabricated financials.
 - 2026-07-03 Ring 3 built (six commits): sealed AI ledgers + chokepoint (budget,
   voice sweep), the coach-only Coach FAB and drawer, client summaries, workout
   drafting, text and voice (Deepgram) check-in structuring, final pass. Ledgers
