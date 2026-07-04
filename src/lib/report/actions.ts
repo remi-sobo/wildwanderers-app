@@ -7,9 +7,10 @@
 //   fileIssueReport — file the finished report: upload the screenshot, insert
 //                     the row, audit it, and email the build team.
 //
-// Both are staff-facing today (the FAB entry lives on the coach shell), but the
-// org and reporter identity are resolved server-side and never trusted from the
-// client, and the table's RLS is org-scoped.
+// Open to any signed-in member of an org (staff on the coach shell, clients on
+// the client shell). The org and reporter identity are resolved server-side and
+// never trusted from the client, and the table's RLS is org-scoped, so a report
+// can never land on another org.
 
 import crypto from "crypto";
 import { getSessionProfile } from "@/lib/auth/get-profile";
@@ -50,12 +51,12 @@ function extForMime(mime: string): string {
   return "bin";
 }
 
-// Only staff use the FAB entry; guard to owner and coach.
-async function requireStaff() {
+// Any signed-in member of an org may report, staff or client. The org and the
+// reporter identity are resolved here and the table's RLS scopes the row to the
+// caller's org, so a report can never land on another org.
+async function requireReporter() {
   const session = await getSessionProfile();
-  if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
-    return null;
-  }
+  if (!session?.profile || !session.profile.org_id) return null;
   return session;
 }
 
@@ -71,7 +72,7 @@ export async function interviewIssue(input: {
   hasPhoto?: boolean;
   pageContext?: PageContext;
 }): Promise<InterviewResult> {
-  const session = await requireStaff();
+  const session = await requireReporter();
   if (!session?.profile) return { action: null, error: "You are signed out." };
   if (!coachConfigured()) {
     return { action: null, error: "The intake guide is not set up yet. Add the API key to switch it on." };
@@ -126,7 +127,7 @@ export async function fileIssueReport(input: {
   pagePath?: string;
   screenshot?: { data: string; mime: string };
 }): Promise<FileResult> {
-  const session = await requireStaff();
+  const session = await requireReporter();
   if (!session?.profile) return { ok: false, error: "You are signed out." };
   if (!isReportKind(input.kind)) return { ok: false, error: "Pick what you are reporting." };
 
