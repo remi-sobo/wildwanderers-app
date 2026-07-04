@@ -6,9 +6,11 @@ import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
 import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
 import { getClientWellness } from "@/lib/data/coach-fitness";
+import { getClientLongevity } from "@/lib/data/longevity";
 import { getClientCheckIns } from "@/lib/data/checkins";
 import { openThreadWithClient } from "@/lib/messaging/actions";
 import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
+import { ClientLongevityPanel } from "@/components/coach/ClientLongevityPanel";
 import { CheckInsReview } from "@/components/coach/CheckInsReview";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -32,10 +34,11 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, sessions, wellness, checkIns] = await Promise.all([
+  const [plan, sessions, wellness, longevity, checkIns] = await Promise.all([
     getPlanForClient(id),
     getUpcomingSessionsForClient(id),
     getClientWellness(id),
+    getClientLongevity(id),
     getClientCheckIns(id),
   ]);
 
@@ -107,6 +110,11 @@ export default async function ClientDetailPage({
             </span>
           ) : null}
         </Link>
+      ) : null}
+
+      {/* Longevity profile */}
+      {longevity.totalCount > 0 ? (
+        <ClientLongevityPanel clientId={id} longevity={longevity} />
       ) : null}
 
       {/* Sessions */}
