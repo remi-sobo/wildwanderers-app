@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type FamilyBadge = { id: string; name: string; emoji: string | null; note: string | null; awarded_at: string };
 export type FamilySession = { id: string; title: string; location: string | null; starts_at: string };
 export type FamilyAttendance = { session_title: string; status: string; starts_at: string };
+export type FamilyAdventure = { id: string; kind: string; title: string | null; body: string; entry_date: string };
 
 export type FamilyChild = {
   id: string;
@@ -13,6 +14,8 @@ export type FamilyChild = {
   upcoming: FamilySession[];
   recentAttendance: FamilyAttendance[];
   badges: FamilyBadge[];
+  adventure: FamilyAdventure[];
+  formsToSign: string[];
 };
 
 // The signed-in parent's children with their program, next sessions, recent
@@ -31,7 +34,7 @@ export async function getMyFamily(): Promise<FamilyChild[]> {
   const groupIds = kids.map((k) => k.group_id as string | null).filter(Boolean) as string[];
   const kidIds = kids.map((k) => k.id as string);
 
-  const [{ data: programs }, { data: groups }, { data: sessions }, { data: badges }, { data: attendance }] =
+  const [{ data: programs }, { data: groups }, { data: sessions }, { data: badges }, { data: attendance }, { data: adventure }, { data: forms }, { data: acks }] =
     await Promise.all([
       supabase.from("programs").select("id, name").in("id", programIds),
       groupIds.length
@@ -52,10 +55,22 @@ export async function getMyFamily(): Promise<FamilyChild[]> {
         .from("attendance")
         .select("participant_id, status, program_sessions(title, starts_at)")
         .in("participant_id", kidIds),
+      // RLS returns only family-visible entries for the parent's own kids.
+      supabase
+        .from("adventure_entries")
+        .select("id, participant_id, kind, title, body, entry_date")
+        .in("participant_id", kidIds)
+        .order("entry_date", { ascending: false }),
+      supabase.from("forms").select("id, title, version, is_required, is_active"),
+      supabase
+        .from("form_acknowledgements")
+        .select("form_id, form_version, participant_id")
+        .in("participant_id", kidIds),
     ]);
 
   const programName = new Map((programs ?? []).map((p) => [p.id as string, p.name as string]));
   const groupName = new Map((groups ?? []).map((g) => [g.id as string, g.name as string]));
+  const requiredForms = (forms ?? []).filter((f) => f.is_required && f.is_active);
 
   return kids.map((kid) => {
     const pid = kid.program_id as string;
@@ -96,6 +111,23 @@ export async function getMyFamily(): Promise<FamilyChild[]> {
             awarded_at: b.awarded_at as string,
           };
         }),
+      adventure: (adventure ?? [])
+        .filter((e) => e.participant_id === kid.id)
+        .map((e) => ({
+          id: e.id as string,
+          kind: e.kind as string,
+          title: (e.title as string | null) ?? null,
+          body: e.body as string,
+          entry_date: e.entry_date as string,
+        })),
+      formsToSign: requiredForms
+        .filter(
+          (f) =>
+            !(acks ?? []).some(
+              (a) => a.form_id === f.id && a.form_version === f.version && a.participant_id === kid.id,
+            ),
+        )
+        .map((f) => f.title as string),
     };
   });
 }

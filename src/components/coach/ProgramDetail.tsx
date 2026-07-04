@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Users, CalendarClock, CircleCheck, Award, Check, Sparkles } from "lucide-react";
+import { ChevronLeft, Plus, Users, CalendarClock, CircleCheck, Award, Check, Sparkles, ShieldAlert } from "lucide-react";
 import {
   addGroup,
   addParticipant,
@@ -18,9 +18,13 @@ import {
 } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, Participant, ProgramGroup, EarnedExperience } from "@/lib/data/boys";
 import { BAND_DOT } from "@/components/longevity/LongevityBits";
+import { FamiliesTab } from "@/components/coach/FamiliesTab";
+import { FormsTab, isSigned } from "@/components/coach/FormsTab";
+import { EnrollmentTab } from "@/components/coach/EnrollmentTab";
+import { AdventureTab } from "@/components/coach/AdventureTab";
 
 const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
-const TABS = ["Roster", "Schedule", "Attendance", "Badges", "Experiences"] as const;
+const TABS = ["Families", "Roster", "Forms", "Enrollment", "Schedule", "Attendance", "Badges", "Experiences", "Adventure"] as const;
 type Tab = (typeof TABS)[number];
 
 function fullName(p: Participant) {
@@ -294,8 +298,23 @@ function AttendanceTab({ detail }: { detail: Detail }) {
     absent: "bg-[color:var(--color-state-error)] text-bone",
   };
 
+  // Waiver gate: a session should not run on a kid without a current signed
+  // waiver. Surface who is missing one, never a hard block.
+  const waiver = detail.forms.find((f) => f.kind === "waiver" && f.is_active);
+  const missingWaiver = waiver
+    ? detail.participants.filter((p) => !isSigned(detail, waiver, p.id))
+    : [];
+
   return (
     <div className="flex flex-col gap-4">
+      {missingWaiver.length > 0 ? (
+        <div className="flex items-start gap-2 rounded-xl border border-[color:var(--color-state-caution)]/40 bg-[color:var(--color-state-caution)]/10 px-4 py-3">
+          <ShieldAlert size={16} className="mt-0.5 shrink-0 text-[color:var(--color-state-caution)]" aria-hidden="true" />
+          <p className="text-[13px] text-forest-deep">
+            No signed waiver yet for {missingWaiver.map((p) => fullName(p)).join(", ")}. Sign it on the Forms tab before the session.
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} className={`${field} min-w-[240px]`}>
           {upcomingFirst.map((s) => <option key={s.id} value={s.id}>{s.title} · {whenLabel(s.starts_at)}</option>)}
@@ -497,7 +516,7 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
 }
 
 export function ProgramDetail({ detail }: { detail: Detail }) {
-  const [tab, setTab] = useState<Tab>("Roster");
+  const [tab, setTab] = useState<Tab>("Families");
 
   return (
     <div className="flex flex-col gap-6">
@@ -528,11 +547,15 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
         ))}
       </div>
 
+      {tab === "Families" ? <FamiliesTab detail={detail} /> : null}
       {tab === "Roster" ? <RosterTab detail={detail} /> : null}
+      {tab === "Forms" ? <FormsTab detail={detail} /> : null}
+      {tab === "Enrollment" ? <EnrollmentTab detail={detail} /> : null}
       {tab === "Schedule" ? <ScheduleTab detail={detail} /> : null}
       {tab === "Attendance" ? <AttendanceTab detail={detail} /> : null}
       {tab === "Badges" ? <BadgesTab detail={detail} /> : null}
       {tab === "Experiences" ? <ExperiencesTab detail={detail} /> : null}
+      {tab === "Adventure" ? <AdventureTab detail={detail} /> : null}
     </div>
   );
 }
