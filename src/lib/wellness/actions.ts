@@ -160,6 +160,109 @@ export async function toggleHabitToday(
   return { error: null };
 }
 
+// ── Ring 6: the longevity profile ──
+
+export type AssessmentInput = {
+  assessmentId: string;
+  value?: string;
+  valueText?: string;
+};
+
+// The signed-in client records their own self-reported test result. The band
+// is stamped by the database trigger from the catalog thresholds, never here.
+export async function recordSelfAssessment(input: AssessmentInput): Promise<ActionResult> {
+  const session = await getSessionProfile();
+  const client = await getMyClient();
+  if (!session?.profile || !client) return { error: "You are signed out." };
+  if (!input.assessmentId) return { error: "Pick a test first." };
+
+  const value = numOrNull(input.value);
+  const valueText = input.valueText?.trim() || null;
+  if (value === null && !valueText) return { error: "Enter a result." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("assessment_results").insert({
+    org_id: session.profile.org_id,
+    assessment_id: input.assessmentId,
+    subject: "client",
+    client_id: client.id,
+    value,
+    value_text: valueText,
+    source: "self_reported",
+    recorded_by: session.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+
+  await auditLog({
+    actorId: session.userId,
+    orgId: session.profile.org_id,
+    action: "assessment_result.create",
+    entityTable: "assessment_results",
+    entityId: client.id,
+    // A label (which test) and the source, never the measured value.
+    metadata: { assessment_id: input.assessmentId, source: "self_reported" },
+  });
+
+  revalidatePath("/progress");
+  return { error: null };
+}
+
+// Turn body composition (body fat, progress photos) on. Opt-in, private,
+// separate from the base health-tracking consent, and easy to turn off.
+export async function grantBodyCompositionConsent(): Promise<ActionResult> {
+  const session = await getSessionProfile();
+  const client = await getMyClient();
+  if (!session?.profile || !client) return { error: "You are signed out." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("consents").insert({
+    org_id: session.profile.org_id,
+    client_id: client.id,
+    kind: "body_composition",
+    granted_by: session.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+
+  await auditLog({
+    actorId: session.userId,
+    orgId: session.profile.org_id,
+    action: "consent.grant",
+    entityTable: "consents",
+    entityId: client.id,
+    metadata: { kind: "body_composition" },
+  });
+
+  revalidatePath("/progress");
+  return { error: null };
+}
+
+// Turn body composition back off. Removes the opt-in; the tests stop showing.
+export async function revokeBodyCompositionConsent(): Promise<ActionResult> {
+  const session = await getSessionProfile();
+  const client = await getMyClient();
+  if (!session?.profile || !client) return { error: "You are signed out." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("consents")
+    .delete()
+    .eq("client_id", client.id)
+    .eq("kind", "body_composition");
+  if (error) return { error: "That did not save. Try again." };
+
+  await auditLog({
+    actorId: session.userId,
+    orgId: session.profile.org_id,
+    action: "consent.revoke",
+    entityTable: "consents",
+    entityId: client.id,
+    metadata: { kind: "body_composition" },
+  });
+
+  revalidatePath("/progress");
+  return { error: null };
+}
+
 export type ActivityInput = {
   kind: string;
   duration_minutes?: string;

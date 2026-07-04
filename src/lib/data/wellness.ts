@@ -281,3 +281,171 @@ export async function getMyProgress(): Promise<Progress> {
     hasAnyData,
   };
 }
+
+// ── Ring 6: the longevity profile (capacity, beside the daily ring) ──
+
+export type PillarKey =
+  | "move_well"
+  | "be_strong"
+  | "carry"
+  | "go_far"
+  | "move_fast"
+  | "recover_well"
+  | "healthy_habits";
+
+export type Band = "healthy" | "improving" | "needs_attention";
+
+export const PILLAR_ORDER: PillarKey[] = [
+  "move_well",
+  "be_strong",
+  "carry",
+  "go_far",
+  "move_fast",
+  "recover_well",
+  "healthy_habits",
+];
+
+export const PILLAR_LABEL: Record<PillarKey, string> = {
+  move_well: "Move well",
+  be_strong: "Be strong",
+  carry: "Carry things",
+  go_far: "Go far",
+  move_fast: "Move fast",
+  recover_well: "Recover well",
+  healthy_habits: "Healthy habits",
+};
+
+export type LongevityPoint = { date: string; value: number };
+
+export type LongevityTest = {
+  assessmentId: string;
+  name: string;
+  slug: string;
+  pillar: PillarKey;
+  unit: string;
+  higherIsBetter: boolean;
+  howTo: string | null;
+  isBodyComposition: boolean;
+  latestValue: number | null;
+  latestValueText: string | null;
+  latestBand: Band | null;
+  latestOn: string | null;
+  previousValue: number | null;
+  history: LongevityPoint[];
+};
+
+export type LongevityPillar = {
+  pillar: PillarKey;
+  label: string;
+  tests: LongevityTest[];
+};
+
+export type Longevity = {
+  hasConsent: boolean;
+  showBodyComposition: boolean;
+  pillars: LongevityPillar[];
+  testedCount: number;
+  totalCount: number;
+};
+
+// The signed-in client's longevity profile: the seven pillars, each test's
+// latest result and band, and its trend. A separate, periodic view of
+// capacity, alongside (never merged into) the daily wellness ring. Body
+// composition tests appear only if the client has opted in. RLS scopes the
+// results to the client; the catalog is org-wide and read-only to them.
+export async function getMyLongevity(): Promise<Longevity> {
+  const client = await getMyClient();
+  if (!client) {
+    return { hasConsent: false, showBodyComposition: false, pillars: [], testedCount: 0, totalCount: 0 };
+  }
+
+  const supabase = await createClient();
+  const [{ data: consent }, { data: bodyConsent }, { data: catalog }, { data: results }] =
+    await Promise.all([
+      supabase
+        .from("consents")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("kind", "health_tracking")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("consents")
+        .select("id")
+        .eq("client_id", client.id)
+        .eq("kind", "body_composition")
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("assessments")
+        .select("id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition")
+        .eq("is_active", true)
+        .order("name", { ascending: true }),
+      supabase
+        .from("assessment_results")
+        .select("assessment_id, value, value_text, band, taken_on")
+        .eq("client_id", client.id)
+        .eq("subject", "client")
+        .order("taken_on", { ascending: true }),
+    ]);
+
+  const showBodyComposition = Boolean(bodyConsent);
+
+  // History per assessment, in date order.
+  const byAssessment = new Map<string, { value: number | null; value_text: string | null; band: Band | null; taken_on: string }[]>();
+  for (const r of results ?? []) {
+    const aid = r.assessment_id as string;
+    const list = byAssessment.get(aid) ?? [];
+    list.push({
+      value: r.value as number | null,
+      value_text: r.value_text as string | null,
+      band: r.band as Band | null,
+      taken_on: r.taken_on as string,
+    });
+    byAssessment.set(aid, list);
+  }
+
+  const tests: LongevityTest[] = (catalog ?? [])
+    .filter((a) => showBodyComposition || !a.is_body_composition)
+    .map((a) => {
+      const rows = byAssessment.get(a.id as string) ?? [];
+      const withValue = rows.filter((r) => r.value !== null) as {
+        value: number;
+        band: Band | null;
+        taken_on: string;
+      }[];
+      const latest = rows.length ? rows[rows.length - 1] : null;
+      const lastTwoValued = withValue.slice(-2);
+      return {
+        assessmentId: a.id as string,
+        name: a.name as string,
+        slug: a.slug as string,
+        pillar: a.pillar as PillarKey,
+        unit: a.unit as string,
+        higherIsBetter: a.higher_is_better as boolean,
+        howTo: (a.how_to as string | null) ?? null,
+        isBodyComposition: a.is_body_composition as boolean,
+        latestValue: latest?.value ?? null,
+        latestValueText: latest?.value_text ?? null,
+        latestBand: latest?.band ?? null,
+        latestOn: latest?.taken_on ?? null,
+        previousValue: lastTwoValued.length === 2 ? lastTwoValued[0].value : null,
+        history: withValue.map((r) => ({ date: r.taken_on, value: r.value })),
+      };
+    });
+
+  const testedIds = new Set((results ?? []).map((r) => r.assessment_id as string));
+  const pillars: LongevityPillar[] = PILLAR_ORDER.map((p) => ({
+    pillar: p,
+    label: PILLAR_LABEL[p],
+    tests: tests.filter((t) => t.pillar === p),
+  })).filter((grp) => grp.tests.length > 0);
+
+  return {
+    hasConsent: Boolean(consent),
+    showBodyComposition,
+    pillars,
+    testedCount: tests.filter((t) => testedIds.has(t.assessmentId)).length,
+    totalCount: tests.length,
+  };
+}
