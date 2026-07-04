@@ -112,19 +112,26 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
-- The boys-program completions are the next ring: family-first onboarding, the
-  forms (waiver, medical, photo release, pickup, code of conduct, parent
-  agreement), the warmer-worded enrollment pipeline tied to the Ring 4 offerings,
-  the student adventure log, and mentor onboarding. Forms jump the line if a real
+- Ring 7 (the boys-program completions) spec is drafted in RING7_SPEC.md, awaiting
+  decisions before build: the warmer word for "apply," the mentor-onboarding split
+  into its own Ring 8, the guardians family model, and the Ring 4 tuition linkage.
+  Covers family-first intake, forms and waivers, the enrollment path, and the
+  adventure log with the extended family view. Forms jump the line if a real
   family needs a waiver before a session.
-- The family read-only view of a boy's earned experiences is deferred to that
-  ring (Ring 6 decision 4).
+- Mentor onboarding is proposed as its own Ring 8 (mentor profile, certifications,
+  background check, first aid, availability, training track, and the brotherhood
+  layer), to keep Ring 7 reviewable.
 - PWA install shell (manifest, service worker, icons), a later pass.
 - Vercel env vars: ANTHROPIC_API_KEY (Coach), DEEPGRAM_API_KEY (voice check-ins),
   FDC_API_KEY (food search), SUPABASE_SERVICE_ROLE_KEY (audit writes, voice
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-04 Ring 7 spec drafted (RING7_SPEC.md): the boys-program completions,
+  family-first intake, versioned forms with a waiver gate, the warmer enrollment
+  path tied to the Ring 4 offerings, and the adventure log with the extended
+  family view. Forked onto the Ring 5 boys schema. Mentor onboarding proposed as a
+  separate Ring 8. Spec only, awaiting decisions.
 - 2026-07-04 Ring 6 built (five commits): the assessment schema + RLS + band
   trigger + seeded catalog and animal movements (6.1), the client longevity
   profile (6.2), the coach panel and catalog editor (6.3), the boys' earned
