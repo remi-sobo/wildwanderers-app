@@ -189,3 +189,93 @@ export async function getCustomers(): Promise<Customer[]> {
   return (data as Customer[] | null) ?? [];
 }
 
+export type Offering = {
+  id: string;
+  name: string;
+  kind: string;
+  price_cents: number | null;
+  cadence: string;
+  is_active: boolean;
+  description: string | null;
+};
+export type RevenueEvent = {
+  id: string;
+  category: string;
+  description: string | null;
+  amount_cents: number;
+  status: string;
+  occurred_at: string;
+  customer_name: string | null;
+};
+export type Expense = {
+  id: string;
+  category: string;
+  vendor: string | null;
+  description: string | null;
+  amount_cents: number;
+  expense_date: string;
+};
+export type FinanceData = {
+  offerings: Offering[];
+  customers: Customer[];
+  revenue: RevenueEvent[];
+  expenses: Expense[];
+  revenueMtdCents: number;
+  expensesMtdCents: number;
+};
+
+export async function getOfferings(): Promise<Offering[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("offerings")
+    .select("id, name, kind, price_cents, cadence, is_active, description")
+    .order("sort_order", { ascending: true });
+  return (data as Offering[] | null) ?? [];
+}
+
+// Offerings, recent revenue and expenses, and the month-to-date totals, all
+// owner-scoped and computed from real rows.
+export async function getFinance(): Promise<FinanceData> {
+  const supabase = await createClient();
+  const startThis = monthStartUtc(0);
+
+  const [offerings, customers, { data: revRows }, { data: expRows }] = await Promise.all([
+    getOfferings(),
+    getCustomers(),
+    supabase
+      .from("revenue_events")
+      .select("id, category, description, amount_cents, status, occurred_at, customers(name)")
+      .order("occurred_at", { ascending: false })
+      .limit(25),
+    supabase
+      .from("expenses")
+      .select("id, category, vendor, description, amount_cents, expense_date")
+      .order("expense_date", { ascending: false })
+      .limit(25),
+  ]);
+
+  const revenue: RevenueEvent[] = (revRows ?? []).map((r) => {
+    const cust = r.customers as { name?: string } | { name?: string }[] | null;
+    const name = Array.isArray(cust) ? cust[0]?.name ?? null : cust?.name ?? null;
+    return {
+      id: r.id as string,
+      category: r.category as string,
+      description: (r.description as string | null) ?? null,
+      amount_cents: r.amount_cents as number,
+      status: r.status as string,
+      occurred_at: r.occurred_at as string,
+      customer_name: name,
+    };
+  });
+  const expenses = (expRows ?? []) as Expense[];
+
+  const revenueMtdCents = revenue
+    .filter((r) => r.status === "collected" && new Date(r.occurred_at) >= startThis)
+    .reduce((s, r) => s + r.amount_cents, 0);
+  const expensesMtdCents = expenses
+    .filter((e) => new Date(e.expense_date + "T00:00:00Z") >= startThis)
+    .reduce((s, e) => s + e.amount_cents, 0);
+
+  return { offerings, customers, revenue, expenses, revenueMtdCents, expensesMtdCents };
+}
+

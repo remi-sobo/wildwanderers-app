@@ -1,10 +1,7 @@
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Wrench } from "lucide-react";
+import { getFinance } from "@/lib/data/business";
+import { FinancePanel } from "@/components/coach/FinancePanel";
 
-export default function FinancePlaceholder() {
-  return (
-    <EmptyState icon={Wrench} title="Coming right up.">
-      This surface is being built in this ring.
-    </EmptyState>
-  );
+export default async function FinancePage() {
+  const data = await getFinance();
+  return <FinancePanel data={data} />;
 }

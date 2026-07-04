@@ -107,6 +107,105 @@ export async function logLeadActivity(
   return { error: null };
 }
 
+export type RevenueInput = {
+  amount: string;
+  category: string;
+  description?: string;
+  customer_id?: string;
+  offering_id?: string;
+  occurred_at?: string;
+};
+
+export async function addRevenue(input: RevenueInput): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const cents = dollarsToCents(input.amount);
+  if (cents === null || cents <= 0) return { error: "Enter an amount." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("revenue_events").insert({
+    org_id: ctx.orgId,
+    category: input.category || "other",
+    description: input.description?.trim() || null,
+    amount_cents: cents,
+    customer_id: input.customer_id || null,
+    offering_id: input.offering_id || null,
+    status: "collected",
+    source: "manual",
+    occurred_at: input.occurred_at ? new Date(input.occurred_at).toISOString() : new Date().toISOString(),
+    entered_by: ctx.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+
+  // Roll the customer's lifetime value if attributed.
+  if (input.customer_id) {
+    const { data: sums } = await supabase
+      .from("revenue_events")
+      .select("amount_cents")
+      .eq("customer_id", input.customer_id)
+      .eq("status", "collected");
+    const ltv = (sums ?? []).reduce((s, r) => s + (r.amount_cents as number), 0);
+    await supabase.from("customers").update({ lifetime_value_cents: ltv }).eq("id", input.customer_id);
+  }
+
+  revalidatePath("/business/finance");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+export type ExpenseInput = {
+  amount: string;
+  category: string;
+  vendor?: string;
+  description?: string;
+  expense_date?: string;
+  recurring?: boolean;
+};
+
+export async function addExpense(input: ExpenseInput): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const cents = dollarsToCents(input.amount);
+  if (cents === null || cents <= 0) return { error: "Enter an amount." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("expenses").insert({
+    org_id: ctx.orgId,
+    category: input.category || "other",
+    vendor: input.vendor?.trim() || null,
+    description: input.description?.trim() || null,
+    amount_cents: cents,
+    expense_date: input.expense_date || new Date().toISOString().slice(0, 10),
+    recurring: Boolean(input.recurring),
+    entered_by: ctx.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/finance");
+  return { error: null };
+}
+
+export async function setOfferingPrice(offeringId: string, priceDollars: string): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const cents = dollarsToCents(priceDollars);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("offerings").update({ price_cents: cents }).eq("id", offeringId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/finance");
+  return { error: null };
+}
+
+export async function toggleOffering(offeringId: string, isActive: boolean): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("offerings").update({ is_active: isActive }).eq("id", offeringId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/finance");
+  return { error: null };
+}
+
 // Convert a lead into a customer: create the customer record, link it, and mark
 // the lead won. Skips if the lead is already linked.
 export async function convertLeadToCustomer(leadId: string): Promise<BizResult> {
