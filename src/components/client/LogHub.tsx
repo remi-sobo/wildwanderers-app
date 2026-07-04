@@ -86,8 +86,8 @@ function HabitsCard({ habits }: { habits: HabitToday[] }) {
   if (state.length === 0) {
     return (
       <p className="text-[13.5px] leading-[1.55] text-[color:var(--color-text-muted)]">
-        Gabe has not set up habits yet. When he does, they show here to check off
-        each day.
+        Your coach has not set up habits yet. When they do, they show here to
+        check off each day.
       </p>
     );
   }
@@ -349,7 +349,7 @@ export function LogHub({
 }) {
   return (
     <div className="flex flex-col gap-5">
-      <Card icon={MessageSquareHeart} title="Check in with Gabe" hint="A quick reflection, whenever.">
+      <Card icon={MessageSquareHeart} title="Check in with your coach" hint="A quick reflection, whenever.">
         <CheckInCard recent={recentCheckIns} voiceEnabled={voiceEnabled} />
       </Card>
       <Card icon={Check} title="Today's habits" hint="Tap to check one off.">

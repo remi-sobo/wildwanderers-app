@@ -22,10 +22,10 @@ export default async function MessagesPage({
   if (threads.length === 0) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <EmptyState icon={MessageCircle} title={isStaff ? "No conversations yet." : "Talk with Gabe here."}>
+        <EmptyState icon={MessageCircle} title={isStaff ? "No conversations yet." : "Talk with your coach here."}>
           {isStaff
             ? "Open a conversation from a client's page and it shows up here."
-            : "Your messages with Gabe will live on this screen. He will reach out soon."}
+            : "Your messages with your coach will live on this screen. They will reach out soon."}
         </EmptyState>
       </div>
     );

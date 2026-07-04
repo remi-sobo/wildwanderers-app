@@ -8,7 +8,14 @@ import { Ridgeline } from "@/components/brand/Ridgeline";
 // The one-time consent screen, shown the first time a client opens tracking.
 // Plain about what is tracked and how it is used. The wellness score note
 // makes clear it is a progress signal, never a medical assessment.
-export function ConsentScreen() {
+export function ConsentScreen({
+  orgName = "Wild Wanderers",
+  coachName,
+}: {
+  orgName?: string;
+  coachName?: string;
+}) {
+  const coach = coachName?.trim() || "your coach";
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -33,8 +40,8 @@ export function ConsentScreen() {
             Before you start logging.
           </h1>
           <p className="mt-2 max-w-md text-[14.5px] leading-[1.55] text-bone/70">
-            Tracking gives you and Gabe a real picture to coach from. Here is what
-            it covers, in plain terms.
+            Tracking gives you and {coach} a real picture to coach from. Here is
+            what it covers, in plain terms.
           </p>
         </div>
       </section>
@@ -48,11 +55,11 @@ export function ConsentScreen() {
             ],
             [
               "Who can see it",
-              "Only you and your coach, Gabe. No other client sees your data, and it never leaves Wild Wanderers. Access is recorded.",
+              `Only you and ${coach}. No other client sees your data, and it never leaves ${orgName}. Access is recorded.`,
             ],
             [
               "How it is used",
-              "To shape your training and habits and to show your progress over time. Your wellness score is a motivating progress number, not a medical or health assessment, and Gabe coaches as a certified trainer, not a clinician.",
+              `To shape your training and habits and to show your progress over time. Your wellness score is a motivating progress number, not a medical or health assessment, and ${coach} coaches as a certified trainer, not a clinician.`,
             ],
           ].map(([title, body]) => (
             <li key={title} className="flex gap-3">
