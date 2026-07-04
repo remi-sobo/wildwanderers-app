@@ -1,14 +1,15 @@
 import { getTrackingHub } from "@/lib/data/wellness";
 import { getMyCheckIns } from "@/lib/data/checkins";
+import { getMyOrg } from "@/lib/data/org";
 import { voiceConfigured } from "@/lib/voice/transcribe";
 import { ConsentScreen } from "@/components/client/ConsentScreen";
 import { LogHub } from "@/components/client/LogHub";
 
 export default async function LogPage() {
-  const hub = await getTrackingHub();
+  const [hub, org] = await Promise.all([getTrackingHub(), getMyOrg()]);
 
   if (!hub.hasConsent) {
-    return <ConsentScreen />;
+    return <ConsentScreen orgName={org?.name} />;
   }
 
   const recentCheckIns = await getMyCheckIns();
@@ -21,7 +22,7 @@ export default async function LogPage() {
           Log what you did.
         </h1>
         <p className="mt-1 text-[14px] text-[color:var(--color-text-muted)]">
-          Everything here stays private to you and Gabe.
+          Everything here stays private to you and your coach.
         </p>
       </div>
       <LogHub

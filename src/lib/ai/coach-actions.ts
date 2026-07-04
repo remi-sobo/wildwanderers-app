@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/auth/get-profile";
+import { getMyOrg } from "@/lib/data/org";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient } from "@/lib/data/plans";
 import { getClientWellness } from "@/lib/data/coach-fitness";
@@ -42,16 +43,31 @@ export type WorkoutPlanDraft = {
 export type CoachResult = { text: string | null; error: string | null };
 
 // The scope Coach never steps outside of. Coach-facing, programming/habits/
-// summarizing only, no medical or nutrition advice, Wild Wanderers voice.
-const COACH_SYSTEM = `You are Coach, an assistant for Gabe, a certified fitness trainer at Wild Wanderers. You help Gabe, never the client directly.
+// summarizing only, no medical or nutrition advice, brand voice. Named for the
+// coach and org that own the surface so a second org reads as its own, not Gabe's.
+function coachSystem(coach: string, org: string): string {
+  return `You are Coach, an assistant for ${coach}, a certified fitness trainer at ${org}. You help ${coach}, never the client directly.
 
 Scope, strict:
 - You do programming, habits, and summarizing only.
-- You give no medical, nutrition, or health advice, and you diagnose nothing. If something looks like it needs a clinician, say only that Gabe may want to check in with the client, never a diagnosis.
+- You give no medical, nutrition, or health advice, and you diagnose nothing. If something looks like it needs a clinician, say only that ${coach} may want to check in with the client, never a diagnosis.
 - Never make a medical claim. The wellness score is a motivational progress signal, not a health assessment.
 - Never frame the client as broken, unhealthy, or failing. The plan needs work, never the person.
 
 Voice: warm, direct, clear, succinct. No em dashes, use commas or restructure. No AI-giveaway words (transformative, holistic, leverage, unlock, seamless, robust, pivotal). No filler transitions.`;
+}
+
+// The caller's coaching name and org, for the system prompt. Falls back to
+// generic labels so Coach never speaks in another org's name.
+function coachIdentity(
+  firstName: string | undefined,
+  org: { name: string } | null,
+): { coach: string; org: string } {
+  return {
+    coach: firstName?.trim() || "the coach",
+    org: org?.name?.trim() || "the gym",
+  };
+}
 
 function isConfigError(e: unknown): e is CoachNotConfiguredError | CoachBudgetError {
   return e instanceof CoachNotConfiguredError || e instanceof CoachBudgetError;
@@ -68,12 +84,14 @@ export async function summarizeClient(clientId: string): Promise<CoachResult> {
     return { text: null, error: "Coach is not set up yet. Add the API key to switch it on." };
   }
 
-  const [client, plan, wellness] = await Promise.all([
+  const [client, plan, wellness, org] = await Promise.all([
     getClientById(clientId),
     getPlanForClient(clientId),
     getClientWellness(clientId),
+    getMyOrg(),
   ]);
   if (!client) return { text: null, error: "That client was not found." };
+  const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
 
   // Build a compact, factual context. No fabrication: only what is logged.
   const lines: string[] = [];
@@ -117,17 +135,17 @@ export async function summarizeClient(clientId: string): Promise<CoachResult> {
     lines.push("The client has not opened wellness tracking yet.");
   }
 
-  const prompt = `Here is what Wild Wanderers has logged for this client:
+  const prompt = `Here is what ${orgName} has logged for this client:
 
 ${lines.join("\n")}
 
-Write Gabe a short summary he can read in fifteen seconds: where the client is, what is going well, and one or two things worth his attention or a nudge on. Three or four sentences. Coach-facing, never addressed to the client.`;
+Write ${coach} a short summary they can read in fifteen seconds: where the client is, what is going well, and one or two things worth their attention or a nudge on. Three or four sentences. Coach-facing, never addressed to the client.`;
 
   try {
     const text = await callCoachText({
       task: "coach.summary",
       model: SUMMARY_MODEL,
-      system: COACH_SYSTEM,
+      system: coachSystem(coach, orgName),
       messages: [{ role: "user", content: prompt }],
       maxTokens: 700,
       context: { actorId: session.userId, orgId: session.profile.org_id },
@@ -218,25 +236,27 @@ export async function draftWorkoutPlan(clientId: string, ask: string): Promise<D
   }
   if (!ask.trim()) return { draft: null, error: "Tell Coach what to draft." };
 
-  const [client, library] = await Promise.all([
+  const [client, library, org] = await Promise.all([
     getClientById(clientId),
     getExerciseLibrary(),
+    getMyOrg(),
   ]);
   if (!client) return { draft: null, error: "That client was not found." };
+  const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
 
   // Group the library so Coach knows what it can pull from.
   const libraryList = library.map((l) => `${l.title} (${l.kind})`).join(", ");
 
-  const system = `${COACH_SYSTEM}
+  const system = `${coachSystem(coach, orgName)}
 
-You are drafting a training plan for Gabe to review, edit, and approve. It is a draft, never final, and never goes live without Gabe. Build it from the exercise library where you can, using the exact library titles so they link. You may add an exercise not in the library if the plan needs it. Keep loads and reps sensible and general. Never give medical or nutrition advice.`;
+You are drafting a training plan for ${coach} to review, edit, and approve. It is a draft, never final, and never goes live without ${coach}. Build it from the exercise library where you can, using the exact library titles so they link. You may add an exercise not in the library if the plan needs it. Keep loads and reps sensible and general. Never give medical or nutrition advice.`;
 
   const prompt = `Client: ${clientName(client)}.${client.goal ? ` Their goal: ${client.goal}.` : ""}
 
 Exercise library you can pull from (use these exact titles where they fit):
 ${libraryList || "(empty)"}
 
-Gabe's request: ${ask.trim()}
+${coach}'s request: ${ask.trim()}
 
 Draft the plan.`;
 
@@ -328,16 +348,16 @@ export async function structureCheckIn(checkInId: string): Promise<StructureResu
   }
 
   const supabase = await createClient();
-  const { data: checkIn } = await supabase
-    .from("check_ins")
-    .select("id, body")
-    .eq("id", checkInId)
-    .maybeSingle();
+  const [{ data: checkIn }, org] = await Promise.all([
+    supabase.from("check_ins").select("id, body").eq("id", checkInId).maybeSingle(),
+    getMyOrg(),
+  ]);
   if (!checkIn?.body) return { structured: null, error: "That check-in has no text to structure." };
+  const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
 
-  const system = `${COACH_SYSTEM}
+  const system = `${coachSystem(coach, orgName)}
 
-You are structuring a client's check-in into a fast read for Gabe. Summarize only. Pull out mood in a couple of words, concrete wins, and any blockers, and name one focus for Gabe to consider. Never give the client medical or nutrition advice, and never frame them as failing.`;
+You are structuring a client's check-in into a fast read for ${coach}. Summarize only. Pull out mood in a couple of words, concrete wins, and any blockers, and name one focus for ${coach} to consider. Never give the client medical or nutrition advice, and never frame them as failing.`;
 
   try {
     const structured = await callCoachStructured<CheckInStructure>({
