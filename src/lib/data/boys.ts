@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Band, PillarKey } from "@/lib/longevity/pillars";
 
 export type ProgramStatus = "setup" | "active" | "completed" | "archived";
 
@@ -91,6 +92,29 @@ export type AttendanceRow = {
   status: "present" | "absent" | "late";
 };
 
+// An earned-experience definition: an assessment that carries a boys name.
+export type Experience = {
+  assessmentId: string;
+  experienceName: string;
+  testName: string;
+  pillar: PillarKey;
+  unit: string;
+  howTo: string | null;
+};
+
+// One recorded experience for a boy. The band is Gabe's quiet read; the boy
+// sees the experience and his growth, never a grade.
+export type EarnedExperience = {
+  id: string;
+  participant_id: string;
+  assessmentId: string;
+  experienceName: string;
+  value: number | null;
+  valueText: string | null;
+  band: Band | null;
+  taken_on: string;
+};
+
 export type ProgramDetail = {
   program: Program;
   groups: ProgramGroup[];
@@ -99,6 +123,8 @@ export type ProgramDetail = {
   badges: Badge[];
   awards: BadgeAward[];
   attendance: AttendanceRow[];
+  experiences: Experience[];
+  earned: EarnedExperience[];
 };
 
 // A full program for the detail surface: cohorts, roster, sessions, the badge
@@ -112,7 +138,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     .maybeSingle();
   if (!program) return null;
 
-  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }] =
+  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }, { data: expCatalog }] =
     await Promise.all([
       supabase.from("program_groups").select("id, name, color").eq("program_id", id).order("created_at"),
       supabase
@@ -126,10 +152,16 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
         .eq("program_id", id)
         .order("starts_at", { ascending: true }),
       supabase.from("program_badges").select("id, name, emoji, description").order("sort_order"),
+      supabase
+        .from("assessments")
+        .select("id, name, pillar, unit, how_to, boys_experience_name")
+        .eq("is_active", true)
+        .not("boys_experience_name", "is", null)
+        .order("boys_experience_name"),
     ]);
 
   const participantIds = (participants ?? []).map((p) => p.id as string);
-  const [{ data: awards }, { data: attendance }] = await Promise.all([
+  const [{ data: awards }, { data: attendance }, { data: results }] = await Promise.all([
     participantIds.length
       ? supabase
           .from("participant_badges")
@@ -138,7 +170,35 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
           .order("awarded_at", { ascending: false })
       : Promise.resolve({ data: [] as unknown[] }),
     supabase.from("attendance").select("session_id, participant_id, status").eq("program_id", id),
+    participantIds.length
+      ? supabase
+          .from("assessment_results")
+          .select("id, participant_id, assessment_id, value, value_text, band, taken_on")
+          .eq("subject", "participant")
+          .in("participant_id", participantIds)
+          .order("taken_on", { ascending: false })
+      : Promise.resolve({ data: [] as unknown[] }),
   ]);
+
+  const experiences: Experience[] = ((expCatalog ?? []) as Record<string, unknown>[]).map((a) => ({
+    assessmentId: a.id as string,
+    experienceName: a.boys_experience_name as string,
+    testName: a.name as string,
+    pillar: a.pillar as PillarKey,
+    unit: a.unit as string,
+    howTo: (a.how_to as string | null) ?? null,
+  }));
+  const expName = new Map(experiences.map((e) => [e.assessmentId, e.experienceName] as const));
+  const earned: EarnedExperience[] = ((results ?? []) as Record<string, unknown>[]).map((r) => ({
+    id: r.id as string,
+    participant_id: r.participant_id as string,
+    assessmentId: r.assessment_id as string,
+    experienceName: expName.get(r.assessment_id as string) ?? "Experience",
+    value: (r.value as number | null) ?? null,
+    valueText: (r.value_text as string | null) ?? null,
+    band: (r.band as Band | null) ?? null,
+    taken_on: r.taken_on as string,
+  }));
 
   type AwardRaw = {
     id: string;
@@ -170,5 +230,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     badges: (badges ?? []) as Badge[],
     awards: awardRows,
     attendance: (attendance ?? []) as AttendanceRow[],
+    experiences,
+    earned,
   };
 }

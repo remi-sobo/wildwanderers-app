@@ -232,3 +232,36 @@ export async function awardBadge(
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }
+
+// Record an earned experience for a boy: the same assessment result an adult
+// logs, scored the same way by the trigger, but surfaced as encouragement with
+// the animal name, never a test he can fail. Staff-only, coach-observed.
+export async function recordExperience(
+  programId: string,
+  participantId: string,
+  assessmentId: string,
+  value: string,
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!participantId || !assessmentId) return { error: "Pick a kid and an experience." };
+
+  const n = Number(value);
+  const isNum = value.trim() !== "" && Number.isFinite(n);
+  if (!isNum && !value.trim()) return { error: "Enter what he did." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("assessment_results").insert({
+    org_id: ctx.orgId,
+    assessment_id: assessmentId,
+    subject: "participant",
+    participant_id: participantId,
+    value: isNum ? n : null,
+    value_text: isNum ? null : value.trim(),
+    source: "coach_observed",
+    recorded_by: ctx.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}

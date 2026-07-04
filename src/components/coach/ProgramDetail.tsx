@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Users, CalendarClock, CircleCheck, Award, Check } from "lucide-react";
+import { ChevronLeft, Plus, Users, CalendarClock, CircleCheck, Award, Check, Sparkles } from "lucide-react";
 import {
   addGroup,
   addParticipant,
@@ -11,14 +11,16 @@ import {
   addSession,
   markAttendance,
   awardBadge,
+  recordExperience,
   inviteParent,
   type ParticipantInput,
   type SessionInput,
 } from "@/lib/boys/actions";
-import type { ProgramDetail as Detail, Participant, ProgramGroup } from "@/lib/data/boys";
+import type { ProgramDetail as Detail, Participant, ProgramGroup, EarnedExperience } from "@/lib/data/boys";
+import { BAND_DOT } from "@/components/longevity/LongevityBits";
 
 const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
-const TABS = ["Roster", "Schedule", "Attendance", "Badges"] as const;
+const TABS = ["Roster", "Schedule", "Attendance", "Badges", "Experiences"] as const;
 type Tab = (typeof TABS)[number];
 
 function fullName(p: Participant) {
@@ -397,6 +399,103 @@ function BadgesTab({ detail }: { detail: Detail }) {
   );
 }
 
+// ── Experiences (the boys' earned movements) ────────────────
+function ExperiencesTab({ detail }: { detail: Detail }) {
+  const router = useRouter();
+  const [participantId, setParticipantId] = useState(detail.participants[0]?.id ?? "");
+  const [assessmentId, setAssessmentId] = useState(detail.experiences[0]?.assessmentId ?? "");
+  const [value, setValue] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [pending, start] = useTransition();
+
+  const selected = detail.experiences.find((e) => e.assessmentId === assessmentId) ?? null;
+  const unitFor = new Map(detail.experiences.map((e) => [e.assessmentId, e.unit] as const));
+
+  function record() {
+    if (!participantId || !assessmentId) return;
+    setErr(null);
+    setSaved(false);
+    start(async () => {
+      const res = await recordExperience(detail.program.id, participantId, assessmentId, value);
+      if (res.error) setErr(res.error);
+      else {
+        setValue("");
+        setSaved(true);
+        router.refresh();
+      }
+    });
+  }
+
+  const earnedByKid = new Map<string, EarnedExperience[]>();
+  for (const e of detail.earned) {
+    const arr = earnedByKid.get(e.participant_id) ?? [];
+    arr.push(e);
+    earnedByKid.set(e.participant_id, arr);
+  }
+
+  if (detail.participants.length === 0) {
+    return <p className="text-[13.5px] text-[color:var(--color-text-muted)]">Add kids to the roster first, then record experiences.</p>;
+  }
+  if (detail.experiences.length === 0) {
+    return <p className="text-[13.5px] text-[color:var(--color-text-muted)]">No experiences in the catalog yet.</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-5 shadow-[var(--shadow-card)]">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <select className={field} value={participantId} onChange={(e) => setParticipantId(e.target.value)}>
+            {detail.participants.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
+          </select>
+          <select className={field} value={assessmentId} onChange={(e) => setAssessmentId(e.target.value)}>
+            {detail.experiences.map((x) => <option key={x.assessmentId} value={x.assessmentId}>{x.experienceName}</option>)}
+          </select>
+          <input className={field} inputMode="decimal"
+            placeholder={selected ? `What he did (${selected.unit})` : "What he did"}
+            value={value} onChange={(e) => setValue(e.target.value)} />
+        </div>
+        {selected?.howTo ? (
+          <p className="mt-2 text-[12.5px] leading-[1.5] text-[color:var(--color-text-muted)]">{selected.howTo}</p>
+        ) : null}
+        <div className="mt-4 flex items-center gap-3">
+          <button type="button" onClick={record} disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            <Sparkles size={15} /> Record experience
+          </button>
+          {saved ? <span className="flex items-center gap-1 text-[13px] text-fern"><Check size={15} /> Recorded</span> : null}
+          {err ? <span className="text-[13px] text-[color:var(--color-state-error)]">{err}</span> : null}
+        </div>
+        <p className="mt-3 text-[11.5px] leading-[1.5] text-[color:var(--color-text-muted)]">
+          Recorded quietly. He earns the experience and sees his own growth, never
+          a test he can fail. The band is your read, not his.
+        </p>
+      </div>
+
+      {detail.earned.length > 0 ? (
+        <ul className="flex flex-col gap-2.5">
+          {detail.participants.filter((p) => (earnedByKid.get(p.id)?.length ?? 0) > 0).map((p) => (
+            <li key={p.id} className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-4 shadow-[var(--shadow-card)]">
+              <p className="text-[14px] font-semibold text-forest-deep">{fullName(p)}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(earnedByKid.get(p.id) ?? []).map((e) => (
+                  <span key={e.id} className="inline-flex items-center gap-1.5 rounded-full bg-inset px-3 py-1 text-[12.5px] text-forest-deep">
+                    {e.band ? <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: BAND_DOT[e.band] }} aria-hidden="true" /> : null}
+                    {e.experienceName}
+                    <span className="text-[color:var(--color-text-muted)]">
+                      {e.value !== null ? `${e.value} ${unitFor.get(e.assessmentId) ?? ""}`.trim() : e.valueText}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 export function ProgramDetail({ detail }: { detail: Detail }) {
   const [tab, setTab] = useState<Tab>("Roster");
 
@@ -433,6 +532,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
       {tab === "Schedule" ? <ScheduleTab detail={detail} /> : null}
       {tab === "Attendance" ? <AttendanceTab detail={detail} /> : null}
       {tab === "Badges" ? <BadgesTab detail={detail} /> : null}
+      {tab === "Experiences" ? <ExperiencesTab detail={detail} /> : null}
     </div>
   );
 }
