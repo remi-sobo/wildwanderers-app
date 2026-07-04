@@ -1,6 +1,11 @@
-import { CalendarClock, Award, CircleCheck } from "lucide-react";
+import { CalendarClock, Award, CircleCheck, Compass, FileWarning } from "lucide-react";
 import { Ridgeline } from "@/components/brand/Ridgeline";
 import type { FamilyChild } from "@/lib/data/family";
+
+const ADVENTURE_LABEL: Record<string, string> = {
+  journal: "Nature journal",
+  check_in: "Check-in",
+};
 
 function whenLabel(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -100,6 +105,17 @@ export function FamilyView({
               </div>
             </div>
 
+            {kid.formsToSign.length > 0 ? (
+              <div className="border-t border-[color:var(--border-hair)] bg-[color:var(--color-state-caution)]/8 px-5 py-4">
+                <div className="flex items-start gap-2">
+                  <FileWarning size={15} className="mt-0.5 shrink-0 text-[color:var(--color-state-caution)]" aria-hidden="true" />
+                  <p className="text-[13px] text-forest-deep">
+                    Still to sign for {kid.first_name}: {kid.formsToSign.join(", ")}. Your coach will help you complete these.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {kid.badges.length > 0 ? (
               <div className="border-t border-[color:var(--border-hair)] px-5 py-4">
                 <div className="mb-2 flex items-center gap-2">
@@ -113,6 +129,26 @@ export function FamilyView({
                     </span>
                   ))}
                 </div>
+              </div>
+            ) : null}
+
+            {kid.adventure.length > 0 ? (
+              <div className="border-t border-[color:var(--border-hair)] px-5 py-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <Compass size={15} className="text-forest" aria-hidden="true" />
+                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.12em] text-bark">His adventure</h3>
+                </div>
+                <ul className="flex flex-col gap-2.5">
+                  {kid.adventure.map((e) => (
+                    <li key={e.id} className="border-l-2 border-[color:var(--color-fern)] pl-3">
+                      <p className="text-[12px] text-bark">
+                        {ADVENTURE_LABEL[e.kind] ?? "Note"} · {new Date(e.entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                      {e.title ? <p className="text-[13.5px] font-medium text-forest-deep">{e.title}</p> : null}
+                      <p className="text-[13.5px] leading-[1.5] text-[color:var(--color-text)]">{e.body}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ) : null}
           </section>
