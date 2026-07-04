@@ -10,7 +10,7 @@ export type BoysResult = { error: string | null; id?: string };
 async function staffContext() {
   const session = await getSessionProfile();
   if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) return null;
-  return { userId: session.userId, orgId: session.profile.org_id };
+  return { userId: session.userId, orgId: session.profile.org_id, role: session.profile.role };
 }
 
 export async function createProgram(input: {
@@ -488,6 +488,120 @@ export async function acknowledgeForm(
     { onConflict: "form_id,form_version,participant_id", ignoreDuplicates: true },
   );
   if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+// ── Ring 7: the enrollment path (tied to Ring 4, not a second ledger) ──
+
+function dollarsToCents(v?: string): number | null {
+  if (!v || !v.trim()) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) : null;
+}
+
+export type EnrollmentInput = {
+  offeringId?: string;
+  tuition?: string;       // dollars
+  scholarship?: string;   // dollars
+  scholarshipReason?: string;
+  notes?: string;
+};
+
+// Create or update a kid's enrollment record. Tuition comes from a Ring 4
+// boys_program offering (or a manual figure); a scholarship is a recorded
+// discount. This never posts money; enrolling does that (below).
+export async function saveEnrollment(
+  programId: string,
+  participantId: string,
+  input: EnrollmentInput,
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+
+  const { data: link } = await supabase
+    .from("participant_guardians")
+    .select("guardian_id")
+    .eq("participant_id", participantId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  let tuitionCents = dollarsToCents(input.tuition);
+  if (tuitionCents === null && input.offeringId) {
+    const { data: off } = await supabase.from("offerings").select("price_cents").eq("id", input.offeringId).maybeSingle();
+    tuitionCents = (off?.price_cents as number | null) ?? null;
+  }
+
+  const row = {
+    org_id: ctx.orgId,
+    program_id: programId,
+    participant_id: participantId,
+    guardian_id: link?.guardian_id ?? null,
+    offering_id: input.offeringId || null,
+    tuition_cents: tuitionCents,
+    scholarship_cents: dollarsToCents(input.scholarship) ?? 0,
+    scholarship_reason: input.scholarshipReason?.trim() || null,
+    notes: input.notes?.trim() || null,
+  };
+
+  const { data: existing } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("program_id", programId)
+    .eq("participant_id", participantId)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase.from("enrollments").update(row).eq("id", existing.id)
+    : await supabase.from("enrollments").insert({ ...row, status: "interested" });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+// Move an enrollment through the path. On the move into 'enrolled', the owner
+// posts the net tuition as one Ring 4 revenue event. A coach can move the
+// status but not post revenue (finance is owner-only), so the money waits for
+// the owner. Guarded against double-posting by the prior status.
+export async function setEnrollmentStatus(
+  programId: string,
+  enrollmentId: string,
+  status: "interested" | "waitlisted" | "offered" | "enrolled" | "withdrawn",
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+
+  const { data: enr } = await supabase
+    .from("enrollments")
+    .select("id, status, tuition_cents, scholarship_cents, offering_id")
+    .eq("id", enrollmentId)
+    .maybeSingle();
+  if (!enr) return { error: "That enrollment was not found." };
+
+  const { error } = await supabase
+    .from("enrollments")
+    .update({ status, status_changed_at: new Date().toISOString() })
+    .eq("id", enrollmentId);
+  if (error) return { error: "That did not save. Try again." };
+
+  const becomingEnrolled = status === "enrolled" && enr.status !== "enrolled";
+  if (becomingEnrolled && ctx.role === "owner") {
+    const net = ((enr.tuition_cents as number | null) ?? 0) - ((enr.scholarship_cents as number | null) ?? 0);
+    if (net > 0) {
+      await supabase.from("revenue_events").insert({
+        org_id: ctx.orgId,
+        offering_id: (enr.offering_id as string | null) ?? null,
+        category: "boys_program",
+        description: "Boys program tuition",
+        amount_cents: net,
+        status: "collected",
+        source: "manual",
+        entered_by: ctx.userId,
+      });
+    }
+  }
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }

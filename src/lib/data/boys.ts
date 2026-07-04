@@ -174,6 +174,19 @@ export type FormAck = {
   signed_name: string | null;
   acknowledged_at: string;
 };
+export type EnrollmentStatus = "interested" | "waitlisted" | "offered" | "enrolled" | "withdrawn";
+export type Enrollment = {
+  id: string;
+  participant_id: string;
+  guardian_id: string | null;
+  status: EnrollmentStatus;
+  offering_id: string | null;
+  tuition_cents: number | null;
+  scholarship_cents: number;
+  scholarship_reason: string | null;
+  notes: string | null;
+};
+export type BoysOffering = { id: string; name: string; price_cents: number | null };
 
 export type ProgramDetail = {
   program: Program;
@@ -191,6 +204,8 @@ export type ProgramDetail = {
   emergency: EmergencyContact[];
   forms: FormDef[];
   acks: FormAck[];
+  enrollments: Enrollment[];
+  offerings: BoysOffering[];
 };
 
 // A full program for the detail surface: cohorts, roster, sessions, the badge
@@ -204,7 +219,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     .maybeSingle();
   if (!program) return null;
 
-  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }, { data: expCatalog }, { data: formRows }] =
+  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }, { data: expCatalog }, { data: formRows }, { data: enrollRows }, { data: offeringRows }] =
     await Promise.all([
       supabase.from("program_groups").select("id, name, color").eq("program_id", id).order("created_at"),
       supabase
@@ -228,6 +243,16 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
         .from("forms")
         .select("id, kind, title, body, version, is_required, is_active")
         .order("kind"),
+      supabase
+        .from("enrollments")
+        .select("id, participant_id, guardian_id, status, offering_id, tuition_cents, scholarship_cents, scholarship_reason, notes")
+        .eq("program_id", id),
+      supabase
+        .from("offerings")
+        .select("id, name, price_cents")
+        .eq("kind", "boys_program")
+        .eq("is_active", true)
+        .order("sort_order"),
     ]);
 
   const participantIds = (participants ?? []).map((p) => p.id as string);
@@ -343,5 +368,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     emergency: (emergency ?? []) as EmergencyContact[],
     forms: (formRows ?? []) as FormDef[],
     acks: (acks ?? []) as FormAck[],
+    enrollments: (enrollRows ?? []) as Enrollment[],
+    offerings: (offeringRows ?? []) as BoysOffering[],
   };
 }
