@@ -19,13 +19,21 @@ const STATUS_STYLE: Record<string, string> = {
 
 // The parent's read-only view of their kids in the boys program. Warm, simple,
 // no controls: the schedule, how the week went, and the badges they earned.
-export function FamilyView({ children, firstName }: { children: FamilyChild[]; firstName?: string }) {
+export function FamilyView({
+  children,
+  firstName,
+  orgName = "Wild Wanderers",
+}: {
+  children: FamilyChild[];
+  firstName?: string;
+  orgName?: string;
+}) {
   return (
     <div className="flex flex-col gap-6">
       <section className="relative overflow-hidden rounded-2xl bg-chrome shadow-[var(--shadow-card)]">
         <Ridgeline className="absolute inset-x-0 bottom-0 h-20 w-full" />
         <div className="relative z-10 px-6 pb-10 pt-7">
-          <p className="eyebrow text-[10px] text-bone/60">Wild Wanderers</p>
+          <p className="eyebrow text-[10px] text-bone/60">{orgName}</p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-[26px] leading-tight text-bone">
             {firstName ? `Hi ${firstName}.` : "Your family."}
           </h1>

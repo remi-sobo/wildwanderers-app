@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays, CalendarClock, ChevronRight } from "lucide-react";
 import { getMyTraining, currentWorkoutIndex } from "@/lib/data/training";
 import { getMyNextSession } from "@/lib/data/sessions";
+import { getMyOrg } from "@/lib/data/org";
 import { Ridgeline } from "@/components/brand/Ridgeline";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -16,9 +17,10 @@ function formatWhen(iso: string): string {
 }
 
 export default async function ClientHomePage() {
-  const [{ client, plan, completedIds }, nextSession] = await Promise.all([
+  const [{ client, plan, completedIds }, nextSession, org] = await Promise.all([
     getMyTraining(),
     getMyNextSession(),
+    getMyOrg(),
   ]);
 
   const firstName = client?.first_name?.trim();
@@ -33,7 +35,7 @@ export default async function ClientHomePage() {
       <section className="relative overflow-hidden rounded-2xl bg-chrome shadow-[var(--shadow-card)]">
         <Ridgeline className="absolute inset-x-0 bottom-0 h-20 w-full" />
         <div className="relative z-10 px-6 pb-10 pt-7">
-          <p className="eyebrow text-[10px] text-bone/60">Wild Wanderers</p>
+          <p className="eyebrow text-[10px] text-bone/60">{org?.name ?? "Wild Wanderers"}</p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-[26px] leading-tight text-bone">
             {firstName ? `Good to see you, ${firstName}.` : "Good to see you."}
           </h1>
@@ -79,8 +81,8 @@ export default async function ClientHomePage() {
         </Link>
       ) : (
         <EmptyState icon={CalendarDays} title="Your day starts here.">
-          Once Gabe sets up your plan, today&apos;s workout and your next session
-          show up on this screen. Nothing to do yet, and that is fine.
+          Once your coach sets up your plan, today&apos;s workout and your next
+          session show up on this screen. Nothing to do yet, and that is fine.
         </EmptyState>
       )}
     </div>
