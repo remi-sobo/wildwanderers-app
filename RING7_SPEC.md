@@ -176,9 +176,25 @@ lands.
    or mentor-training surface shows them, take the same answers as the site spec.
    Not re-litigated here.
 
+## Decisions locked (2026-07-04)
+1. **The warmer word** — "Request a spot" is the action that starts an enrollment.
+   The status enum stays neutral (`interested`) so the label can still change.
+2. **Mentor onboarding** — split into its own Ring 8, not built here.
+3. **The family model** — a `guardians` entity owns the kids, with the login link
+   moved from participants and the Ring 5 parent fields backfilled.
+4. **Tuition and scholarships** — an enrollment ties to a Ring 4 boys_program
+   offering; enrolling posts one owner-only revenue event, scholarship a discount.
+5. **Family view of earned experiences** — held; the family view shows the journal
+   and check-ins now, not the Ring 6 earned experiences.
+
 ## Build status
-Spec only. Not yet built. Awaiting the decisions above, chiefly the warmer word
-and the mentor-onboarding split, then the migration lands first as commit 1. Per
-the craft-pass loop, the family intake and the adventure view get a just-in-time
-design pass against the best youth-program and family-onboarding tools before
-their UI lands.
+Built in six commits on `claude/ww-assessment-z1hbai`: the schema and RLS (7.1),
+family-first intake (7.2), forms and the waiver gate (7.3), the enrollment path
+(7.4), the adventure log and extended family view (7.5), and this final pass (7.6).
+The migration is applied and verified on the live project: a parent sees only
+their own kid's records and only the family-visible adventure entries, a client
+sees none of the per-kid data, and the six forms seed. Build and type check green.
+No fabricated families; the only seed is the form catalog as clearly-labeled
+placeholders. Mentor onboarding is Ring 8. A follow-up: audit privileged reads of
+medical data to the sealed ledger, as the wellness data already is; RLS is the
+protection today and is verified.
