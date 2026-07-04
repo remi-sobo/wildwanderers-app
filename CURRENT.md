@@ -4,7 +4,18 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 6 built. Ring 6 is the Assessment and Longevity system: one
+Rings 0 through 7 built. Ring 7 completes the boys program the way a family joins
+one: a guardians family model that owns the kids (with medical, emergency
+contacts, and pickup authorization), versioned forms with a waiver that gates a
+session, a warmer enrollment path (request a spot, waitlist, offer, enroll) tied
+to the Ring 4 boys_program offering and one owner-only revenue event, and an
+adventure log (nature journal, check-ins, private mentor notes) surfaced to the
+family read-only alongside forms still to sign. Private mentor notes never cross
+to the family. Parent-own-child and client isolation verified on the live DB.
+Mentor onboarding is split to Ring 8. No fabricated families; only the form
+catalog is seeded, as placeholders Gabe replaces before any family signs.
+
+Ring 6 is the Assessment and Longevity system: one
 shared engine (an assessments catalog and assessment_results) expressed two ways.
 Adults get a longevity profile on Progress and on each client's Fitness page, the
 seven pillars with each test's latest band and its trend, beside the daily
@@ -104,6 +115,11 @@ profile, goal, and a coaching group.
   the same movements as earned experiences for the boys, human three-band scoring
   via a trigger, a staff catalog editor, opt-in body composition, the not-medical
   guardrail throughout. Built and verified on the live DB. See RING6_SPEC.md.
+- Ring 7: the boys-program completions. A guardians family model, medical and
+  emergency contacts, versioned forms with a waiver gate, the enrollment path tied
+  to the Ring 4 offerings, and the adventure log with the extended family view.
+  Built and verified on the live DB. Mentor onboarding split to Ring 8. See
+  RING7_SPEC.md.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -112,26 +128,28 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
-- Ring 7 (the boys-program completions) spec is drafted in RING7_SPEC.md, awaiting
-  decisions before build: the warmer word for "apply," the mentor-onboarding split
-  into its own Ring 8, the guardians family model, and the Ring 4 tuition linkage.
-  Covers family-first intake, forms and waivers, the enrollment path, and the
-  adventure log with the extended family view. Forms jump the line if a real
-  family needs a waiver before a session.
-- Mentor onboarding is proposed as its own Ring 8 (mentor profile, certifications,
-  background check, first aid, availability, training track, and the brotherhood
-  layer), to keep Ring 7 reviewable.
+- Ring 8 (mentor onboarding) is next: mentor profile, certifications, background
+  check status, first aid, availability, the training track (philosophy, safety,
+  child development, emotional intelligence, outdoor skills, leadership), and the
+  brotherhood layer (book club, accountability, service, retreats) as simple
+  records. Split out of Ring 7 to keep it reviewable. Not yet spec'd.
+- Follow-up: audit privileged reads of medical data to the sealed ledger, as the
+  wellness data already is. RLS is the protection today and is verified.
 - PWA install shell (manifest, service worker, icons), a later pass.
 - Vercel env vars: ANTHROPIC_API_KEY (Coach), DEEPGRAM_API_KEY (voice check-ins),
   FDC_API_KEY (food search), SUPABASE_SERVICE_ROLE_KEY (audit writes, voice
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
-- 2026-07-04 Ring 7 spec drafted (RING7_SPEC.md): the boys-program completions,
-  family-first intake, versioned forms with a waiver gate, the warmer enrollment
-  path tied to the Ring 4 offerings, and the adventure log with the extended
-  family view. Forked onto the Ring 5 boys schema. Mentor onboarding proposed as a
-  separate Ring 8. Spec only, awaiting decisions.
+- 2026-07-04 Ring 7 built (six commits): the family, forms, enrollment, and
+  adventure schema with RLS (7.1), family-first intake (7.2), forms and the waiver
+  gate (7.3), the enrollment path tied to Ring 4 (7.4), the adventure log and
+  extended family view (7.5), and the final pass (7.6). Parent-own-child isolation,
+  the private-mentor-note filter, and client isolation verified on the live DB. No
+  fabricated families; only the form catalog is seeded, as placeholders. Mentor
+  onboarding split to Ring 8.
+- 2026-07-04 Ring 7 spec drafted (RING7_SPEC.md), then confirmed and built the
+  same day.
 - 2026-07-04 Ring 6 built (five commits): the assessment schema + RLS + band
   trigger + seeded catalog and animal movements (6.1), the client longevity
   profile (6.2), the coach panel and catalog editor (6.3), the boys' earned
