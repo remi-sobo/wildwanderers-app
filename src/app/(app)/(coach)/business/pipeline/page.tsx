@@ -1,10 +1,7 @@
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Wrench } from "lucide-react";
+import { getLeads, getCustomers } from "@/lib/data/business";
+import { PipelineBoard } from "@/components/coach/PipelineBoard";
 
-export default function PipelinePlaceholder() {
-  return (
-    <EmptyState icon={Wrench} title="Coming right up.">
-      This surface is being built in this ring.
-    </EmptyState>
-  );
+export default async function PipelinePage() {
+  const [leads, customers] = await Promise.all([getLeads(), getCustomers()]);
+  return <PipelineBoard leads={leads} customers={customers} />;
 }

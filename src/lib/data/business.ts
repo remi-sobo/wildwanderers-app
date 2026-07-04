@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatMoney } from "@/lib/business/format";
+
+export { formatMoney };
 
 export type GoalProgress = {
   id: string;
@@ -117,11 +120,72 @@ export async function getBusinessDashboard(): Promise<BusinessDashboard> {
   };
 }
 
-// Shared money formatter for the business surfaces.
-export function formatMoney(cents: number): string {
-  return (cents / 100).toLocaleString(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
+export type LeadStage =
+  | "new"
+  | "contacted"
+  | "engaged"
+  | "trial"
+  | "proposal"
+  | "won"
+  | "lost"
+  | "nurture";
+
+export type Lead = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  source: string;
+  interest: string | null;
+  estimated_value_cents: number | null;
+  stage: LeadStage;
+  next_action: string | null;
+  next_action_date: string | null;
+  notes: string | null;
+  customer_id: string | null;
+  last_activity_at: string | null;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  lifecycle_stage: "lead" | "active" | "paused" | "churned";
+  lifetime_value_cents: number;
+  notes: string | null;
+};
+
+// All leads for the owner, newest touch first, with the last-activity time
+// folded in for the board.
+export async function getLeads(): Promise<Lead[]> {
+  const supabase = await createClient();
+  const [{ data: leads }, { data: acts }] = await Promise.all([
+    supabase
+      .from("leads")
+      .select(
+        "id, name, email, phone, source, interest, estimated_value_cents, stage, next_action, next_action_date, notes, customer_id",
+      )
+      .order("updated_at", { ascending: false }),
+    supabase.from("lead_activities").select("lead_id, created_at"),
+  ]);
+  const lastByLead = new Map<string, string>();
+  for (const a of acts ?? []) {
+    const cur = lastByLead.get(a.lead_id as string);
+    if (!cur || (a.created_at as string) > cur) lastByLead.set(a.lead_id as string, a.created_at as string);
+  }
+  return (leads ?? []).map((l) => ({
+    ...(l as Omit<Lead, "last_activity_at">),
+    last_activity_at: lastByLead.get(l.id as string) ?? null,
+  }));
 }
+
+export async function getCustomers(): Promise<Customer[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name, email, phone, lifecycle_stage, lifetime_value_cents, notes")
+    .order("created_at", { ascending: false });
+  return (data as Customer[] | null) ?? [];
+}
+
