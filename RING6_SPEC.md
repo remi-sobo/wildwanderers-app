@@ -257,6 +257,22 @@ architecture, the schema, the guardrails, and the commit sequence above are the
 part to lock now; the screens get their just-in-time design pass against the best
 current assessment apps when we build them.
 
+## Decisions locked (2026-07-04)
+1. **The shared engine** — confirmed. One assessment model for boys and adults,
+   expressed two ways.
+2. **The adult section's name** — "Longevity" for now (working title, one string
+   to change if Gabe wants "Capacity" or another word).
+3. **Body composition** — off by default, opt-in through a separate consent, easy
+   to turn off.
+4. **Family view of earned experiences** — held for the boys-program completions
+   ring, to keep this ring tight.
+
 ## Build status
-Spec only. Not yet built. Awaiting the decisions above, chiefly the shared-engine
-confirmation, then the migration lands first as commit 1.
+Built in five commits on `claude/ww-assessment-z1hbai`: the schema, RLS, band
+trigger, and seeded catalog (6.1); the client longevity profile (6.2); the coach
+panel and catalog editor (6.3); the boys' earned experiences (6.4); and this final
+pass (6.5). The migration is applied and verified on the live project: bands
+compute in both directions, a client sees only their own results and is blocked
+from writing for another, participant results are staff-only, and the demo client
+carries a mid-journey profile. Build and type check green. No fabricated results;
+the only seeds are the catalog, the animal movements, and the demo client.
