@@ -257,3 +257,42 @@ begin
   perform public.snapshot_wellness_score(demo_c);
   perform set_config('request.jwt.claims', '', true);
 end $$;
+
+-- ── Ring 6: a mid-journey longevity profile for the demo client ──
+-- A handful of assessment results across pillars, a baseline eight weeks
+-- back and a recent retest, most pillars improving. Bands are computed by
+-- the trigger. Scoped to the demo client only. Idempotent.
+do $$
+declare
+  ww uuid; demo_user uuid; demo_c uuid; gabe uuid;
+begin
+  select id into ww from public.organizations where slug = 'wild-wanderers-fitness';
+  select id into demo_user from auth.users where email = 'demo.client@wildwanderers.life';
+  select id into gabe from auth.users where email = 'brewha07@gmail.com';
+  select c.id into demo_c from public.clients c where c.user_id = demo_user;
+  if demo_c is null then return; end if;
+
+  delete from public.assessment_results where client_id = demo_c;
+
+  insert into public.assessment_results
+    (org_id, assessment_id, subject, client_id, value, source, recorded_by, taken_on)
+  select ww, a.id, 'client', demo_c, v.val, v.src::result_source, gabe,
+         (now() - (v.wks || ' weeks')::interval)::date
+  from (values
+    ('single_leg_balance', 12,   8, 'coach_observed'),
+    ('single_leg_balance', 22,   0, 'coach_observed'),
+    ('push_ups',           14,   8, 'self_reported'),
+    ('push_ups',           23,   0, 'self_reported'),
+    ('dead_hang',          25,   8, 'coach_observed'),
+    ('dead_hang',          42,   0, 'coach_observed'),
+    ('cooper_12min',       1750, 8, 'self_reported'),
+    ('cooper_12min',       2050, 0, 'self_reported'),
+    ('farmers_carry',      35,   8, 'coach_observed'),
+    ('farmers_carry',      55,   0, 'coach_observed'),
+    ('resting_hr',         68,   8, 'device_estimate'),
+    ('resting_hr',         61,   0, 'device_estimate'),
+    ('sleep',              6.5,  8, 'self_reported'),
+    ('sleep',              7.5,  0, 'self_reported')
+  ) as v(slug, val, wks, src)
+  join public.assessments a on a.slug = v.slug and a.org_id = ww;
+end $$;
