@@ -224,6 +224,30 @@ export type FinanceData = {
   expensesMtdCents: number;
 };
 
+export type BusinessTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  priority: "urgent" | "high" | "medium" | "low";
+  due_date: string | null;
+  pin_today: boolean;
+  status: "open" | "in_progress" | "done" | "cancelled";
+};
+
+// Open and recently-done tasks for the owner, pinned first.
+export async function getTasks(): Promise<BusinessTask[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("business_tasks")
+    .select("id, title, description, category, priority, due_date, pin_today, status")
+    .neq("status", "cancelled")
+    .order("pin_today", { ascending: false })
+    .order("status", { ascending: true })
+    .order("due_date", { ascending: true, nullsFirst: false });
+  return (data as BusinessTask[] | null) ?? [];
+}
+
 export async function getOfferings(): Promise<Offering[]> {
   const supabase = await createClient();
   const { data } = await supabase

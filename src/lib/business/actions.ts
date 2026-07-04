@@ -107,6 +107,101 @@ export async function logLeadActivity(
   return { error: null };
 }
 
+export type TaskInput = {
+  title: string;
+  category?: string;
+  priority?: string;
+  due_date?: string;
+  pin_today?: boolean;
+};
+
+export async function addTask(input: TaskInput): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.title.trim()) return { error: "A title is needed." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_tasks").insert({
+    org_id: ctx.orgId,
+    title: input.title.trim(),
+    category: input.category || "other",
+    priority: input.priority || "medium",
+    due_date: input.due_date || null,
+    pin_today: Boolean(input.pin_today),
+    created_by: ctx.userId,
+  });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/tasks");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+export async function setTaskDone(taskId: string, done: boolean): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("business_tasks")
+    .update({ status: done ? "done" : "open", completed_at: done ? new Date().toISOString() : null })
+    .eq("id", taskId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/tasks");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+export async function toggleTaskPin(taskId: string, pin: boolean): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_tasks").update({ pin_today: pin }).eq("id", taskId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/tasks");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+export type GoalInput = {
+  name: string;
+  metric: string;
+  target_value: string;
+  period: string;
+};
+
+export async function addGoal(input: GoalInput): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.name.trim()) return { error: "A name is needed." };
+  const target = Number(input.target_value.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(target) || target <= 0) return { error: "Set a target above zero." };
+  if (!/^\d{4}(-\d{2})?$/.test(input.period)) return { error: "Period looks like 2026-07 or 2026." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_goals").insert({
+    org_id: ctx.orgId,
+    name: input.name.trim(),
+    metric: input.metric,
+    target_value: target,
+    period: input.period,
+    set_by: ctx.userId,
+  });
+  if (error) return { error: "That did not save. A goal for that metric and period may already exist." };
+  revalidatePath("/business/tasks");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+export async function deleteGoal(goalId: string): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_goals").delete().eq("id", goalId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/tasks");
+  revalidatePath("/business");
+  return { error: null };
+}
+
 export type RevenueInput = {
   amount: string;
   category: string;
