@@ -4,7 +4,23 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 5 complete. Rings 0 through 4 are on main; Ring 5 is built and
+Rings 0 through 6 built. Ring 6 is the Assessment and Longevity system: one
+shared engine (an assessments catalog and assessment_results) expressed two ways.
+Adults get a longevity profile on Progress and on each client's Fitness page, the
+seven pillars with each test's latest band and its trend, beside the daily
+wellness ring, never merged into it. Boys get the same movements as earned
+experiences on the program, the animal-named versions (Tree climber, Heron
+balance, Redwood endurance), recorded quietly and surfaced as encouragement,
+never a test to fail. A before-insert trigger stamps the human band (healthy,
+improving, needs attention) from the catalog's own editable thresholds, so a
+client can never set their own. Body fat and progress photos are opt-in, private,
+and off by default. Strict RLS from the first migration, verified on the live DB.
+Gabe tunes the tests and bands in a staff catalog editor. No fabricated results;
+the only seeds are the catalog, the animal movements, and the demo client's
+mid-journey profile. Next up: the boys-program completions (family-first
+onboarding, forms and waivers, enrollment, the adventure log, mentor onboarding).
+
+Rings 0 through 4 are on main; Ring 5 is built and
 verified on the branch, ready to merge. Ring 5 is the boys program (Dads &
 Kids), run the way a nonprofit runs an after-school program, minus impact,
 evaluation, and fundraising: staff create programs and cohorts, build the roster
@@ -83,6 +99,11 @@ profile, goal, and a coaching group.
   cohorts, roster, schedule, attendance, badges, the family-facing parent view,
   and the white-label settings plus coach invite. Done, on the branch. No
   evaluation or fundraising, by design.
+- Ring 6: the Assessment and Longevity system. One shared engine (assessments +
+  assessment_results), a longevity profile for adults beside the wellness ring,
+  the same movements as earned experiences for the boys, human three-band scoring
+  via a trigger, a staff catalog editor, opt-in body composition, the not-medical
+  guardrail throughout. Built and verified on the live DB. See RING6_SPEC.md.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -91,22 +112,29 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
-- Ring 6 (Assessment and Longevity) spec is drafted in RING6_SPEC.md, awaiting
-  decisions before build, chiefly the shared-engine confirmation. The
-  boys-program completions (forms, family-first onboarding, enrollment, adventure
-  log, mentor onboarding) follow as the next ring after it.
+- The boys-program completions are the next ring: family-first onboarding, the
+  forms (waiver, medical, photo release, pickup, code of conduct, parent
+  agreement), the warmer-worded enrollment pipeline tied to the Ring 4 offerings,
+  the student adventure log, and mentor onboarding. Forms jump the line if a real
+  family needs a waiver before a session.
+- The family read-only view of a boy's earned experiences is deferred to that
+  ring (Ring 6 decision 4).
 - PWA install shell (manifest, service worker, icons), a later pass.
 - Vercel env vars: ANTHROPIC_API_KEY (Coach), DEEPGRAM_API_KEY (voice check-ins),
   FDC_API_KEY (food search), SUPABASE_SERVICE_ROLE_KEY (audit writes, voice
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-04 Ring 6 built (five commits): the assessment schema + RLS + band
+  trigger + seeded catalog and animal movements (6.1), the client longevity
+  profile (6.2), the coach panel and catalog editor (6.3), the boys' earned
+  experiences (6.4), and the final pass (6.5). Band computation, client and
+  cross-client isolation, the write block, and the participant path all verified
+  on the live DB. No fabricated results; catalog, animal movements, and the demo
+  client's profile are the only seeds.
 - 2026-07-04 Ring 6 spec drafted (RING6_SPEC.md): the Assessment and Longevity
-  system, one shared engine (assessments + assessment_results) expressed two
-  ways, a longevity profile for adults beside the wellness ring and earned
-  experiences for the boys. Human three-band scoring, the not-medical guardrail
-  with teeth, RLS from the first migration, forked onto the built schema. Spec
-  only, not built; awaiting the shared-engine confirmation.
+  system, one shared engine expressed two ways, then confirmed and built the same
+  day.
 - 2026-07-04 Ring 5 built (six commits): boys program schema + staff/parent RLS
   + badge seed, the Dads & Kids shell and programs list, the program detail
   (roster, schedule, attendance, badges), the family-facing parent view, the
