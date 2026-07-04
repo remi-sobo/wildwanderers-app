@@ -153,6 +153,37 @@ export async function callCoachText(opts: {
   return retryText;
 }
 
+// A raw Coach reply that is NOT voice-swept. Used by the "Report an issue"
+// intake, where the synthesized artifact is an engineering brief (a technical
+// document), not client-facing prose, so the voice sweep would wrongly rewrite
+// it. Still gated by config and budget, and still logged to the ai_calls ledger.
+export async function callCoachRaw(opts: {
+  task: string;
+  model: string;
+  system: string;
+  messages: Msg[];
+  maxTokens?: number;
+  context: CoachContext;
+}): Promise<string> {
+  await gate();
+  const anthropic = client();
+  const res = await anthropic.messages.create({
+    model: opts.model,
+    max_tokens: opts.maxTokens ?? 1500,
+    system: opts.system,
+    messages: opts.messages,
+  });
+  await logCall({
+    task: opts.task,
+    model: opts.model,
+    inputTokens: res.usage.input_tokens,
+    outputTokens: res.usage.output_tokens,
+    actorId: opts.context.actorId,
+    orgId: opts.context.orgId,
+  });
+  return textOf(res);
+}
+
 // A structured Coach reply (a workout draft). Forced tool use guarantees the
 // model returns the schema as validated JSON rather than prose we parse.
 // Thinking is off because the API does not allow it with a forced tool choice.
