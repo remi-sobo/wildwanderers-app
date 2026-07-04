@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  Backpack,
   Briefcase,
   ClipboardList,
   Dumbbell,
@@ -34,6 +35,7 @@ function coachSections(role: Role): NavSection[] {
   const surface: NavItem[] = [
     { href: "/program", label: "Program", icon: ClipboardList, hint: "Clients and training" },
     { href: "/fitness", label: "Fitness", icon: Activity, hint: "Wellness and tracking" },
+    { href: "/boys", label: "Dads & Kids", icon: Backpack, hint: "The boys program" },
   ];
   if (role === "owner") {
     surface.push({ href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" });
