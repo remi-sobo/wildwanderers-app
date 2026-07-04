@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSessionProfile, type Profile } from "./get-profile";
 
-// Guards the client shell. A client passes; owner and coach are sent to the
-// coach shell; anyone without a session or profile goes back to login.
-export async function requireClient(): Promise<{
+// Guards the family view. Only a parent passes; staff go to their program,
+// a client to their home, anyone signed out to login.
+export async function requireParent(): Promise<{
   userId: string;
   email: string | null;
   profile: Profile;
@@ -12,8 +12,8 @@ export async function requireClient(): Promise<{
   if (!session || !session.profile) redirect("/login");
 
   const { profile } = session;
-  if (profile.role === "owner" || profile.role === "coach") redirect("/program");
-  if (profile.role === "parent") redirect("/family");
-
+  if (profile.role !== "parent") {
+    redirect(profile.role === "owner" || profile.role === "coach" ? "/program" : "/home");
+  }
   return { userId: session.userId, email: session.email, profile };
 }

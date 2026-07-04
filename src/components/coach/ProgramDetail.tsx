@@ -11,6 +11,7 @@ import {
   addSession,
   markAttendance,
   awardBadge,
+  inviteParent,
   type ParticipantInput,
   type SessionInput,
 } from "@/lib/boys/actions";
@@ -31,6 +32,29 @@ function whenLabel(iso: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function InviteFamily({ programId, participantId }: { programId: string; participantId: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
+  function invite() {
+    setErr(null);
+    start(async () => {
+      const res = await inviteParent(programId, participantId);
+      if (res.error) setErr(res.error);
+      else router.refresh();
+    });
+  }
+  return (
+    <span className="flex items-center gap-2">
+      <button type="button" onClick={invite} disabled={pending}
+        className="rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60">
+        {pending ? "Inviting" : "Invite family"}
+      </button>
+      {err ? <span className="max-w-[220px] text-[11.5px] text-[color:var(--color-state-error)]">{err}</span> : null}
+    </span>
+  );
 }
 
 // ── Roster ──────────────────────────────────────────────────
@@ -151,6 +175,9 @@ function RosterTab({ detail }: { detail: Detail }) {
                         </p>
                       ) : null}
                     </div>
+                    {!kid.parent_user_id && kid.parent_email ? (
+                      <InviteFamily programId={detail.program.id} participantId={kid.id} />
+                    ) : null}
                     <select value={kid.group_id ?? ""} onChange={(e) => move(kid.id, e.target.value)}
                       className="h-9 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[13px] text-ink">
                       <option value="">No cohort</option>
