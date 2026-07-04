@@ -265,3 +265,157 @@ export async function recordExperience(
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }
+
+// ── Ring 7: family-first intake ──
+
+export type GuardianInput = { first_name: string; last_name: string; email?: string; phone?: string };
+
+// Add a family (guardian). Kids are added under it, family first.
+export async function addGuardian(programId: string, input: GuardianInput): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.first_name.trim() || !input.last_name.trim()) return { error: "A family contact needs a name." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guardians")
+    .insert({
+      org_id: ctx.orgId,
+      first_name: input.first_name.trim(),
+      last_name: input.last_name.trim(),
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null, id: data.id as string };
+}
+
+export type KidInput = {
+  first_name: string;
+  last_name: string;
+  grade?: string;
+  group_id?: string;
+  guardian_id: string;
+};
+
+// Add a kid under an existing family, linking the two. Copies the guardian's
+// contact onto the participant for Ring 5 back-compat.
+export async function addKidToFamily(programId: string, input: KidInput): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.first_name.trim() || !input.last_name.trim()) return { error: "A first and last name are needed." };
+  if (!input.guardian_id) return { error: "Pick a family first." };
+  const grade = input.grade ? Number(input.grade) : null;
+  if (grade !== null && (!Number.isInteger(grade) || grade < 1 || grade > 12)) return { error: "Grade is 1 to 12." };
+
+  const supabase = await createClient();
+  const { data: g } = await supabase
+    .from("guardians")
+    .select("first_name, last_name, email, phone, user_id")
+    .eq("id", input.guardian_id)
+    .single();
+
+  const { data: kid, error } = await supabase
+    .from("participants")
+    .insert({
+      org_id: ctx.orgId,
+      program_id: programId,
+      group_id: input.group_id || null,
+      first_name: input.first_name.trim(),
+      last_name: input.last_name.trim(),
+      grade,
+      parent_name: g ? `${g.first_name} ${g.last_name}`.trim() : null,
+      parent_email: g?.email ?? null,
+      parent_phone: g?.phone ?? null,
+      parent_user_id: g?.user_id ?? null,
+    })
+    .select("id")
+    .single();
+  if (error || !kid) return { error: "That did not save. Try again." };
+
+  const { error: linkErr } = await supabase.from("participant_guardians").insert({
+    org_id: ctx.orgId,
+    participant_id: kid.id,
+    guardian_id: input.guardian_id,
+    relationship: "parent",
+    is_primary: true,
+    can_pickup: true,
+  });
+  if (linkErr) return { error: "The kid was added, but linking the family failed. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null, id: kid.id as string };
+}
+
+export async function setPickup(programId: string, linkId: string, canPickup: boolean): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("participant_guardians")
+    .update({ can_pickup: canPickup })
+    .eq("id", linkId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+export type MedicalInput = {
+  allergies?: string;
+  conditions?: string;
+  medications?: string;
+  notes?: string;
+  doctor_name?: string;
+  doctor_phone?: string;
+  insurance_note?: string;
+};
+
+export async function upsertMedical(
+  programId: string,
+  participantId: string,
+  input: MedicalInput,
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("participant_medical").upsert(
+    {
+      org_id: ctx.orgId,
+      participant_id: participantId,
+      allergies: input.allergies?.trim() || null,
+      conditions: input.conditions?.trim() || null,
+      medications: input.medications?.trim() || null,
+      notes: input.notes?.trim() || null,
+      doctor_name: input.doctor_name?.trim() || null,
+      doctor_phone: input.doctor_phone?.trim() || null,
+      insurance_note: input.insurance_note?.trim() || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "participant_id" },
+  );
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+export async function addEmergencyContact(
+  programId: string,
+  participantId: string,
+  input: { name: string; relationship?: string; phone: string },
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.name.trim() || !input.phone.trim()) return { error: "A name and phone are needed." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("emergency_contacts").insert({
+    org_id: ctx.orgId,
+    participant_id: participantId,
+    name: input.name.trim(),
+    relationship: input.relationship?.trim() || null,
+    phone: input.phone.trim(),
+  });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
