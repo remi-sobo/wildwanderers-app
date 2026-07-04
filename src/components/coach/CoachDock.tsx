@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, X, ClipboardList, Dumbbell, Send } from "lucide-react";
+import { Sparkles, X, ClipboardList, Dumbbell, Send, Flag } from "lucide-react";
 import { summarizeClient, draftWorkoutPlan } from "@/lib/ai/coach-actions";
 import { COACH_DRAFT_KEY } from "@/components/coach/PlanBuilder";
+import { ReportIssueSheet } from "@/components/report/ReportIssueSheet";
 
 export type CoachClient = { id: string; name: string };
 
@@ -14,6 +15,9 @@ export type CoachClient = { id: string; name: string };
 export function CoachDock({ clients, configured }: { clients: CoachClient[]; configured: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [answer, setAnswer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +25,23 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
   const [ask, setAsk] = useState("");
   const [drafting, startDraft] = useTransition();
   const [draftError, setDraftError] = useState<string | null>(null);
+
+  // Outside tap and Escape close the FAB menu.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   function resetOutputs() {
     setAnswer(null);
@@ -60,15 +81,56 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
 
   return (
     <>
-      {/* FAB */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Open Coach"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber text-[#23170c] shadow-[0_12px_30px_rgba(120,68,16,0.34)] transition-transform hover:-translate-y-0.5 hover:bg-amber-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber md:bottom-8 md:right-8"
+      {/* FAB + its action menu */}
+      <div
+        ref={menuRef}
+        className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5 md:bottom-8 md:right-8"
       >
-        <Sparkles size={22} strokeWidth={1.9} aria-hidden="true" />
-      </button>
+        {menuOpen ? (
+          <div className="flex flex-col gap-1 rounded-2xl border border-[color:var(--border-hair)] bg-canvas p-1.5 shadow-[0_16px_44px_rgba(42,33,24,0.28)]">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-ink transition-colors hover:bg-amber/10"
+            >
+              <Sparkles size={16} className="text-forest" aria-hidden="true" />
+              Ask Coach
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setReportOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-ink transition-colors hover:bg-amber/10"
+            >
+              <Flag size={16} className="text-forest" aria-hidden="true" />
+              Report an issue
+            </button>
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="Quick actions"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-amber text-[#23170c] shadow-[0_12px_30px_rgba(120,68,16,0.34)] transition-transform hover:-translate-y-0.5 hover:bg-amber-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber"
+        >
+          <Sparkles
+            size={22}
+            strokeWidth={1.9}
+            aria-hidden="true"
+            className={`transition-transform ${menuOpen ? "rotate-45" : ""}`}
+          />
+        </button>
+      </div>
+
+      <ReportIssueSheet open={reportOpen} onClose={() => setReportOpen(false)} />
 
       {/* Drawer */}
       {open ? (
