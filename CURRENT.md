@@ -4,8 +4,20 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 4 complete. Rings 0, 1, 2, and 3 are on main; Ring 4 is built
-and verified on the branch, ready to merge. Ring 4 is the business switch,
+Rings 0 through 5 complete. Rings 0 through 4 are on main; Ring 5 is built and
+verified on the branch, ready to merge. Ring 5 is the boys program (Dads &
+Kids), run the way a nonprofit runs an after-school program, minus impact,
+evaluation, and fundraising: staff create programs and cohorts, build the roster
+of kids and parents, schedule sessions, take attendance, and award a light
+motivational badge. Parents get their own read-only view of their own kids'
+schedule, attendance, and badges, behind an invite-and-login flow. The road to
+resale is folded in: the owner edits the org's white-label fields (name, logo,
+colors) and invites a second coach, and the shell now shows the org name.
+Everything is staff-only or parent-own-child, verified on the live DB (a client
+sees zero kid data; a parent sees only their own child). No fabricated kids;
+only the badge catalog is seeded.
+
+Ring 4 is the business switch,
 Gabe's owner-only back office: a command dashboard (active clients, revenue this
 month, open pipeline, follow-ups due, goals with live progress), a light CRM and
 pipeline (add a lead, move it through stages, convert to a customer), finance
@@ -67,7 +79,10 @@ profile, goal, and a coaching group.
   offerings, revenue and expenses (manual now, Stripe reserved), tasks with
   pin-for-today, and goals. Done, on the branch. Deferred: the Stripe webhook
   ingest, the public website-inquiry lead capture, payroll and commissions.
-- Ring 5: the boys program management and the road to resale. Not started.
+- Ring 5: the boys program (Dads & Kids) and the road to resale. Programs,
+  cohorts, roster, schedule, attendance, badges, the family-facing parent view,
+  and the white-label settings plus coach invite. Done, on the branch. No
+  evaluation or fundraising, by design.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -82,6 +97,11 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-04 Ring 5 built (six commits): boys program schema + staff/parent RLS
+  + badge seed, the Dads & Kids shell and programs list, the program detail
+  (roster, schedule, attendance, badges), the family-facing parent view, the
+  white-label settings and coach invite, final pass. Staff, write-path, and
+  parent isolation verified on the live DB. No fabricated kids.
 - 2026-07-04 Ring 4 built (six commits): business schema + owner-only RLS +
   offerings seed, the owner-guarded business shell and command dashboard, the
   pipeline and CRM, finance, tasks and goals, final pass. Owner-only isolation
