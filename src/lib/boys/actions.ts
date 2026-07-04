@@ -605,3 +605,37 @@ export async function setEnrollmentStatus(
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }
+
+// ── Ring 7: the adventure log ──
+
+export type AdventureInput = {
+  kind: "journal" | "check_in" | "mentor_note";
+  title?: string;
+  body: string;
+  visibleToFamily?: boolean;
+};
+
+// Add an adventure entry for a kid. Journal and check-in default visible to the
+// family; a mentor note is private to staff (never crosses to the family).
+export async function addAdventureEntry(
+  programId: string,
+  participantId: string,
+  input: AdventureInput,
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.body.trim()) return { error: "Write something first." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("adventure_entries").insert({
+    org_id: ctx.orgId,
+    participant_id: participantId,
+    kind: input.kind,
+    title: input.title?.trim() || null,
+    body: input.body.trim(),
+    author_id: ctx.userId,
+    visible_to_family: input.kind === "mentor_note" ? (input.visibleToFamily ?? false) : (input.visibleToFamily ?? true),
+  });
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
