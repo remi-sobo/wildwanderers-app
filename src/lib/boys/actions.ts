@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 
 export type BoysResult = { error: string | null; id?: string };
@@ -151,6 +152,62 @@ export async function markAttendance(
     { onConflict: "session_id,participant_id" },
   );
   if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+// Invite a participant's parent to the family view. Creates a parent login,
+// attaches it to the org, and links it to the kid so the parent reads only
+// their own child's schedule, attendance, and badges. Needs the server key;
+// without it the roster still works, just no family login.
+export async function inviteParent(programId: string, participantId: string): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+
+  const supabase = await createClient();
+  const { data: kid } = await supabase
+    .from("participants")
+    .select("id, parent_email, parent_name, parent_user_id")
+    .eq("id", participantId)
+    .maybeSingle();
+  if (!kid) return { error: "That kid was not found." };
+  if (kid.parent_user_id) return { error: "This family already has a login." };
+  const email = (kid.parent_email as string | null)?.trim();
+  if (!email) return { error: "Add the parent's email first." };
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return { error: "Inviting a family login needs the server key. Add SUPABASE_SERVICE_ROLE_KEY in the deployment." };
+  }
+
+  const parts = ((kid.parent_name as string | null) ?? "").trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0] ?? "Parent";
+  const lastName = parts.slice(1).join(" ");
+
+  const { data: created, error: cErr } = await admin.auth.admin.createUser({
+    email,
+    password: crypto.randomUUID(),
+    email_confirm: true,
+    user_metadata: { first_name: firstName, last_name: lastName },
+  });
+  if (cErr || !created.user) {
+    return { error: "We could not create that login. The email may already be in use." };
+  }
+
+  // The signup trigger made a client profile; retarget it to parent in this org.
+  await admin
+    .from("profiles")
+    .update({ org_id: ctx.orgId, role: "parent", first_name: firstName, last_name: lastName })
+    .eq("id", created.user.id);
+
+  const { error: linkErr } = await supabase
+    .from("participants")
+    .update({ parent_user_id: created.user.id, updated_at: new Date().toISOString() })
+    .eq("id", participantId);
+  if (linkErr) return { error: "Login created, but linking the family failed. Try again." };
+
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }

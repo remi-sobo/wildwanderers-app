@@ -56,6 +56,15 @@ const CLIENT_SECTIONS: NavSection[] = [
   WORKSPACE,
 ];
 
+// A parent sees only their family view and settings.
+const PARENT_SECTIONS: NavSection[] = [
+  {
+    label: "Menu",
+    items: [{ href: "/family", label: "My family", icon: Backpack, hint: "The boys program" }],
+  },
+  { items: [{ href: "/settings", label: "Settings", icon: Settings }] },
+];
+
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "WW";
@@ -76,7 +85,11 @@ export function Sidebar({
   const pathname = usePathname();
   const current = activePath ?? pathname;
   const sections =
-    role === "owner" || role === "coach" ? coachSections(role) : CLIENT_SECTIONS;
+    role === "owner" || role === "coach"
+      ? coachSections(role)
+      : role === "parent"
+        ? PARENT_SECTIONS
+        : CLIENT_SECTIONS;
 
   return (
     <aside className="sticky top-0 z-20 flex h-dvh w-16 shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:w-[248px]">

@@ -41,8 +41,10 @@ export const getSessionProfile = cache(async (): Promise<SessionProfile | null> 
   };
 });
 
-// Where a role belongs. Owner and coach share the coach shell; everyone else
-// lands on the client home.
+// Where a role belongs. Owner and coach share the coach shell, a parent gets
+// the family view, everyone else lands on the client home.
 export function surfaceForRole(role: Role | undefined): string {
-  return role === "owner" || role === "coach" ? "/program" : "/home";
+  if (role === "owner" || role === "coach") return "/program";
+  if (role === "parent") return "/family";
+  return "/home";
 }

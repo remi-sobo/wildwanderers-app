@@ -13,6 +13,7 @@ export async function requireClient(): Promise<{
 
   const { profile } = session;
   if (profile.role === "owner" || profile.role === "coach") redirect("/program");
+  if (profile.role === "parent") redirect("/family");
 
   return { userId: session.userId, email: session.email, profile };
 }
