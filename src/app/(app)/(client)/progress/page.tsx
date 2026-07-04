@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { TrendingUp, LineChart, ListChecks } from "lucide-react";
-import { getMyProgress } from "@/lib/data/wellness";
+import { getMyProgress, getMyLongevity } from "@/lib/data/wellness";
 import { WellnessScoreCard } from "@/components/client/WellnessScoreCard";
 import { WeightChart } from "@/components/client/WeightChart";
+import { LongevityCard } from "@/components/client/LongevityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default async function ProgressPage() {
-  const { hasConsent, score, weightSeries, habits, hasAnyData } = await getMyProgress();
+  const [{ hasConsent, score, weightSeries, habits, hasAnyData }, longevity] =
+    await Promise.all([getMyProgress(), getMyLongevity()]);
 
   if (!hasConsent) {
     return (
@@ -31,6 +33,8 @@ export default async function ProgressPage() {
       </div>
 
       <WellnessScoreCard score={score} />
+
+      {longevity.totalCount > 0 ? <LongevityCard longevity={longevity} /> : null}
 
       {weightSeries.length > 0 ? (
         <section className="rounded-2xl border border-[color:var(--border-hair)] bg-card shadow-[var(--shadow-card)]">
