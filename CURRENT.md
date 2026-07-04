@@ -91,12 +91,22 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
+- Ring 6 (Assessment and Longevity) spec is drafted in RING6_SPEC.md, awaiting
+  decisions before build, chiefly the shared-engine confirmation. The
+  boys-program completions (forms, family-first onboarding, enrollment, adventure
+  log, mentor onboarding) follow as the next ring after it.
 - PWA install shell (manifest, service worker, icons), a later pass.
 - Vercel env vars: ANTHROPIC_API_KEY (Coach), DEEPGRAM_API_KEY (voice check-ins),
   FDC_API_KEY (food search), SUPABASE_SERVICE_ROLE_KEY (audit writes, voice
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-04 Ring 6 spec drafted (RING6_SPEC.md): the Assessment and Longevity
+  system, one shared engine (assessments + assessment_results) expressed two
+  ways, a longevity profile for adults beside the wellness ring and earned
+  experiences for the boys. Human three-band scoring, the not-medical guardrail
+  with teeth, RLS from the first migration, forked onto the built schema. Spec
+  only, not built; awaiting the shared-engine confirmation.
 - 2026-07-04 Ring 5 built (six commits): boys program schema + staff/parent RLS
   + badge seed, the Dads & Kids shell and programs list, the program detail
   (roster, schedule, attendance, badges), the family-facing parent view, the
