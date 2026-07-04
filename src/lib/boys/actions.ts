@@ -419,3 +419,75 @@ export async function addEmergencyContact(
   revalidatePath(`/boys/${programId}`);
   return { error: null };
 }
+
+// ── Ring 7: forms and the waiver gate ──
+
+export type FormPatch = { title?: string; body?: string; is_required?: boolean; is_active?: boolean };
+
+// Edit a form. A change to the body bumps the version, which clears every
+// kid's "signed" state for that form until they sign the new version.
+export async function updateForm(programId: string, formId: string, patch: FormPatch): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+
+  const { data: current } = await supabase
+    .from("forms")
+    .select("body, version")
+    .eq("id", formId)
+    .single();
+  if (!current) return { error: "That form was not found." };
+
+  const bodyChanged = patch.body !== undefined && (patch.body.trim() || null) !== current.body;
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (patch.title !== undefined) update.title = patch.title.trim() || null;
+  if (patch.body !== undefined) update.body = patch.body.trim() || null;
+  if (patch.is_required !== undefined) update.is_required = patch.is_required;
+  if (patch.is_active !== undefined) update.is_active = patch.is_active;
+  if (bodyChanged) update.version = (current.version as number) + 1;
+
+  const { error } = await supabase.from("forms").update(update).eq("id", formId).eq("org_id", ctx.orgId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}
+
+// Record that a family signed a form for a kid (on paper or in person). Signs
+// the form's current version; a later version bump re-prompts the family.
+export async function acknowledgeForm(
+  programId: string,
+  formId: string,
+  participantId: string,
+  signedName: string,
+): Promise<BoysResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!signedName.trim()) return { error: "Whose signature is this?" };
+  const supabase = await createClient();
+
+  const { data: form } = await supabase.from("forms").select("version").eq("id", formId).single();
+  if (!form) return { error: "That form was not found." };
+
+  const { data: link } = await supabase
+    .from("participant_guardians")
+    .select("guardian_id")
+    .eq("participant_id", participantId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const { error } = await supabase.from("form_acknowledgements").upsert(
+    {
+      org_id: ctx.orgId,
+      form_id: formId,
+      form_version: form.version as number,
+      participant_id: participantId,
+      guardian_id: link?.guardian_id ?? null,
+      acknowledged_by: ctx.userId,
+      signed_name: signedName.trim(),
+    },
+    { onConflict: "form_id,form_version,participant_id", ignoreDuplicates: true },
+  );
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath(`/boys/${programId}`);
+  return { error: null };
+}

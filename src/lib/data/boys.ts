@@ -150,6 +150,30 @@ export type EmergencyContact = {
   phone: string;
   is_primary: boolean;
 };
+export type FormKind =
+  | "waiver"
+  | "medical"
+  | "photo_release"
+  | "pickup"
+  | "code_of_conduct"
+  | "parent_agreement";
+export type FormDef = {
+  id: string;
+  kind: FormKind;
+  title: string;
+  body: string | null;
+  version: number;
+  is_required: boolean;
+  is_active: boolean;
+};
+export type FormAck = {
+  id: string;
+  form_id: string;
+  form_version: number;
+  participant_id: string;
+  signed_name: string | null;
+  acknowledged_at: string;
+};
 
 export type ProgramDetail = {
   program: Program;
@@ -165,6 +189,8 @@ export type ProgramDetail = {
   guardianLinks: GuardianLink[];
   medical: MedicalRecord[];
   emergency: EmergencyContact[];
+  forms: FormDef[];
+  acks: FormAck[];
 };
 
 // A full program for the detail surface: cohorts, roster, sessions, the badge
@@ -178,7 +204,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     .maybeSingle();
   if (!program) return null;
 
-  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }, { data: expCatalog }] =
+  const [{ data: groups }, { data: participants }, { data: sessions }, { data: badges }, { data: expCatalog }, { data: formRows }] =
     await Promise.all([
       supabase.from("program_groups").select("id, name, color").eq("program_id", id).order("created_at"),
       supabase
@@ -198,11 +224,15 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
         .eq("is_active", true)
         .not("boys_experience_name", "is", null)
         .order("boys_experience_name"),
+      supabase
+        .from("forms")
+        .select("id, kind, title, body, version, is_required, is_active")
+        .order("kind"),
     ]);
 
   const participantIds = (participants ?? []).map((p) => p.id as string);
   const emptyResult = Promise.resolve({ data: [] as unknown[] });
-  const [{ data: awards }, { data: attendance }, { data: results }, { data: links }, { data: medical }, { data: emergency }] =
+  const [{ data: awards }, { data: attendance }, { data: results }, { data: links }, { data: medical }, { data: emergency }, { data: acks }] =
     await Promise.all([
       participantIds.length
         ? supabase
@@ -236,6 +266,12 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
         ? supabase
             .from("emergency_contacts")
             .select("id, participant_id, name, relationship, phone, is_primary")
+            .in("participant_id", participantIds)
+        : emptyResult,
+      participantIds.length
+        ? supabase
+            .from("form_acknowledgements")
+            .select("id, form_id, form_version, participant_id, signed_name, acknowledged_at")
             .in("participant_id", participantIds)
         : emptyResult,
     ]);
@@ -305,5 +341,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     guardianLinks,
     medical: (medical ?? []) as MedicalRecord[],
     emergency: (emergency ?? []) as EmergencyContact[],
+    forms: (formRows ?? []) as FormDef[],
+    acks: (acks ?? []) as FormAck[],
   };
 }
