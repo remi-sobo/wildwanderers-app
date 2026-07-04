@@ -118,7 +118,7 @@ export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voice
 
         {sent ? (
           <span className="flex items-center gap-1 text-[13px] text-fern">
-            <Check size={15} /> Sent to Gabe
+            <Check size={15} /> Sent to your coach
           </span>
         ) : null}
       </div>
@@ -140,7 +140,7 @@ export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voice
                   })}
                 </span>
                 <span className="text-[11px] capitalize text-[color:var(--color-text-faint)]">
-                  {c.status === "reviewed" ? "Gabe reviewed" : "Sent"}
+                  {c.status === "reviewed" ? "Reviewed" : "Sent"}
                 </span>
               </div>
               {c.body ? (

@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { getMyOrg } from "@/lib/data/org";
+import { orgThemeStyle } from "@/lib/brand/theme";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TopBar } from "@/components/shell/TopBar";
 import { TrailTexture } from "@/components/brand/TrailTexture";
@@ -21,7 +22,10 @@ export default async function AppLayout({
     "Your workspace";
 
   return (
-    <div className="relative flex min-h-dvh bg-canvas">
+    <div
+      className="relative flex min-h-dvh bg-canvas"
+      style={orgThemeStyle(org?.primary_color ?? null, org?.secondary_color ?? null)}
+    >
       {/* Persistent brand scenery, bottom-right, behind the workspace cards. */}
       <TrailTexture className="pointer-events-none fixed bottom-0 right-0 z-0 h-auto w-[80vw] max-w-[1100px]" />
       <Sidebar
