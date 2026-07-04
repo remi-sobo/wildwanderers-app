@@ -86,14 +86,20 @@ Each commit: build green, one change at a time, staff-only RLS on every new tabl
 no client reaching program data, no fabricated kids and no evaluation, shown
 before it lands.
 
-## Decisions to confirm before build
-1. **Family-facing view** — defer the parents' and kids' read-only trail-log view
-   to a later pass (recommended, it needs parent invites and logins), or build a
-   light version this ring.
-2. **Badges** — include the light motivational badge award (recommended, it is in
-   the master spec and kid-facing), or skip it for now.
-3. **Who runs it** — owner and coach both manage the program (recommended, so a
-   second coach can help), or owner-only.
-4. **Resale and white-label** — focus this ring on the boys program and defer the
-   multi-coach resale polish and white-label settings to a 5b (recommended, it
-   matches your ask), or fold the white-label settings in now.
+## Decisions locked (2026-07-04)
+1. **Family-facing view** — built this ring. Parents get a read-only view of their
+   own kids' schedule, attendance, and badges, behind an invite-and-login flow.
+2. **Badges** — included. A light motivational award from a seeded catalog.
+3. **Who runs it** — owner and coach both manage the program.
+4. **Resale and white-label** — folded in. The owner edits the org's name, logo,
+   and brand colors, and invites a second coach, the first step toward resale.
+
+## Build status
+Shipped in six commits on `claude/ring-0-foundation-shell-r619dg`: the schema
+with staff and parent RLS and the badge seed, the Dads & Kids shell and programs
+list, the program detail (roster, schedule, attendance, badges), the
+family-facing view, the white-label settings and coach invite, and this final
+pass. Staff isolation, the full write path, and parent isolation (a parent sees
+only their own child) are all verified on the live project. No fabricated kids:
+the only seed is the badge catalog. Inviting a family or a coach needs the
+server key; the rest works regardless.
