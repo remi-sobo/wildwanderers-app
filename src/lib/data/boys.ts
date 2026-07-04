@@ -115,6 +115,42 @@ export type EarnedExperience = {
   taken_on: string;
 };
 
+// ── Ring 7: families, medical, emergency ──
+export type Guardian = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  user_id: string | null;
+};
+export type GuardianLink = {
+  id: string;
+  participant_id: string;
+  guardian_id: string;
+  relationship: string;
+  is_primary: boolean;
+  can_pickup: boolean;
+};
+export type MedicalRecord = {
+  participant_id: string;
+  allergies: string | null;
+  conditions: string | null;
+  medications: string | null;
+  notes: string | null;
+  doctor_name: string | null;
+  doctor_phone: string | null;
+  insurance_note: string | null;
+};
+export type EmergencyContact = {
+  id: string;
+  participant_id: string;
+  name: string;
+  relationship: string | null;
+  phone: string;
+  is_primary: boolean;
+};
+
 export type ProgramDetail = {
   program: Program;
   groups: ProgramGroup[];
@@ -125,6 +161,10 @@ export type ProgramDetail = {
   attendance: AttendanceRow[];
   experiences: Experience[];
   earned: EarnedExperience[];
+  guardians: Guardian[];
+  guardianLinks: GuardianLink[];
+  medical: MedicalRecord[];
+  emergency: EmergencyContact[];
 };
 
 // A full program for the detail surface: cohorts, roster, sessions, the badge
@@ -161,24 +201,53 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     ]);
 
   const participantIds = (participants ?? []).map((p) => p.id as string);
-  const [{ data: awards }, { data: attendance }, { data: results }] = await Promise.all([
-    participantIds.length
-      ? supabase
-          .from("participant_badges")
-          .select("id, participant_id, badge_id, note, awarded_at, program_badges(name, emoji)")
-          .in("participant_id", participantIds)
-          .order("awarded_at", { ascending: false })
-      : Promise.resolve({ data: [] as unknown[] }),
-    supabase.from("attendance").select("session_id, participant_id, status").eq("program_id", id),
-    participantIds.length
-      ? supabase
-          .from("assessment_results")
-          .select("id, participant_id, assessment_id, value, value_text, band, taken_on")
-          .eq("subject", "participant")
-          .in("participant_id", participantIds)
-          .order("taken_on", { ascending: false })
-      : Promise.resolve({ data: [] as unknown[] }),
-  ]);
+  const emptyResult = Promise.resolve({ data: [] as unknown[] });
+  const [{ data: awards }, { data: attendance }, { data: results }, { data: links }, { data: medical }, { data: emergency }] =
+    await Promise.all([
+      participantIds.length
+        ? supabase
+            .from("participant_badges")
+            .select("id, participant_id, badge_id, note, awarded_at, program_badges(name, emoji)")
+            .in("participant_id", participantIds)
+            .order("awarded_at", { ascending: false })
+        : emptyResult,
+      supabase.from("attendance").select("session_id, participant_id, status").eq("program_id", id),
+      participantIds.length
+        ? supabase
+            .from("assessment_results")
+            .select("id, participant_id, assessment_id, value, value_text, band, taken_on")
+            .eq("subject", "participant")
+            .in("participant_id", participantIds)
+            .order("taken_on", { ascending: false })
+        : emptyResult,
+      participantIds.length
+        ? supabase
+            .from("participant_guardians")
+            .select("id, participant_id, guardian_id, relationship, is_primary, can_pickup")
+            .in("participant_id", participantIds)
+        : emptyResult,
+      participantIds.length
+        ? supabase
+            .from("participant_medical")
+            .select("participant_id, allergies, conditions, medications, notes, doctor_name, doctor_phone, insurance_note")
+            .in("participant_id", participantIds)
+        : emptyResult,
+      participantIds.length
+        ? supabase
+            .from("emergency_contacts")
+            .select("id, participant_id, name, relationship, phone, is_primary")
+            .in("participant_id", participantIds)
+        : emptyResult,
+    ]);
+
+  const guardianLinks = (links ?? []) as GuardianLink[];
+  const guardianIds = [...new Set(guardianLinks.map((l) => l.guardian_id))];
+  const { data: guardianRows } = guardianIds.length
+    ? await supabase
+        .from("guardians")
+        .select("id, first_name, last_name, email, phone, user_id")
+        .in("id", guardianIds)
+    : { data: [] as unknown[] };
 
   const experiences: Experience[] = ((expCatalog ?? []) as Record<string, unknown>[]).map((a) => ({
     assessmentId: a.id as string,
@@ -232,5 +301,9 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     attendance: (attendance ?? []) as AttendanceRow[],
     experiences,
     earned,
+    guardians: (guardianRows ?? []) as Guardian[],
+    guardianLinks,
+    medical: (medical ?? []) as MedicalRecord[],
+    emergency: (emergency ?? []) as EmergencyContact[],
   };
 }

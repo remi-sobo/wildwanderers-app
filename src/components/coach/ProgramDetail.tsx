@@ -18,9 +18,10 @@ import {
 } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, Participant, ProgramGroup, EarnedExperience } from "@/lib/data/boys";
 import { BAND_DOT } from "@/components/longevity/LongevityBits";
+import { FamiliesTab } from "@/components/coach/FamiliesTab";
 
 const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
-const TABS = ["Roster", "Schedule", "Attendance", "Badges", "Experiences"] as const;
+const TABS = ["Families", "Roster", "Schedule", "Attendance", "Badges", "Experiences"] as const;
 type Tab = (typeof TABS)[number];
 
 function fullName(p: Participant) {
@@ -497,7 +498,7 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
 }
 
 export function ProgramDetail({ detail }: { detail: Detail }) {
-  const [tab, setTab] = useState<Tab>("Roster");
+  const [tab, setTab] = useState<Tab>("Families");
 
   return (
     <div className="flex flex-col gap-6">
@@ -528,6 +529,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
         ))}
       </div>
 
+      {tab === "Families" ? <FamiliesTab detail={detail} /> : null}
       {tab === "Roster" ? <RosterTab detail={detail} /> : null}
       {tab === "Schedule" ? <ScheduleTab detail={detail} /> : null}
       {tab === "Attendance" ? <AttendanceTab detail={detail} /> : null}
