@@ -83,7 +83,7 @@ export default async function LibraryPage() {
 
       {!coachConfigured() ? (
         <p className="px-1 text-[12.5px] text-[color:var(--color-text-faint)]">
-          Coach can draft a blurb in the composer once its key is set in the deployment.
+          Scout can draft a blurb in the composer once its key is set in the deployment.
           Everything else works now.
         </p>
       ) : null}

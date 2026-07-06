@@ -46,7 +46,7 @@ export type CoachResult = { text: string | null; error: string | null };
 // summarizing only, no medical or nutrition advice, brand voice. Named for the
 // coach and org that own the surface so a second org reads as its own, not Gabe's.
 function coachSystem(coach: string, org: string): string {
-  return `You are Coach, an assistant for ${coach}, a certified fitness trainer at ${org}. You help ${coach}, never the client directly.
+  return `You are Scout, an assistant for ${coach}, a certified fitness trainer at ${org}. You help ${coach}, never the client directly.
 
 Scope, strict:
 - You do programming, habits, and summarizing only.
@@ -81,7 +81,7 @@ export async function summarizeClient(clientId: string): Promise<CoachResult> {
     return { text: null, error: "You are signed out." };
   }
   if (!coachConfigured()) {
-    return { text: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+    return { text: null, error: "Scout is not set up yet. Add the API key to switch it on." };
   }
 
   const [client, plan, wellness, org] = await Promise.all([
@@ -163,7 +163,7 @@ Write ${coach} a short summary they can read in fifteen seconds: where the clien
     return { text, error: null };
   } catch (e) {
     if (isConfigError(e)) return { text: null, error: e.message };
-    return { text: null, error: "Coach could not answer just now. Try again." };
+    return { text: null, error: "Scout could not answer just now. Try again." };
   }
 }
 
@@ -183,7 +183,7 @@ export async function draftPostBlurb(input: {
     return { text: null, error: "You are signed out." };
   }
   if (!coachConfigured()) {
-    return { text: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+    return { text: null, error: "Scout is not set up yet. Add the API key to switch it on." };
   }
 
   const link = input.link?.trim();
@@ -231,7 +231,7 @@ Return just the sentence, nothing else.`;
     return { text: text.trim(), error: null };
   } catch (e) {
     if (isConfigError(e)) return { text: null, error: e.message };
-    return { text: null, error: "Coach could not draft that just now. Try again." };
+    return { text: null, error: "Scout could not draft that just now. Try again." };
   }
 }
 
@@ -300,7 +300,7 @@ export async function draftWorkoutPlan(clientId: string, ask: string): Promise<D
     return { draft: null, error: "You are signed out." };
   }
   if (!coachConfigured()) {
-    return { draft: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+    return { draft: null, error: "Scout is not set up yet. Add the API key to switch it on." };
   }
   if (!ask.trim()) return { draft: null, error: "Tell Coach what to draft." };
 
@@ -376,7 +376,7 @@ Draft the plan.`;
     return { draft, error: null };
   } catch (e) {
     if (isConfigError(e)) return { draft: null, error: e.message };
-    return { draft: null, error: "Coach could not draft that just now. Try again." };
+    return { draft: null, error: "Scout could not draft that just now. Try again." };
   }
 }
 
@@ -412,7 +412,7 @@ export async function structureCheckIn(checkInId: string): Promise<StructureResu
     return { structured: null, error: "You are signed out." };
   }
   if (!coachConfigured()) {
-    return { structured: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+    return { structured: null, error: "Scout is not set up yet. Add the API key to switch it on." };
   }
 
   const supabase = await createClient();
@@ -456,6 +456,6 @@ You are structuring a client's check-in into a fast read for ${coach}. Summarize
     return { structured, error: null };
   } catch (e) {
     if (isConfigError(e)) return { structured: null, error: e.message };
-    return { structured: null, error: "Coach could not structure that just now. Try again." };
+    return { structured: null, error: "Scout could not structure that just now. Try again." };
   }
 }

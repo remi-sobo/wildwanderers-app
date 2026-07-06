@@ -125,11 +125,11 @@ export function PostComposer({
         category,
       });
       if (res.error || !res.text) {
-        setBlurbNote(res.error ?? "Coach could not draft that.");
+        setBlurbNote(res.error ?? "Scout could not draft that.");
         return;
       }
       setBody(res.text);
-      setBlurbNote("Coach drafted a blurb. Edit it to sound like you before publishing.");
+      setBlurbNote("Scout drafted a blurb. Edit it to sound like you before publishing.");
     });
   }
 
@@ -206,7 +206,7 @@ export function PostComposer({
                 className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60"
               >
                 <Sparkles size={13} aria-hidden="true" />
-                {blurbing ? "Drafting" : "Draft a blurb with Coach"}
+                {blurbing ? "Drafting" : "Draft a blurb with Scout"}
               </button>
             ) : null}
           </div>
@@ -223,7 +223,7 @@ export function PostComposer({
           ) : null}
           {!coachConfigured ? (
             <p className="mt-2 text-[12px] text-[color:var(--color-text-faint)]">
-              Coach can draft a blurb here once its key is set in the deployment.
+              Scout can draft a blurb here once its key is set in the deployment.
             </p>
           ) : null}
         </div>
