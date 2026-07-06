@@ -66,7 +66,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
     startDraft(async () => {
       const res = await draftWorkoutPlan(clientId, ask);
       if (res.error || !res.draft) {
-        setDraftError(res.error ?? "Coach could not draft that.");
+        setDraftError(res.error ?? "Scout could not draft that.");
         return;
       }
       // Hand the draft to the plan builder for Gabe to review and approve.
@@ -97,7 +97,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
               className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-ink transition-colors hover:bg-amber/10"
             >
               <Sparkles size={16} className="text-forest" aria-hidden="true" />
-              Ask Coach
+              Ask Scout
             </button>
             <button
               type="button"
@@ -151,7 +151,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                   </span>
                   <div>
                     <h2 className="font-[family-name:var(--font-display)] text-[20px] leading-none text-bone">
-                      Coach
+                      Scout
                     </h2>
                     <p className="mt-1 text-[12.5px] text-bone/65">
                       Your assistant. Drafts and summaries, always your call.
@@ -173,8 +173,8 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
             <div className="flex-1 overflow-y-auto px-6 py-6">
               {!configured ? (
                 <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-5 text-[13.5px] leading-[1.55] text-[color:var(--color-text-muted)] shadow-[var(--shadow-card)]">
-                  Coach is not switched on yet. Once the API key is set in the
-                  deployment, Coach can summarize a client and draft workouts for
+                  Scout is not switched on yet. Once the API key is set in the
+                  deployment, Scout can summarize a client and draft workouts for
                   you to review. Everything it drafts stays a draft until you
                   approve it.
                 </div>
@@ -182,7 +182,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
 
               {clients.length === 0 ? (
                 <p className="text-[13.5px] text-[color:var(--color-text-muted)]">
-                  Add a client first, then Coach can summarize them or draft a
+                  Add a client first, then Scout can summarize them or draft a
                   workout.
                 </p>
               ) : (
@@ -256,7 +256,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                       </h3>
                     </div>
                     <p className="mb-3 text-[13px] text-[color:var(--color-text-muted)]">
-                      Coach drafts a plan from the exercise library. It opens in
+                      Scout drafts a plan from the exercise library. It opens in
                       the plan builder for you to review, edit, and activate.
                       Nothing goes live until you approve it.
                     </p>
@@ -273,7 +273,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                       disabled={drafting || !ask.trim()}
                       className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
                     >
-                      {drafting ? "Drafting" : "Draft with Coach"}
+                      {drafting ? "Drafting" : "Draft with Scout"}
                       {!drafting ? <Sparkles size={14} aria-hidden="true" /> : null}
                     </button>
                     {draftError ? (

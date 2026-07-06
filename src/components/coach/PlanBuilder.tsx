@@ -156,7 +156,7 @@ export function PlanBuilder({
         <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-fern)]/30 bg-[color:var(--color-fern)]/10 px-5 py-4">
           <Sparkles size={17} className="mt-0.5 shrink-0 text-forest" aria-hidden="true" />
           <p className="text-[13.5px] leading-[1.55] text-forest-deep">
-            Coach drafted this plan. Review and edit anything, then create and
+            Scout drafted this plan. Review and edit anything, then create and
             activate it when it is ready. Nothing goes live until you do.
           </p>
         </div>

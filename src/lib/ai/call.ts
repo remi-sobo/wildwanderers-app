@@ -9,13 +9,13 @@ import { violatesVoice, voiceRetryNote, type VoiceViolation } from "@/lib/voice/
 // Typed failures the server actions map to friendly copy.
 export class CoachNotConfiguredError extends Error {
   constructor() {
-    super("Coach is not set up yet.");
+    super("Scout is not set up yet.");
     this.name = "CoachNotConfiguredError";
   }
 }
 export class CoachBudgetError extends Error {
   constructor() {
-    super("Coach has reached this month's usage limit.");
+    super("Scout has reached this month's usage limit.");
     this.name = "CoachBudgetError";
   }
 }
@@ -228,7 +228,7 @@ export async function callCoachStructured<T>(opts: {
     const block = res.content.find(
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
     );
-    if (!block) throw new Error("Coach returned no draft.");
+    if (!block) throw new Error("Scout returned no draft.");
     return { raw: JSON.stringify(block.input), parsed: block.input as T };
   }
 

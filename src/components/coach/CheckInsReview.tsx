@@ -44,7 +44,7 @@ function Structured({ s }: { s: CheckInStructure }) {
         ) : null}
       </div>
       <p className="mt-3 text-[11px] text-[color:var(--color-text-faint)]">
-        Structured by Coach for you. A summary, not a medical assessment.
+        Structured by Scout for you. A summary, not a medical assessment.
       </p>
     </div>
   );
@@ -81,7 +81,7 @@ function Row({ checkIn }: { checkIn: CheckIn }) {
             className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60"
           >
             <Sparkles size={13} aria-hidden="true" />
-            {pending ? "Structuring" : "Structure with Coach"}
+            {pending ? "Structuring" : "Structure with Scout"}
           </button>
         ) : null}
       </div>
