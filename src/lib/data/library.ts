@@ -22,12 +22,13 @@ export type Post = {
   is_challenge: boolean;
   challenge_week: number | null;
   completion_count: number;
+  email_sent_at: string | null;
   created_at: string;
   updated_at: string;
 };
 
 const POST_COLUMNS =
-  "id, org_id, author_id, title, slug, category, external_link, body, cover_image_url, audience, status, published_at, is_challenge, challenge_week, completion_count, created_at, updated_at";
+  "id, org_id, author_id, title, slug, category, external_link, body, cover_image_url, audience, status, published_at, is_challenge, challenge_week, completion_count, email_sent_at, created_at, updated_at";
 
 // All posts, newest first, drafts and published together. Owner only by RLS.
 export async function getOwnerPosts(): Promise<Post[]> {
