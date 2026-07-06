@@ -62,16 +62,20 @@ const CLIENT_SECTIONS: NavSection[] = [
       { href: "/training", label: "Training", icon: Dumbbell },
       { href: "/log", label: "Log", icon: NotebookPen },
       { href: "/progress", label: "Progress", icon: TrendingUp },
+      { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
     ],
   },
   WORKSPACE,
 ];
 
-// A parent sees only their family view and settings.
+// A parent sees their family view, the library, and settings.
 const PARENT_SECTIONS: NavSection[] = [
   {
     label: "Menu",
-    items: [{ href: "/family", label: "My family", icon: Backpack, hint: "The boys program" }],
+    items: [
+      { href: "/family", label: "My family", icon: Backpack, hint: "The boys program" },
+      { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
+    ],
   },
   { items: [{ href: "/settings", label: "Settings", icon: Settings }] },
 ];

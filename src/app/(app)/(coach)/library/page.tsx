@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BookOpen, Flag, Link2, Users } from "lucide-react";
+import { BookOpen, Eye, Flag, Link2, Users } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getOwnerPosts, getPublishingCadence } from "@/lib/data/library";
 import { categoryLabel } from "@/lib/library/categories";
@@ -21,6 +21,15 @@ export default async function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex justify-end">
+        <Link
+          href="/trailhead"
+          className="ww-link inline-flex items-center gap-1.5 text-[13px] font-semibold text-forest"
+        >
+          <Eye size={14} aria-hidden="true" />
+          View the reader
+        </Link>
+      </div>
       <WeekCadenceCard cadence={cadence} />
 
       {posts.length === 0 ? (
