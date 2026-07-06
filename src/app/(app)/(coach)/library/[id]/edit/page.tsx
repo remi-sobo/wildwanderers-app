@@ -3,6 +3,7 @@ import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getPostById } from "@/lib/data/library";
 import { coachConfigured } from "@/lib/ai/config";
 import { PostComposer, type ComposerInitial } from "@/components/library/PostComposer";
+import { SendWeeklyButton } from "@/components/library/SendWeeklyButton";
 
 // Edit a post. Owner only. Same composer as New, pre-filled from the row.
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +38,9 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
           Change anything and save. Moving a published post to draft pulls it from the app
           and the site.
         </p>
+      </div>
+      <div className="max-w-2xl">
+        <SendWeeklyButton postId={post.id} status={post.status} sentAt={post.email_sent_at} />
       </div>
       <PostComposer mode="edit" initial={initial} coachConfigured={coachConfigured()} />
     </div>
