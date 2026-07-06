@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   Backpack,
+  BookOpen,
   Briefcase,
   ClipboardList,
   Dumbbell,
@@ -40,7 +41,17 @@ function coachSections(role: Role): NavSection[] {
   if (role === "owner") {
     surface.push({ href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" });
   }
-  return [{ label: "Surface", items: surface }, WORKSPACE];
+  const sections: NavSection[] = [{ label: "Surface", items: surface }];
+  // The Trailhead Library composer is Gabe's writer surface, owner only. Clients
+  // and families reach the reader feed from their own menu.
+  if (role === "owner") {
+    sections.push({
+      label: "Content",
+      items: [{ href: "/library", label: "Trailhead Library", icon: BookOpen, hint: "Your living library" }],
+    });
+  }
+  sections.push(WORKSPACE);
+  return sections;
 }
 
 const CLIENT_SECTIONS: NavSection[] = [

@@ -167,6 +167,74 @@ Write ${coach} a short summary they can read in fifteen seconds: where the clien
   }
 }
 
+// Coach drafts a one-line blurb for a Trailhead Library post. Optional assist
+// in the composer: Gabe pastes a link (and maybe a note), Coach returns a plain,
+// warm sentence in the Wild Wanderers voice, and Gabe edits and publishes. Same
+// chokepoint as every other call, so it voice-sweeps, logs to the ledger, and
+// degrades to the friendly not-configured state when no key is set.
+export async function draftPostBlurb(input: {
+  link?: string;
+  title?: string;
+  note?: string;
+  category?: string;
+}): Promise<CoachResult> {
+  const session = await getSessionProfile();
+  if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
+    return { text: null, error: "You are signed out." };
+  }
+  if (!coachConfigured()) {
+    return { text: null, error: "Coach is not set up yet. Add the API key to switch it on." };
+  }
+
+  const link = input.link?.trim();
+  const note = input.note?.trim();
+  const title = input.title?.trim();
+  if (!link && !note && !title) {
+    return { text: null, error: "Paste a link or a few words first, then Coach can draft a blurb." };
+  }
+
+  const org = await getMyOrg();
+  const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
+
+  const facts: string[] = [];
+  if (title) facts.push(`Working title: ${title}`);
+  if (link) facts.push(`Link: ${link}`);
+  if (input.category) facts.push(`Category: ${input.category}`);
+  if (note) facts.push(`What ${coach} said about it: ${note}`);
+
+  const system = `You write short blurbs for the Trailhead Library, ${orgName}'s field journal. One sentence, warm, plain, and specific, the way a person points a friend to something good on a trail. Never hype, never a sales pitch. No medical, nutrition, or health claims. Voice: no em dashes, use commas or restructure. No AI-giveaway words (transformative, holistic, leverage, unlock, seamless, robust, pivotal). No filler transitions.`;
+
+  const prompt = `Draft a one-sentence blurb to introduce this post in the library. Base it only on what is given, invent no facts, name no results.
+
+${facts.join("\n")}
+
+Return just the sentence, nothing else.`;
+
+  try {
+    const text = await callCoachText({
+      task: "library.blurb",
+      model: SUMMARY_MODEL,
+      system,
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 200,
+      context: { actorId: session.userId, orgId: session.profile.org_id },
+    });
+
+    await auditLog({
+      actorId: session.userId,
+      orgId: session.profile.org_id,
+      action: "library.blurb",
+      entityTable: "posts",
+      metadata: { model: SUMMARY_MODEL, hadLink: Boolean(link) },
+    });
+
+    return { text: text.trim(), error: null };
+  } catch (e) {
+    if (isConfigError(e)) return { text: null, error: e.message };
+    return { text: null, error: "Coach could not draft that just now. Try again." };
+  }
+}
+
 const KINDS = ["strength", "cardio", "mobility", "warmup", "cooldown", "skill"];
 
 // What Coach returns for a draft (before we match it to the library).

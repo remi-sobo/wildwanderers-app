@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ChevronRight, Plus, Users } from "lucide-react";
 import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
+import { getSessionProfile } from "@/lib/auth/get-profile";
+import { getPublishingCadence } from "@/lib/data/library";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LibraryNudgeStrip } from "@/components/library/LibraryNudgeStrip";
 
 const STATUS_STYLE: Record<ClientStatus, string> = {
   active: "bg-[color:var(--color-state-good)]/12 text-[color:var(--color-state-good)]",
@@ -20,10 +23,14 @@ function StatusPill({ status }: { status: ClientStatus }) {
 }
 
 export default async function ProgramPage() {
-  const clients = await getClients();
+  const [clients, session] = await Promise.all([getClients(), getSessionProfile()]);
+  // The library nudge is Gabe's, owner only. A coach cannot publish, so they
+  // never see it. Fetched only for the owner to keep the read off the coach path.
+  const cadence = session?.profile?.role === "owner" ? await getPublishingCadence() : null;
 
   return (
     <div className="flex flex-col gap-5">
+      {cadence ? <LibraryNudgeStrip cadence={cadence} /> : null}
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-[color:var(--color-text-muted)]">
           {clients.length === 0

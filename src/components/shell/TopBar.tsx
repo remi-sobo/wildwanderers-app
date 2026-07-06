@@ -6,6 +6,7 @@ const TITLES: Record<string, { title: string; context: string }> = {
   "/program": { title: "Program", context: "Clients and training plans" },
   "/fitness": { title: "Fitness", context: "Wellness and tracking" },
   "/business": { title: "Business", context: "The business switch" },
+  "/library": { title: "Trailhead Library", context: "Your living content library" },
   "/home": { title: "Home", context: "" },
   "/training": { title: "Training", context: "" },
   "/log": { title: "Log", context: "" },
