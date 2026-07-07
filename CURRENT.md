@@ -4,6 +4,25 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 10 (phases A and B) built, 2026-07-07: reusable training, coach side.
+Drafts now rest. A plan saves as a draft or creates-and-activates from the
+builder; Scout's drafted plan is saved as a real draft row with the ask it came
+from (no more sessionStorage handoff), and each client's Program page has a
+Drafts list to review, activate, or discard. Activation stamps who approved and
+when (coach_approved_at/by). The leak this closed: with drafts resting, the old
+client fallback could have shown one, so the client read policy and
+getPlanForClient both exclude draft and pending_review, verified on the live DB
+(client sees zero drafts and zero templates, own active plan untouched; owner
+sees and saves both; the template RPC writes under RLS). Plan templates are
+net-new dedicated tables (plan_templates, template_workouts,
+template_workout_exercises), staff-only with no client policy at all: save as a
+template from the builder, start a client's plan from one (it lands as a
+resting draft, one review path), manage at /program/templates. Phase C (client
+self-directed workouts, no AI in that path) is specified in RING10_SPEC.md and
+deferred to its own ring. This ring was renumbered from 9 mid-build when the
+Movements work below claimed Ring 9 on the live DB first; the two merged clean,
+and both rings' migrations are applied live.
+
 Rings 0 through 9 built. Ring 9 is the Movements manager and real video: Gabe
 edits the exercise library himself at /fitness/movements, adding movements,
 arranging them, retiring or deleting (deletes blocked while a plan uses one), and

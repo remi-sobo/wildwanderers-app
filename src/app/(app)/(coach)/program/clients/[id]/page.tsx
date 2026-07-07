@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CalendarClock, ChevronLeft, ClipboardList, Dumbbell, MessageCircle } from "lucide-react";
 import { Activity } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
-import { getPlanForClient } from "@/lib/data/plans";
+import { getPlanForClient, getDraftPlansForClient } from "@/lib/data/plans";
 import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { getClientLongevity } from "@/lib/data/longevity";
@@ -12,6 +12,7 @@ import { openThreadWithClient } from "@/lib/messaging/actions";
 import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
 import { ClientLongevityPanel } from "@/components/coach/ClientLongevityPanel";
 import { CheckInsReview } from "@/components/coach/CheckInsReview";
+import { DraftPlansList } from "@/components/coach/DraftPlansList";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatWhen(iso: string): string {
@@ -34,8 +35,9 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, sessions, wellness, longevity, checkIns] = await Promise.all([
+  const [plan, drafts, sessions, wellness, longevity, checkIns] = await Promise.all([
     getPlanForClient(id),
+    getDraftPlansForClient(id),
     getUpcomingSessionsForClient(id),
     getClientWellness(id),
     getClientLongevity(id),
@@ -147,6 +149,9 @@ export default async function ClientDetailPage({
 
       {/* Check-ins */}
       <CheckInsReview checkIns={checkIns} />
+
+      {/* Resting drafts, waiting on review */}
+      <DraftPlansList clientId={id} drafts={drafts} />
 
       {/* Plan */}
       {plan ? (
