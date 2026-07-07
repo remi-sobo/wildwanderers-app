@@ -199,7 +199,8 @@ export async function activateDraft(clientId: string, planId: string): Promise<v
 }
 
 // Discards a resting draft. The status filter keeps this away from anything
-// live; an active plan cannot be discarded here.
+// live, and the initiated_by filter keeps the coach's hands off a client's
+// own workout; that one is the client's to keep or delete.
 export async function discardDraft(clientId: string, planId: string): Promise<void> {
   await requireOwnerOrCoach();
   const supabase = await createClient();
@@ -207,8 +208,33 @@ export async function discardDraft(clientId: string, planId: string): Promise<vo
     .from("training_plans")
     .delete()
     .eq("id", planId)
+    .neq("initiated_by", "client")
     .in("status", ["draft", "pending_review"]);
   revalidatePath(`/program/clients/${clientId}`);
+}
+
+// Marks a client-sent workout as looked at: stamps the review and sets it
+// back to draft, so it leaves the coach's list and the client sees the nod.
+// Never an activation; a client's own workout is never their plan.
+export async function markSelfWorkoutReviewed(
+  clientId: string,
+  planId: string,
+): Promise<void> {
+  const { userId } = await requireOwnerOrCoach();
+  const supabase = await createClient();
+  await supabase
+    .from("training_plans")
+    .update({
+      status: "draft",
+      coach_approved_at: new Date().toISOString(),
+      coach_approved_by: userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", planId)
+    .eq("initiated_by", "client")
+    .eq("status", "pending_review");
+  revalidatePath(`/program/clients/${clientId}`);
+  revalidatePath("/training");
 }
 
 // --- Sessions ---
