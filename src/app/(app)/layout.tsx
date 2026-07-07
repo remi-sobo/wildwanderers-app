@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getMyOrg } from "@/lib/data/org";
 import { orgThemeStyle } from "@/lib/brand/theme";
 import { Sidebar } from "@/components/shell/Sidebar";
+import { MobileNav } from "@/components/shell/MobileNav";
 import { TopBar } from "@/components/shell/TopBar";
 import { TrailTexture } from "@/components/brand/TrailTexture";
 
@@ -36,9 +37,12 @@ export default async function AppLayout({
         orgLogoUrl={org?.logo_url ?? undefined}
       />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main className="flex-1 px-5 py-6 md:px-8 md:py-8">{children}</main>
+        <TopBar orgName={org?.name ?? "Wild Wanderers"} orgLogoUrl={org?.logo_url ?? "/brand/mark-forest.png"} />
+        <main className="flex-1 px-4 pb-[calc(76px+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-8">
+          {children}
+        </main>
       </div>
+      <MobileNav role={profile.role} displayName={displayName} email={email} />
     </div>
   );
 }

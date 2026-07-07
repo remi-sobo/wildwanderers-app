@@ -80,7 +80,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
       {/* FAB + its action menu */}
       <div
         ref={menuRef}
-        className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5 md:bottom-8 md:right-8"
+        className="fixed bottom-[calc(74px+env(safe-area-inset-bottom))] right-4 z-40 flex flex-col items-end gap-2.5 md:bottom-8 md:right-8"
       >
         {menuOpen ? (
           <div className="flex flex-col gap-1 rounded-2xl border border-[color:var(--border-hair)] bg-canvas p-1.5 shadow-[0_16px_44px_rgba(42,33,24,0.28)]">
