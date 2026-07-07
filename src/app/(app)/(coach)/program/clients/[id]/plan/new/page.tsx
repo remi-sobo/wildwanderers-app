@@ -46,6 +46,7 @@ export default async function NewPlanPage({
       goal: plan.goal ?? "",
       durationWeeks: plan.duration_weeks != null ? String(plan.duration_weeks) : "",
       aiGenerated: plan.ai_generated,
+      clientInitiated: plan.initiated_by === "client",
       workouts: plan.workouts.map((w) => ({
         weekNumber: w.week_number,
         dayNumber: w.day_number,
