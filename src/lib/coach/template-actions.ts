@@ -127,3 +127,19 @@ export async function setTemplateActive(templateId: string, active: boolean): Pr
     .eq("id", templateId);
   revalidatePath("/program/templates");
 }
+
+// Share a template with clients, or take it back. Per template, deliberate,
+// default off; shared ones show in the client's own builder as a start.
+export async function setTemplateClientVisible(
+  templateId: string,
+  visible: boolean,
+): Promise<void> {
+  await requireOwnerOrCoach();
+  const supabase = await createClient();
+  await supabase
+    .from("plan_templates")
+    .update({ is_client_visible: visible, updated_at: new Date().toISOString() })
+    .eq("id", templateId);
+  revalidatePath("/program/templates");
+  revalidatePath("/training/build");
+}
