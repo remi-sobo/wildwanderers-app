@@ -322,6 +322,21 @@ athlete→client, **without the client AI path.**
    keep the two apart; the git/DB drift itself is flagged in `CURRENT.md` at the
    final pass.
 
+## Build status (2026-07-07)
+
+Phases A and B built in four commits on `claude/client-workout-capabilities-ilmpis`:
+the drafts migration (10.1, two files so the enum value and its first use sit in
+separate transactions), the draft flow (10.2), the templates migration (10.3),
+and the template flow (10.4). All three migrations are applied to the live
+project. Isolation verified live: a client sees zero resting drafts (own or
+another's), zero rows in all three template tables, and zero of another
+client's plans, while their own active plan and workouts read exactly as
+before; the owner sees the draft and the template and writes a template
+through the RPC under RLS. Test rows were labeled and deleted; nothing
+fabricated shipped. Build and type check green at every commit. Phase C
+remains specified above, not built. Deviation from the phase-A text: no
+coach-wide drafts inbox yet, per its own "per-client first" recommendation.
+
 ## Not in this ring (named so the shape is visible)
 
 - Coach↔client comment threads and activity swaps on a plan
