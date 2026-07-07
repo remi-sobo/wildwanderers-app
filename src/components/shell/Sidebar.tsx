@@ -85,6 +85,7 @@ const PARENT_SECTIONS: NavSection[] = [
       { href: "/family", label: "My family", icon: Backpack, hint: "The boys program" },
       { href: "/from-your-coach", label: "Alongside", icon: Footprints, hint: "From your coach" },
       { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
+      { href: "/messages", label: "Messages", icon: MessageCircle },
     ],
   },
   { items: [{ href: "/settings", label: "Settings", icon: Settings }] },
