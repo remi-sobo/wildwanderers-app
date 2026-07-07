@@ -24,7 +24,7 @@ export default async function LibraryPage() {
       <div className="flex justify-end">
         <Link
           href="/trailhead"
-          className="ww-link inline-flex items-center gap-1.5 text-[13px] font-semibold text-forest"
+          className="ww-link inline-flex items-center gap-1.5 text-[13px] font-semibold text-forest max-md:min-h-[44px]"
         >
           <Eye size={14} aria-hidden="true" />
           View the reader

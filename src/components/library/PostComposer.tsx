@@ -203,7 +203,7 @@ export function PostComposer({
                 type="button"
                 onClick={runBlurb}
                 disabled={blurbing}
-                className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60 max-md:min-h-[44px]"
               >
                 <Sparkles size={13} aria-hidden="true" />
                 {blurbing ? "Drafting" : "Draft a blurb with Scout"}
@@ -216,7 +216,7 @@ export function PostComposer({
             onChange={(e) => setBody(e.target.value)}
             rows={4}
             placeholder="A sentence or two. What it is, why it is worth their time."
-            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14.5px] leading-[1.55] text-ink"
+            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[16px] leading-[1.55] text-ink md:text-[14.5px]"
           />
           {blurbNote ? (
             <p className="mt-2 text-[12.5px] text-[color:var(--color-text-muted)]">{blurbNote}</p>
@@ -241,7 +241,7 @@ export function PostComposer({
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[14.5px] text-ink"
+              className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14.5px] text-ink"
             >
               {POST_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -256,7 +256,7 @@ export function PostComposer({
               {POST_AUDIENCES.map((a) => (
                 <label
                   key={a.value}
-                  className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-[13.5px] transition-colors ${
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-[13.5px] transition-colors max-md:min-h-[44px] ${
                     audience === a.value
                       ? "border-forest/40 bg-forest/5 text-ink"
                       : "border-[color:var(--border-hair)] text-[color:var(--color-text-muted)] hover:bg-inset"
@@ -335,7 +335,7 @@ export function PostComposer({
               <button
                 type="button"
                 onClick={clearCover}
-                className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold text-[color:var(--color-state-error)]"
+                className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold text-[color:var(--color-state-error)] max-md:min-h-[44px]"
               >
                 <X size={13} aria-hidden="true" /> Remove
               </button>
@@ -350,7 +350,7 @@ export function PostComposer({
           type="button"
           onClick={() => save(true)}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
         >
           {saving ? "Saving" : isPublished ? "Save and keep published" : "Publish"}
         </button>
@@ -358,11 +358,14 @@ export function PostComposer({
           type="button"
           onClick={() => save(false)}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-5 py-2.5 text-[14px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-5 py-2.5 text-[14px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-70 max-md:min-h-[44px]"
         >
           {isPublished ? "Move to draft" : "Save draft"}
         </button>
-        <Link href="/library" className="ww-link text-[13.5px] font-semibold text-forest">
+        <Link
+          href="/library"
+          className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]"
+        >
           Cancel
         </Link>
       </div>

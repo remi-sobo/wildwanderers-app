@@ -31,23 +31,23 @@ export default async function ProgramPage() {
   return (
     <div className="flex flex-col gap-5">
       {cadence ? <LibraryNudgeStrip cadence={cadence} /> : null}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[13px] text-[color:var(--color-text-muted)]">
           {clients.length === 0
             ? "No clients yet"
             : `${clients.length} ${clients.length === 1 ? "client" : "clients"}`}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/program/templates"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
           >
             <LayoutTemplate size={15} aria-hidden="true" />
             Templates
           </Link>
           <Link
             href="/program/clients/new"
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
           >
             <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
             Add client

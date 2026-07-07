@@ -8,7 +8,7 @@ export default function NewMovementPage() {
       <div>
         <Link
           href="/fitness/movements"
-          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest"
+          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest max-md:min-h-[44px]"
         >
           <ChevronLeft size={16} aria-hidden="true" />
           Movements

@@ -113,7 +113,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
             <button
               type="button"
               onClick={() => setOrder(initialActive)}
-              className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-forest hover:bg-forest/5"
+              className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-forest hover:bg-forest/5 max-md:min-h-[44px]"
             >
               Reset
             </button>
@@ -121,7 +121,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
               type="button"
               onClick={saveOrder}
               disabled={pending}
-              className="rounded-full bg-forest px-4 py-1.5 text-[13px] font-semibold text-bone hover:bg-forest-deep disabled:opacity-60"
+              className="rounded-full bg-forest px-4 py-1.5 text-[13px] font-semibold text-bone hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
             >
               {pending ? "Saving" : "Save order"}
             </button>
@@ -133,13 +133,13 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
       <ul className="flex flex-col gap-2">
         {order.map((m, i) => (
           <li key={m.id} className={rowClass}>
-            <div className="flex flex-col">
+            <div className="flex flex-col max-md:-my-2 max-md:gap-1">
               <button
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0 || pending}
                 aria-label="Move up"
-                className="text-[color:var(--color-text-faint)] transition-colors hover:text-forest disabled:opacity-30"
+                className="flex items-center justify-center rounded-md text-[color:var(--color-text-faint)] transition-colors hover:text-forest disabled:opacity-30 max-md:h-10 max-md:w-10 max-md:-mx-2"
               >
                 <ArrowUp size={15} />
               </button>
@@ -148,7 +148,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
                 onClick={() => move(i, 1)}
                 disabled={i === order.length - 1 || pending}
                 aria-label="Move down"
-                className="text-[color:var(--color-text-faint)] transition-colors hover:text-forest disabled:opacity-30"
+                className="flex items-center justify-center rounded-md text-[color:var(--color-text-faint)] transition-colors hover:text-forest disabled:opacity-30 max-md:h-10 max-md:w-10 max-md:-mx-2"
               >
                 <ArrowDown size={15} />
               </button>
@@ -171,7 +171,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
               <Link
                 href={`/fitness/movements/${m.id}/edit`}
                 aria-label={`Edit ${m.title}`}
-                className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest"
+                className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest max-md:h-11 max-md:w-11 max-md:p-0"
               >
                 <Pencil size={15} />
               </Link>
@@ -181,7 +181,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
                 disabled={busyId === m.id}
                 aria-label={`Retire ${m.title}`}
                 title="Retire (hide from plans and clients)"
-                className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-bark disabled:opacity-40"
+                className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-bark disabled:opacity-40 max-md:h-11 max-md:w-11 max-md:p-0"
               >
                 <Archive size={15} />
               </button>
@@ -191,7 +191,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
                   onClick={() => remove(m.id, m.title)}
                   disabled={busyId === m.id}
                   aria-label={`Delete ${m.title}`}
-                  className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)] disabled:opacity-40"
+                  className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)] disabled:opacity-40 max-md:h-11 max-md:w-11 max-md:p-0"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -223,7 +223,7 @@ export function MovementsList({ movements }: { movements: ManagedMovement[] }) {
                   type="button"
                   onClick={() => retireOrRestore(m.id, true)}
                   disabled={busyId === m.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-40 max-md:min-h-[44px]"
                 >
                   <RotateCcw size={13} /> Restore
                 </button>

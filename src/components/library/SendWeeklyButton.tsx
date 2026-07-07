@@ -71,7 +71,7 @@ export function SendWeeklyButton({
                 type="button"
                 onClick={send}
                 disabled={pending}
-                className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
+                className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
               >
                 <Send size={14} aria-hidden="true" />
                 {pending ? "Sending" : "Send now"}
@@ -80,7 +80,7 @@ export function SendWeeklyButton({
                 type="button"
                 onClick={() => setConfirming(false)}
                 disabled={pending}
-                className="rounded-full px-3 py-2 text-[13px] font-semibold text-forest"
+                className="rounded-full px-3 py-2 text-[13px] font-semibold text-forest max-md:min-h-[44px]"
               >
                 Not yet
               </button>
@@ -89,7 +89,7 @@ export function SendWeeklyButton({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-forest/5"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-forest/5 max-md:min-h-[44px]"
             >
               <Send size={14} aria-hidden="true" />
               {lastSent ? "Send again" : "Send as the weekly note"}
