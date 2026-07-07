@@ -2,9 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOwnerOrCoach } from "@/lib/auth/require-owner-or-coach";
 import { auditLog } from "@/lib/audit/log";
 import type { ExerciseKind } from "@/lib/data/plans";
+
+const MEDIA_BUCKET = "exercise-media";
+const ALLOWED_VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200MB, plenty for a short demo
 
 // The Movements manager write path. Every action re-checks the caller with
 // requireOwnerOrCoach (a hidden button is not a permission); RLS on
@@ -83,6 +88,43 @@ function parseMovement(form: MovementForm): ParsedMovement | string {
 
 function refresh() {
   revalidatePath("/fitness/movements");
+}
+
+export type UploadTicket =
+  | { ok: true; path: string; token: string; publicUrl: string }
+  | { ok: false; error: string };
+
+// Mint a one-time signed upload URL so a clip goes straight from the browser to
+// Storage, never through a server-action body limit. Staff-only, and bound to
+// the caller's org folder. The composer uploads to it, then saves the returned
+// public URL as the movement's media_url. Degrades to a clear message when the
+// service key is not set in the deployment.
+export async function createUploadTicket(ext: string, sizeBytes: number): Promise<UploadTicket> {
+  const { profile } = await requireOwnerOrCoach();
+  const orgId = profile.org_id;
+  if (!orgId) return { ok: false, error: "Your account is not attached to an org yet." };
+
+  const clean = ext.replace(/^\./, "").toLowerCase();
+  if (!ALLOWED_VIDEO_EXT.has(clean)) {
+    return { ok: false, error: "Upload an MP4, WebM, or MOV clip." };
+  }
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return { ok: false, error: "That file looked empty." };
+  }
+  if (sizeBytes > MAX_VIDEO_BYTES) {
+    return { ok: false, error: "That clip is over 200MB. Trim it or link it from YouTube instead." };
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { ok: false, error: "Uploads are not set up yet. Paste a YouTube or Vimeo link for now." };
+  }
+
+  const admin = createAdminClient();
+  const path = `${orgId}/${crypto.randomUUID()}.${clean}`;
+  const { data, error } = await admin.storage.from(MEDIA_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, error: "Could not start the upload. Try again." };
+
+  const { data: pub } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+  return { ok: true, path: data.path, token: data.token, publicUrl: pub.publicUrl };
 }
 
 export async function createMovement(form: MovementForm): Promise<MovementResult> {

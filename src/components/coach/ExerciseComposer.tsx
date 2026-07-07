@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createMovement, updateMovement, type MovementForm } from "@/lib/exercises/actions";
+import { UploadCloud } from "lucide-react";
+import {
+  createMovement,
+  updateMovement,
+  createUploadTicket,
+  type MovementForm,
+} from "@/lib/exercises/actions";
+import { createClient } from "@/lib/supabase/client";
 import { VideoEmbed } from "@/components/ui/VideoEmbed";
 import { resolveVideo } from "@/lib/media/video";
 
@@ -72,9 +79,40 @@ export function ExerciseComposer({
 
   const [error, setError] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const preview = resolveVideo(mediaUrl);
   const linkTyped = mediaUrl.trim() !== "";
+
+  async function onPickClip(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    const ext = file.name.split(".").pop() ?? "";
+    setUploading(true);
+    try {
+      const ticket = await createUploadTicket(ext, file.size);
+      if (!ticket.ok) {
+        setError(ticket.error);
+        return;
+      }
+      const supabase = createClient();
+      const { error: upErr } = await supabase.storage
+        .from("exercise-media")
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+      if (upErr) {
+        setError("That upload did not finish. Try again.");
+        return;
+      }
+      setMediaUrl(ticket.publicUrl);
+    } catch {
+      setError("That upload did not finish. Try again.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   function form(): MovementForm {
     return { title, kind, muscleGroup, equipment, defaultSets, defaultReps, cues, instructions, mediaUrl };
@@ -235,8 +273,28 @@ export function ExerciseComposer({
             className="ww-input"
           />
           <p className="mt-2 text-[12px] text-[color:var(--color-text-faint)]">
-            YouTube and Vimeo links play right in the app. Uploading your own clip
-            is coming next.
+            YouTube and Vimeo links play right in the app.
+          </p>
+        </div>
+        <div className="mt-4 border-t border-[color:var(--border-hair)] pt-4">
+          <span className={labelClass}>Or upload your own clip</span>
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.m4v"
+              onChange={onPickClip}
+              disabled={uploading}
+              className="block text-[13px] text-[color:var(--color-text-muted)] file:mr-3 file:rounded-full file:border-0 file:bg-forest file:px-4 file:py-2 file:text-[13px] file:font-semibold file:text-bone hover:file:bg-forest-deep disabled:opacity-60"
+            />
+            {uploading ? (
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-forest">
+                <UploadCloud size={14} aria-hidden="true" /> Uploading
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-2 text-[12px] text-[color:var(--color-text-faint)]">
+            MP4, WebM, or MOV, up to 200MB. It uploads and fills the link above.
           </p>
         </div>
         {linkTyped ? (
