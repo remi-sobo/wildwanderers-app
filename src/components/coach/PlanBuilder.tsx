@@ -171,6 +171,16 @@ export function PlanBuilder({
         </p>
       ) : null}
 
+      <div className="flex justify-end">
+        <Link
+          href="/fitness/movements"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:text-fern"
+        >
+          <Plus size={14} aria-hidden="true" />
+          Manage movements
+        </Link>
+      </div>
+
       <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 shadow-[var(--shadow-card)]">
         <p className="eyebrow text-bark">Plan</p>
         <div className="mt-4 flex flex-col gap-4">
