@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, X, ClipboardList, Dumbbell, Send, Flag } from "lucide-react";
 import { summarizeClient, draftWorkoutPlan } from "@/lib/ai/coach-actions";
-import { COACH_DRAFT_KEY } from "@/components/coach/PlanBuilder";
 import { ReportIssueSheet } from "@/components/report/ReportIssueSheet";
 
 export type CoachClient = { id: string; name: string };
@@ -65,17 +64,14 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
     setDraftError(null);
     startDraft(async () => {
       const res = await draftWorkoutPlan(clientId, ask);
-      if (res.error || !res.draft) {
+      if (res.error || !res.planId) {
         setDraftError(res.error ?? "Scout could not draft that.");
         return;
       }
-      // Hand the draft to the plan builder for Gabe to review and approve.
-      sessionStorage.setItem(
-        COACH_DRAFT_KEY,
-        JSON.stringify({ clientId, draft: res.draft }),
-      );
+      // The draft is saved as a resting plan; open it in the builder for
+      // Gabe to review, edit, and approve.
       setOpen(false);
-      router.push(`/program/clients/${clientId}/plan/new`);
+      router.push(`/program/clients/${clientId}/plan/new?draft=${res.planId}`);
     });
   }
 

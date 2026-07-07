@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
-import { createAndActivatePlan, type PlanDraft } from "@/lib/coach/actions";
+import { savePlan, type PlanDraft } from "@/lib/coach/actions";
 import type { LibraryItem } from "@/lib/data/exercises";
-
-// Where the Coach drawer stashes a drafted plan before sending Gabe here.
-export const COACH_DRAFT_KEY = "ww:coach-plan-draft";
 
 type ExerciseForm = {
   title: string;
@@ -26,6 +23,17 @@ type WorkoutForm = {
   exercises: ExerciseForm[];
 };
 
+// A resting draft loaded for review, mapped to the builder's shape by the
+// page that owns the route.
+export type BuilderInitial = {
+  planId: string;
+  title: string;
+  goal: string;
+  durationWeeks: string;
+  aiGenerated: boolean;
+  workouts: WorkoutForm[];
+};
+
 const KINDS = ["strength", "cardio", "mobility", "warmup", "cooldown", "skill"];
 
 function emptyExercise(): ExerciseForm {
@@ -41,58 +49,26 @@ const fieldClass =
 export function PlanBuilder({
   clientId,
   library,
+  initial,
 }: {
   clientId: string;
   library: LibraryItem[];
+  initial?: BuilderInitial;
 }) {
-  const [title, setTitle] = useState("");
-  const [goal, setGoal] = useState("");
-  const [durationWeeks, setDurationWeeks] = useState("");
-  const [workouts, setWorkouts] = useState<WorkoutForm[]>([emptyWorkout(1)]);
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [goal, setGoal] = useState(initial?.goal ?? "");
+  const [durationWeeks, setDurationWeeks] = useState(initial?.durationWeeks ?? "");
+  const [workouts, setWorkouts] = useState<WorkoutForm[]>(
+    initial?.workouts.length ? initial.workouts : [emptyWorkout(1)],
+  );
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fromCoach, setFromCoach] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<"draft" | "activate" | null>(null);
 
-  // If Coach drafted a plan for this client, seed the builder from it, then
-  // clear the stash. Gabe reviews and edits before activating; nothing here
-  // goes live on its own.
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(COACH_DRAFT_KEY);
-      if (!raw) return;
-      const stash = JSON.parse(raw) as {
-        clientId: string;
-        draft: {
-          title: string;
-          goal: string;
-          durationWeeks: string;
-          workouts: WorkoutForm[];
-        };
-      };
-      if (stash.clientId !== clientId) return;
-      sessionStorage.removeItem(COACH_DRAFT_KEY);
-      setTitle(stash.draft.title || "");
-      setGoal(stash.draft.goal || "");
-      setDurationWeeks(stash.draft.durationWeeks || "");
-      if (stash.draft.workouts?.length) {
-        setWorkouts(
-          stash.draft.workouts.map((w) => ({
-            weekNumber: w.weekNumber || 1,
-            dayNumber: w.dayNumber || 1,
-            title: w.title || "",
-            exercises:
-              w.exercises?.length > 0
-                ? w.exercises.map((e) => ({ ...emptyExercise(), ...e }))
-                : [emptyExercise()],
-          })),
-        );
-      }
-      setFromCoach(true);
-    } catch {
-      // ignore a malformed stash
-    }
-  }, [clientId]);
+  // Reviewing a resting draft rather than starting fresh.
+  const editingDraft = Boolean(initial?.planId);
+  const fromCoach = Boolean(initial?.aiGenerated);
 
   function updateWorkout(i: number, patch: Partial<WorkoutForm>) {
     setWorkouts((ws) => ws.map((w, idx) => (idx === i ? { ...w, ...patch } : w)));
@@ -118,8 +94,9 @@ export function PlanBuilder({
     setOpenKey(null);
   }
 
-  function submit() {
+  function submit(activate: boolean) {
     setError(null);
+    setPendingAction(activate ? "activate" : "draft");
     const draft: PlanDraft = {
       title,
       goal,
@@ -145,7 +122,10 @@ export function PlanBuilder({
       })),
     };
     startTransition(async () => {
-      const result = await createAndActivatePlan(clientId, draft);
+      const result = await savePlan(clientId, draft, {
+        planId: initial?.planId ?? null,
+        activate,
+      });
       if (result?.error) setError(result.error);
     });
   }
@@ -156,8 +136,9 @@ export function PlanBuilder({
         <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-fern)]/30 bg-[color:var(--color-fern)]/10 px-5 py-4">
           <Sparkles size={17} className="mt-0.5 shrink-0 text-forest" aria-hidden="true" />
           <p className="text-[13.5px] leading-[1.55] text-forest-deep">
-            Scout drafted this plan. Review and edit anything, then create and
-            activate it when it is ready. Nothing goes live until you do.
+            Scout drafted this plan and it is saved as a draft. Review and edit
+            anything, then activate it when it is ready. Nothing goes live until
+            you do.
           </p>
         </div>
       ) : null}
@@ -373,12 +354,31 @@ export function PlanBuilder({
         <Plus size={16} /> Add workout
       </button>
 
-      <div className="flex items-center gap-4 border-t border-[color:var(--border-hair)] pt-6">
-        <button type="button" onClick={submit} disabled={pending} className="submit !mt-0 max-w-[260px]">
-          <span className="submit-label">{pending ? "Saving" : "Create and activate plan"}</span>
+      <div className="flex flex-wrap items-center gap-4 border-t border-[color:var(--border-hair)] pt-6">
+        <button
+          type="button"
+          onClick={() => submit(true)}
+          disabled={pending}
+          className="submit !mt-0 max-w-[280px]"
+        >
+          <span className="submit-label">
+            {pending && pendingAction === "activate"
+              ? "Saving"
+              : editingDraft
+                ? "Approve and activate"
+                : "Create and activate plan"}
+          </span>
           <span aria-hidden="true" className="submit-arrow">
             &rarr;
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => submit(false)}
+          disabled={pending}
+          className="inline-flex items-center rounded-full border border-[color:var(--border-strong)] px-5 py-2.5 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70"
+        >
+          {pending && pendingAction === "draft" ? "Saving" : "Save as a draft"}
         </button>
         <Link href={`/program/clients/${clientId}`} className="ww-link text-sm font-semibold text-forest">
           Cancel
