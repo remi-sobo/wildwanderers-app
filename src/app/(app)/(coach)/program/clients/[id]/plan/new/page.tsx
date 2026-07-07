@@ -4,7 +4,9 @@ import { ChevronLeft } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getExerciseLibrary } from "@/lib/data/exercises";
 import { getPlanWithWorkoutsById } from "@/lib/data/plans";
+import { getPlanTemplates } from "@/lib/data/templates";
 import { PlanBuilder, type BuilderInitial } from "@/components/coach/PlanBuilder";
+import { TemplateStartPicker } from "@/components/coach/TemplateStartPicker";
 
 export const metadata = { title: "Build a plan — Wild Wanderers" };
 
@@ -19,7 +21,11 @@ export default async function NewPlanPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const library = await getExerciseLibrary();
+  const [library, templates] = await Promise.all([
+    getExerciseLibrary(),
+    // The start-from picker only makes sense on a fresh build.
+    draftId ? Promise.resolve([]) : getPlanTemplates({ activeOnly: true }),
+  ]);
 
   // ?draft= opens a resting draft for review. Only this client's own
   // draft/pending_review plans qualify; anything else 404s rather than
@@ -71,6 +77,7 @@ export default async function NewPlanPage({
           {initial ? "Review the draft" : "Build a plan"}
         </h1>
       </div>
+      {!initial ? <TemplateStartPicker clientId={id} templates={templates} /> : null}
       <PlanBuilder clientId={id} library={library} initial={initial} />
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { savePlan, type PlanDraft } from "@/lib/coach/actions";
+import { saveAsTemplate } from "@/lib/coach/template-actions";
 import type { LibraryItem } from "@/lib/data/exercises";
 
 type ExerciseForm = {
@@ -64,7 +65,10 @@ export function PlanBuilder({
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [pendingAction, setPendingAction] = useState<"draft" | "activate" | null>(null);
+  const [pendingAction, setPendingAction] = useState<"draft" | "activate" | "template" | null>(
+    null,
+  );
+  const [templateNote, setTemplateNote] = useState<string | null>(null);
 
   // Reviewing a resting draft rather than starting fresh.
   const editingDraft = Boolean(initial?.planId);
@@ -94,10 +98,8 @@ export function PlanBuilder({
     setOpenKey(null);
   }
 
-  function submit(activate: boolean) {
-    setError(null);
-    setPendingAction(activate ? "activate" : "draft");
-    const draft: PlanDraft = {
+  function buildDraft(): PlanDraft {
+    return {
       title,
       goal,
       durationWeeks,
@@ -121,12 +123,31 @@ export function PlanBuilder({
           })),
       })),
     };
+  }
+
+  function submit(activate: boolean) {
+    setError(null);
+    setTemplateNote(null);
+    setPendingAction(activate ? "activate" : "draft");
+    const draft = buildDraft();
     startTransition(async () => {
       const result = await savePlan(clientId, draft, {
         planId: initial?.planId ?? null,
         activate,
       });
       if (result?.error) setError(result.error);
+    });
+  }
+
+  function saveTemplate() {
+    setError(null);
+    setTemplateNote(null);
+    setPendingAction("template");
+    const draft = buildDraft();
+    startTransition(async () => {
+      const result = await saveAsTemplate(draft);
+      if (result.error) setError(result.error);
+      else setTemplateNote("Saved to your templates, ready to reuse for any client.");
     });
   }
 
@@ -380,10 +401,24 @@ export function PlanBuilder({
         >
           {pending && pendingAction === "draft" ? "Saving" : "Save as a draft"}
         </button>
+        <button
+          type="button"
+          onClick={saveTemplate}
+          disabled={pending}
+          className="inline-flex items-center text-[13px] font-semibold text-forest transition-colors hover:text-fern disabled:opacity-70"
+        >
+          {pending && pendingAction === "template" ? "Saving" : "Save as a template"}
+        </button>
         <Link href={`/program/clients/${clientId}`} className="ww-link text-sm font-semibold text-forest">
           Cancel
         </Link>
       </div>
+
+      {templateNote ? (
+        <p className="text-[13px] text-forest" role="status">
+          {templateNote}
+        </p>
+      ) : null}
     </div>
   );
 }
