@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus, Users } from "lucide-react";
+import { ChevronRight, LayoutTemplate, Plus, Users } from "lucide-react";
 import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getPublishingCadence } from "@/lib/data/library";
@@ -37,13 +37,22 @@ export default async function ProgramPage() {
             ? "No clients yet"
             : `${clients.length} ${clients.length === 1 ? "client" : "clients"}`}
         </p>
-        <Link
-          href="/program/clients/new"
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
-        >
-          <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
-          Add client
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/program/templates"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset"
+          >
+            <LayoutTemplate size={15} aria-hidden="true" />
+            Templates
+          </Link>
+          <Link
+            href="/program/clients/new"
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+          >
+            <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
+            Add client
+          </Link>
+        </div>
       </div>
 
       {clients.length === 0 ? (
