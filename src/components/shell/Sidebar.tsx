@@ -70,6 +70,7 @@ const CLIENT_SECTIONS: NavSection[] = [
       { href: "/training", label: "Training", icon: Dumbbell },
       { href: "/log", label: "Log", icon: NotebookPen },
       { href: "/progress", label: "Progress", icon: TrendingUp },
+      { href: "/from-your-coach", label: "Alongside", icon: Footprints, hint: "From your coach" },
       { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
     ],
   },
@@ -82,6 +83,7 @@ const PARENT_SECTIONS: NavSection[] = [
     label: "Menu",
     items: [
       { href: "/family", label: "My family", icon: Backpack, hint: "The boys program" },
+      { href: "/from-your-coach", label: "Alongside", icon: Footprints, hint: "From your coach" },
       { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
     ],
   },
