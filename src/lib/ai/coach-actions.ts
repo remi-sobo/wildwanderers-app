@@ -235,6 +235,80 @@ Return just the sentence, nothing else.`;
   }
 }
 
+// Scout helps Gabe shape his own Alongside note: it expands his rough words into
+// a short, honest, first-person note in HIS voice. It invents nothing, no events,
+// results, or feelings he did not give. His voice is always final, and nothing
+// publishes without him.
+export async function draftCoachShare(input: {
+  tone?: string;
+  title?: string;
+  note?: string;
+  trainingNote?: string;
+}): Promise<CoachResult> {
+  const session = await getSessionProfile();
+  if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
+    return { text: null, error: "You are signed out." };
+  }
+  if (!coachConfigured()) {
+    return { text: null, error: "Scout is not set up yet. Add the API key to switch it on." };
+  }
+
+  const note = input.note?.trim();
+  const title = input.title?.trim();
+  const training = input.trainingNote?.trim();
+  if (!note && !title && !training) {
+    return { text: null, error: "Jot a few words first, then Scout can shape them." };
+  }
+
+  const org = await getMyOrg();
+  const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
+
+  const toneLabel: Record<string, string> = {
+    note: "a note",
+    training: "training",
+    lesson: "a lesson",
+    win: "a win",
+    tough_day: "a tough day",
+  };
+  const facts: string[] = [];
+  if (title) facts.push(`Working title: ${title}`);
+  if (input.tone) facts.push(`Tone: ${toneLabel[input.tone] ?? input.tone}`);
+  if (training) facts.push(`What ${coach} moved this week: ${training}`);
+  if (note) facts.push(`${coach}'s rough words: ${note}`);
+
+  const system = `You help ${coach}, a coach at ${orgName}, shape a short weekly note to the people ${coach} coaches. It is ${coach}'s own first-person voice, honest and human, leading by example, never above anyone. Two to four sentences. Invent nothing: no events, results, numbers, or feelings ${coach} did not give you; if the words are thin, keep it short rather than embroider. No medical, nutrition, or health claims, and never frame anyone as broken. Voice: no em dashes, use commas or restructure; no AI-giveaway words (transformative, holistic, leverage, unlock, seamless, robust, pivotal); no filler transitions. Write only what ${coach} could stand behind as their own.`;
+
+  const prompt = `Shape these into a short note in ${coach}'s own voice, first person. Base it only on what is given.
+
+${facts.join("\n")}
+
+Return just the note, nothing else.`;
+
+  try {
+    const text = await callCoachText({
+      task: "coach_share.draft",
+      model: SUMMARY_MODEL,
+      system,
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 300,
+      context: { actorId: session.userId, orgId: session.profile.org_id },
+    });
+
+    await auditLog({
+      actorId: session.userId,
+      orgId: session.profile.org_id,
+      action: "coach_share.draft_assist",
+      entityTable: "coach_shares",
+      metadata: { model: SUMMARY_MODEL, tone: input.tone ?? null },
+    });
+
+    return { text: text.trim(), error: null };
+  } catch (e) {
+    if (isConfigError(e)) return { text: null, error: e.message };
+    return { text: null, error: "Scout could not draft that just now. Try again." };
+  }
+}
+
 const KINDS = ["strength", "cardio", "mobility", "warmup", "cooldown", "skill"];
 
 // What Coach returns for a draft (before we match it to the library).

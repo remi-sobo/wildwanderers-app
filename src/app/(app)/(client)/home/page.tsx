@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, CalendarClock, ChevronRight } from "lucide-react";
+import { CalendarDays, CalendarClock, ChevronRight, Footprints } from "lucide-react";
 import { getMyTraining, currentWorkoutIndex } from "@/lib/data/training";
 import { getMyNextSession } from "@/lib/data/sessions";
 import { getMyOrg } from "@/lib/data/org";
+import { getLatestCoachShare } from "@/lib/data/coach-shares";
 import { Ridgeline } from "@/components/brand/Ridgeline";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -17,10 +18,11 @@ function formatWhen(iso: string): string {
 }
 
 export default async function ClientHomePage() {
-  const [{ client, plan, completedIds }, nextSession, org] = await Promise.all([
+  const [{ client, plan, completedIds }, nextSession, org, latestShare] = await Promise.all([
     getMyTraining(),
     getMyNextSession(),
     getMyOrg(),
+    getLatestCoachShare(),
   ]);
 
   const firstName = client?.first_name?.trim();
@@ -41,6 +43,27 @@ export default async function ClientHomePage() {
           </h1>
         </div>
       </section>
+
+      {latestShare ? (
+        <Link
+          href="/from-your-coach"
+          className="group flex items-center gap-3 rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 py-4 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-[color:var(--border-strong)]"
+        >
+          <Footprints size={18} className="shrink-0 text-forest" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-bark">
+              From your coach
+            </p>
+            <p className="truncate text-[14px] text-forest-deep">
+              {latestShare.title || latestShare.body}
+            </p>
+          </div>
+          <ChevronRight
+            size={16}
+            className="shrink-0 text-[color:var(--color-text-faint)] transition-colors group-hover:text-forest"
+          />
+        </Link>
+      ) : null}
 
       {nextSession ? (
         <div className="flex items-center gap-3 rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 py-4 shadow-[var(--shadow-card)]">
