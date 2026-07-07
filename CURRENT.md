@@ -4,6 +4,29 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 10 (phases A and B) built, 2026-07-07: reusable training, coach side.
+Drafts now rest. A plan saves as a draft or creates-and-activates from the
+builder; Scout's drafted plan is saved as a real draft row with the ask it came
+from (no more sessionStorage handoff), and each client's Program page has a
+Drafts list to review, activate, or discard. Activation stamps who approved and
+when (coach_approved_at/by). The leak this closed: with drafts resting, the old
+client fallback could have shown one, so the client read policy and
+getPlanForClient both exclude draft and pending_review, verified on the live DB
+(client sees zero drafts and zero templates, own active plan untouched; owner
+sees and saves both; the template RPC writes under RLS). Plan templates are
+net-new dedicated tables (plan_templates, template_workouts,
+template_workout_exercises), staff-only with no client policy at all: save as a
+template from the builder, start a client's plan from one (it lands as a
+resting draft, one review path), manage at /program/templates. Phase C (client
+self-directed workouts, no AI in that path) is specified in RING10_SPEC.md and
+deferred to its own ring. The spec was renumbered from Ring 9: the live DB
+carries a ring9_movements_media migration (exercise_library.sort_order plus an
+exercise-media bucket) with NO file in this repo, from separate in-flight
+movements work. That git/DB drift is open and needs reconciling when that work
+lands. Also noted: Ring 8 (Trailhead Library: schema, composer, reader, weekly
+email, and the Coach-to-Scout rename) shipped without a CURRENT.md entry; see
+the git log around 2026-07-06.
+
 Rings 0 through 7 built. Ring 7 completes the boys program the way a family joins
 one: a guardians family model that owns the kids (with medical, emergency
 contacts, and pickup authorization), versioned forms with a waiver that gates a
