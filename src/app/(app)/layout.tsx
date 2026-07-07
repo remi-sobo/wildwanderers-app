@@ -33,6 +33,7 @@ export default async function AppLayout({
         displayName={displayName}
         email={email}
         orgName={org?.name ?? "Wild Wanderers"}
+        orgLogoUrl={org?.logo_url ?? undefined}
       />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <TopBar />

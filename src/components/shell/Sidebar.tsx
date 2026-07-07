@@ -101,12 +101,14 @@ export function Sidebar({
   displayName,
   email,
   orgName = "Wild Wanderers",
+  orgLogoUrl = "/brand/mark-bone.png",
   activePath,
 }: {
   role: Role;
   displayName: string;
   email: string | null;
   orgName?: string;
+  orgLogoUrl?: string;
   activePath?: string;
 }) {
   const pathname = usePathname();
@@ -122,11 +124,17 @@ export function Sidebar({
     <aside className="sticky top-0 z-20 flex h-dvh w-16 shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:w-[248px]">
       <Contours className="pointer-events-none absolute inset-x-0 top-20 text-mist/10" />
 
-      {/* Brand */}
-      <div className="relative z-10 flex items-center justify-center px-3 pb-2 pt-6 md:justify-start md:px-6 md:pt-7">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-bone/[0.08] font-[family-name:var(--font-display)] text-[15px] text-cream md:hidden">
-          {initials(orgName)}
-        </span>
+      {/* Brand. The org's mark carries the identity: alone on the collapsed
+          rail, beside the org name on desktop. Seeded with the Wild Wanderers
+          mark; a second org's logo_url takes over without touching this file. */}
+      <div className="relative z-10 flex items-center justify-center gap-3 px-3 pb-2 pt-6 md:justify-start md:px-5 md:pt-7">
+        <img
+          src={orgLogoUrl}
+          alt={orgName}
+          width={34}
+          height={21}
+          className="w-[30px] shrink-0 md:w-[34px]"
+        />
         <div className="hidden md:block">
           <p className="font-[family-name:var(--font-display)] text-[19px] font-medium leading-none text-bone">
             {orgName}
