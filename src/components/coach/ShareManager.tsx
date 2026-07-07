@@ -116,11 +116,11 @@ export function ShareManager({
                     {s.body}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1 max-md:gap-1.5">
                   <Link
                     href={`/alongside/${s.id}/edit`}
                     aria-label="Edit note"
-                    className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest"
+                    className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest max-md:h-11 max-md:w-11 max-md:p-0"
                   >
                     <Pencil size={15} />
                   </Link>
@@ -130,7 +130,7 @@ export function ShareManager({
                     disabled={busyId === s.id}
                     aria-label={published ? "Move to draft" : "Publish"}
                     title={published ? "Move to draft" : "Publish"}
-                    className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest disabled:opacity-40"
+                    className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest disabled:opacity-40 max-md:h-11 max-md:w-11 max-md:p-0"
                   >
                     {published ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -139,7 +139,7 @@ export function ShareManager({
                     onClick={() => remove(s)}
                     disabled={busyId === s.id}
                     aria-label="Delete note"
-                    className="rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)] disabled:opacity-40"
+                    className="flex items-center justify-center rounded-lg p-2 text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)] disabled:opacity-40 max-md:h-11 max-md:w-11 max-md:p-0"
                   >
                     <Trash2 size={15} />
                   </button>

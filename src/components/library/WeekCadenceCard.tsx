@@ -41,7 +41,7 @@ export function WeekCadenceCard({ cadence }: { cadence: Cadence }) {
         </div>
         <Link
           href="/library/new"
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-5 py-2.5 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-5 py-2.5 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
         >
           <PenLine size={15} aria-hidden="true" />
           New post

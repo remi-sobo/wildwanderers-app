@@ -8,7 +8,7 @@ import { PILLAR_ORDER, PILLAR_LABEL, type PillarKey } from "@/lib/longevity/pill
 import type { CatalogGroup, CatalogTest } from "@/lib/data/longevity";
 
 const field =
-  "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 function TestRow({ test }: { test: CatalogTest }) {
   const router = useRouter();
@@ -64,7 +64,7 @@ function TestRow({ test }: { test: CatalogTest }) {
         <button
           type="button"
           onClick={() => setEditing((e) => !e)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px] max-md:px-4"
         >
           <Pencil size={13} aria-hidden="true" />
           Edit
@@ -96,7 +96,7 @@ function TestRow({ test }: { test: CatalogTest }) {
           <label className="mt-3 flex flex-col gap-1 text-[12px] text-bark">
             How to measure
             <textarea
-              className="min-h-[64px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[14px] text-ink"
+              className="min-h-[64px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[16px] md:text-[14px] text-ink"
               value={howTo}
               onChange={(e) => setHowTo(e.target.value)}
             />
@@ -119,14 +119,14 @@ function TestRow({ test }: { test: CatalogTest }) {
               type="button"
               onClick={save}
               disabled={pending}
-              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60"
+              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
             >
               {pending ? "Saving" : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest"
+              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest max-md:min-h-[44px]"
             >
               Cancel
             </button>
@@ -177,7 +177,7 @@ function AddTest() {
       <button
         type="button"
         onClick={() => setShow(true)}
-        className="inline-flex items-center gap-1.5 self-start rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep"
+        className="inline-flex items-center gap-1.5 self-start rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep max-md:min-h-[44px]"
       >
         <Plus size={15} strokeWidth={2.2} aria-hidden="true" />
         Add a test
@@ -244,14 +244,14 @@ function AddTest() {
           type="button"
           onClick={add}
           disabled={pending || !name.trim() || !unit.trim()}
-          className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60"
+          className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
         >
           {pending ? "Adding" : "Add test"}
         </button>
         <button
           type="button"
           onClick={() => setShow(false)}
-          className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest"
+          className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest max-md:min-h-[44px]"
         >
           Cancel
         </button>

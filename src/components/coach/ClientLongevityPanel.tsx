@@ -78,7 +78,7 @@ export function ClientLongevityPanel({
         <button
           type="button"
           onClick={() => setShowRecord((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-3.5 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-3.5 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep max-md:min-h-[44px] max-md:px-4"
         >
           <Plus size={15} strokeWidth={2.2} aria-hidden="true" />
           Record
@@ -120,7 +120,7 @@ export function ClientLongevityPanel({
                 type="button"
                 onClick={save}
                 disabled={pending || !assessmentId}
-                className="shrink-0 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60"
+                className="shrink-0 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
               >
                 {pending ? "Saving" : "Save"}
               </button>
@@ -132,7 +132,7 @@ export function ClientLongevityPanel({
                 key={s}
                 type="button"
                 onClick={() => setSource(s)}
-                className={`rounded-full px-3 py-1 text-[12px] font-medium transition ${
+                className={`rounded-full px-3 py-1 text-[12px] font-medium transition max-md:min-h-[44px] max-md:px-4 ${
                   source === s
                     ? "bg-forest text-bone"
                     : "border border-[color:var(--border-strong)] text-[color:var(--color-text-muted)] hover:bg-inset"

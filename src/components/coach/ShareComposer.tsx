@@ -164,7 +164,7 @@ export function ShareComposer({
                 key={t.value}
                 type="button"
                 onClick={() => setTone(t.value)}
-                className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors max-md:min-h-[44px] ${
                   tone === t.value
                     ? "border-forest bg-forest text-bone"
                     : "border-[color:var(--border-strong)] text-[color:var(--color-text-muted)] hover:border-forest"
@@ -199,7 +199,7 @@ export function ShareComposer({
                 type="button"
                 onClick={runDraft}
                 disabled={drafting}
-                className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60 max-md:min-h-[44px]"
               >
                 <Sparkles size={13} aria-hidden="true" />
                 {drafting ? "Shaping" : "Shape with Scout"}
@@ -212,7 +212,7 @@ export function ShareComposer({
             onChange={(e) => setBody(e.target.value)}
             rows={5}
             placeholder="How your week went, what you are working on, an honest word. This is yours, in your voice."
-            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14.5px] leading-[1.55] text-ink"
+            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[16px] leading-[1.55] text-ink md:text-[14.5px]"
           />
           {draftNote ? (
             <p className="mt-2 text-[12.5px] text-[color:var(--color-text-muted)]">{draftNote}</p>
@@ -244,7 +244,7 @@ export function ShareComposer({
           {AUDIENCE_OPTIONS.map((a) => (
             <label
               key={a.value}
-              className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-[13.5px] transition-colors ${
+              className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-[13.5px] transition-colors max-md:min-h-[44px] ${
                 audience === a.value
                   ? "border-forest/40 bg-forest/5 text-ink"
                   : "border-[color:var(--border-hair)] text-[color:var(--color-text-muted)] hover:bg-inset"
@@ -288,7 +288,7 @@ export function ShareComposer({
               <button
                 type="button"
                 onClick={clearPhoto}
-                className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold text-[color:var(--color-state-error)]"
+                className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold text-[color:var(--color-state-error)] max-md:min-h-[44px]"
               >
                 <X size={13} aria-hidden="true" /> Remove
               </button>
@@ -302,7 +302,7 @@ export function ShareComposer({
           type="button"
           onClick={() => save(true)}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
         >
           {saving ? "Saving" : isPublished ? "Save and keep shared" : "Share it"}
         </button>
@@ -310,11 +310,14 @@ export function ShareComposer({
           type="button"
           onClick={() => save(false)}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-5 py-2.5 text-[14px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-5 py-2.5 text-[14px] font-semibold text-forest transition-colors hover:bg-forest/5 disabled:opacity-70 max-md:min-h-[44px]"
         >
           {isPublished ? "Move to draft" : "Save draft"}
         </button>
-        <Link href="/alongside" className="ww-link text-[13.5px] font-semibold text-forest">
+        <Link
+          href="/alongside"
+          className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]"
+        >
           Cancel
         </Link>
       </div>

@@ -21,7 +21,7 @@ export default async function TemplatesPage() {
       <div>
         <Link
           href="/program"
-          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest"
+          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest max-md:min-h-[44px]"
         >
           <ChevronLeft size={16} aria-hidden="true" />
           Program
@@ -59,11 +59,11 @@ export default async function TemplatesPage() {
                       name="title"
                       defaultValue={t.title}
                       aria-label="Template title"
-                      className="h-9 w-full max-w-[340px] rounded-lg border border-transparent bg-transparent px-2 font-[family-name:var(--font-display)] text-[16px] text-forest-deep transition-colors hover:border-[color:var(--border-hair)] focus:border-[color:var(--border-strong)] focus:bg-card focus:outline-none"
+                      className="h-11 w-full max-w-[340px] rounded-lg border border-transparent bg-transparent px-2 font-[family-name:var(--font-display)] text-[16px] text-forest-deep transition-colors hover:border-[color:var(--border-hair)] focus:border-[color:var(--border-strong)] focus:bg-card focus:outline-none md:h-9"
                     />
                     <button
                       type="submit"
-                      className="text-[12px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-forest"
+                      className="-my-2 inline-flex min-h-[44px] items-center rounded-lg px-2 text-[12px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-forest"
                     >
                       Rename
                     </button>
@@ -81,7 +81,7 @@ export default async function TemplatesPage() {
                 <form action={setActive}>
                   <button
                     type="submit"
-                    className="shrink-0 rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset"
+                    className="shrink-0 rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px] max-md:px-4"
                   >
                     {t.is_active ? "Retire" : "Bring back"}
                   </button>
