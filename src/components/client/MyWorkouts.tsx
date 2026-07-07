@@ -7,12 +7,12 @@ import { setExerciseComplete } from "@/lib/training/actions";
 import { sendSelfWorkoutToCoach, deleteSelfWorkout } from "@/lib/training/self-actions";
 import { logActivity } from "@/lib/wellness/actions";
 import { PlanTalk } from "@/components/plans/PlanTalk";
-import type { MyWorkout } from "@/lib/data/training";
+import type { MyWorkout, MyWorkoutDay } from "@/lib/data/training";
 import type { PlanComment, PlanSwap } from "@/lib/data/plan-talk";
 
 export type WorkoutTalk = { comments: PlanComment[]; swaps: PlanSwap[] };
 
-function detail(ex: MyWorkout["exercises"][number]): string {
+function detail(ex: MyWorkoutDay["exercises"][number]): string {
   const parts: string[] = [];
   if (ex.sets) parts.push(`${ex.sets} sets`);
   if (ex.reps) parts.push(ex.reps);
@@ -56,12 +56,14 @@ export function MyWorkouts({
     }
   }
 
-  function logMovement(w: MyWorkout) {
-    const mins = minutes[w.planId]?.trim();
+  function logMovement(w: MyWorkout, day: MyWorkoutDay, key: string) {
+    const mins = minutes[key]?.trim();
     if (!mins) return;
+    const kind =
+      w.days.length > 1 ? `${w.title}, ${day.title ?? `day ${day.day_number}`}` : w.title;
     startTransition(async () => {
-      const result = await logActivity({ kind: w.title, duration_minutes: mins });
-      if (!result.error) setLogged((prev) => new Set(prev).add(w.planId));
+      const result = await logActivity({ kind, duration_minutes: mins });
+      if (!result.error) setLogged((prev) => new Set(prev).add(key));
     });
   }
 
@@ -87,8 +89,9 @@ export function MyWorkouts({
         </p>
       ) : (
         workouts.map((w) => {
-          const doneCount = w.exercises.filter((e) => done.has(e.id)).length;
-          const complete = w.exercises.length > 0 && doneCount === w.exercises.length;
+          const allExercises = w.days.flatMap((d) => d.exercises);
+          const doneCount = allExercises.filter((e) => done.has(e.id)).length;
+          const complete = allExercises.length > 0 && doneCount === allExercises.length;
           const send = sendSelfWorkoutToCoach.bind(null, w.planId);
           const remove = deleteSelfWorkout.bind(null, w.planId);
           return (
@@ -118,83 +121,101 @@ export function MyWorkouts({
                       : "bg-inset text-[color:var(--color-text-muted)]"
                   }`}
                 >
-                  {complete ? "Done" : `${doneCount}/${w.exercises.length}`}
+                  {complete ? "Done" : `${doneCount}/${allExercises.length}`}
                 </span>
               </div>
 
-              <ul className="flex flex-col">
-                {w.exercises.map((ex) => {
-                  const isDone = done.has(ex.id);
-                  return (
-                    <li
-                      key={ex.id}
-                      className="flex items-center gap-3 border-b border-[color:var(--border-hair)] px-5 py-3 last:border-b-0"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggle(ex.id)}
-                        aria-pressed={isDone}
-                        aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                          isDone
-                            ? "border-fern bg-fern text-bone"
-                            : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
-                        }`}
-                      >
-                        <Check size={15} strokeWidth={2.5} />
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-[14.5px] ${
-                            isDone
-                              ? "text-[color:var(--color-text-faint)] line-through"
-                              : "text-[color:var(--color-text)]"
-                          }`}
+              {w.days.map((day) => {
+                const dayKey = `${w.planId}:${day.id}`;
+                const dayDone =
+                  day.exercises.length > 0 && day.exercises.every((e) => done.has(e.id));
+                return (
+                  <div key={day.id}>
+                    {w.days.length > 1 ? (
+                      <p className="border-b border-[color:var(--border-hair)] bg-inset/40 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-bark">
+                        Day {day.day_number}
+                        {day.title ? ` · ${day.title}` : ""}
+                      </p>
+                    ) : null}
+                    <ul className="flex flex-col">
+                      {day.exercises.map((ex) => {
+                        const isDone = done.has(ex.id);
+                        return (
+                          <li
+                            key={ex.id}
+                            className="flex items-center gap-3 border-b border-[color:var(--border-hair)] px-5 py-3 last:border-b-0"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggle(ex.id)}
+                              aria-pressed={isDone}
+                              aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                                isDone
+                                  ? "border-fern bg-fern text-bone"
+                                  : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
+                              }`}
+                            >
+                              <Check size={15} strokeWidth={2.5} />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`text-[14.5px] ${
+                                  isDone
+                                    ? "text-[color:var(--color-text-faint)] line-through"
+                                    : "text-[color:var(--color-text)]"
+                                }`}
+                              >
+                                {ex.title}
+                              </p>
+                              {detail(ex) ? (
+                                <p className="text-[12.5px] text-[color:var(--color-text-muted)]">
+                                  {detail(ex)}
+                                </p>
+                              ) : null}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {dayDone && !logged.has(dayKey) ? (
+                      <div className="flex items-center gap-2 border-b border-[color:var(--border-hair)] bg-inset/30 px-5 py-2.5">
+                        <input
+                          value={minutes[dayKey] ?? ""}
+                          onChange={(e) =>
+                            setMinutes((m) => ({
+                              ...m,
+                              [dayKey]: e.target.value.replace(/[^0-9]/g, ""),
+                            }))
+                          }
+                          inputMode="numeric"
+                          placeholder="Minutes"
+                          aria-label="How many minutes did it take"
+                          className="h-9 w-[92px] rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[13px] text-ink"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => logMovement(w, day, dayKey)}
+                          disabled={pending || !minutes[dayKey]?.trim()}
+                          className="rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60"
                         >
-                          {ex.title}
-                        </p>
-                        {detail(ex) ? (
-                          <p className="text-[12.5px] text-[color:var(--color-text-muted)]">
-                            {detail(ex)}
-                          </p>
-                        ) : null}
+                          Log it as movement
+                        </button>
                       </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                    ) : null}
+                    {logged.has(dayKey) ? (
+                      <p
+                        className="border-b border-[color:var(--border-hair)] px-5 py-2 text-[12.5px] font-semibold text-forest"
+                        role="status"
+                      >
+                        Logged. It counts toward your movement.
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
 
               <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--border-hair)] px-5 py-3">
-                {complete && !logged.has(w.planId) ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={minutes[w.planId] ?? ""}
-                      onChange={(e) =>
-                        setMinutes((m) => ({
-                          ...m,
-                          [w.planId]: e.target.value.replace(/[^0-9]/g, ""),
-                        }))
-                      }
-                      inputMode="numeric"
-                      placeholder="Minutes"
-                      aria-label="How many minutes did it take"
-                      className="h-9 w-[92px] rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[13px] text-ink"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => logMovement(w)}
-                      disabled={pending || !minutes[w.planId]?.trim()}
-                      className="rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60"
-                    >
-                      Log it as movement
-                    </button>
-                  </div>
-                ) : null}
-                {logged.has(w.planId) ? (
-                  <p className="text-[12.5px] font-semibold text-forest" role="status">
-                    Logged. It counts toward your movement.
-                  </p>
-                ) : null}
                 <div className="ml-auto flex items-center gap-3">
                   {w.status === "draft" && !w.reviewedAt ? (
                     <form action={send}>
@@ -234,7 +255,7 @@ export function MyWorkouts({
                     viewerIsStaff={false}
                     otherLabel="Your coach"
                     exerciseTitles={Object.fromEntries(
-                      w.exercises.map((e) => [e.id, e.title]),
+                      allExercises.map((e) => [e.id, e.title]),
                     )}
                     revalidate="/training"
                   />
