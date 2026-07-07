@@ -283,6 +283,24 @@ only from a client's page.
    Written as one spec per the request; the cut line is drawn so the split is
    free.
 
+## Build status (2026-07-07)
+
+Built as one ring, all five phases (decision 6 resolved by the owner: build
+everything, messaging included), in six commits on
+`claude/client-workout-capabilities-ilmpis`: the conversations migration and
+flow (13.1, 13.2), the drafts inbox (13.3), short plans (13.4), shared
+templates (13.5), and open messaging (13.6). All four migrations applied to
+the live project. Decisions taken as recommended: families included in
+messaging, client-initiated threads past the fork with sender pinning,
+swap acceptance rewrites the row via the definer RPC, per-template sharing
+default off, the seven-day cap. Verified live end to end, including the swap
+loop on a real plan (restored after) and every cross-client negative. One
+honest gap: the guardian messaging lane is verified at the policy level only,
+because no family login exists on the live DB yet; exercise it when the first
+family is invited. Deviations: none from the phase texts; the comments rail
+posts plan-level comments (the exercise anchor exists in schema and displays,
+the composer does not set it yet).
+
 ## Not in this ring (named so the shape is visible)
 
 - Broadcast and announcements (staff to many), group threads, attachments,
