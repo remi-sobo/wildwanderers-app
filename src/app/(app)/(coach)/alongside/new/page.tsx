@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { ShareComposer } from "@/components/coach/ShareComposer";
+import { coachConfigured } from "@/lib/ai/config";
 
 export default function NewSharePage() {
   return (
@@ -17,7 +18,7 @@ export default function NewSharePage() {
           Share a note
         </h1>
       </div>
-      <ShareComposer mode="create" />
+      <ShareComposer mode="create" coachConfigured={coachConfigured()} />
     </div>
   );
 }

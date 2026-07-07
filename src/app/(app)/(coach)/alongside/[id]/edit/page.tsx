@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { getShare } from "@/lib/data/coach-shares";
 import { ShareComposer, type ShareInitial } from "@/components/coach/ShareComposer";
+import { coachConfigured } from "@/lib/ai/config";
 
 export default async function EditSharePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,7 +35,7 @@ export default async function EditSharePage({ params }: { params: Promise<{ id: 
           Edit note
         </h1>
       </div>
-      <ShareComposer mode="edit" initial={initial} />
+      <ShareComposer mode="edit" initial={initial} coachConfigured={coachConfigured()} />
     </div>
   );
 }
