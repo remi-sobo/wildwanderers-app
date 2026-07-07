@@ -4,6 +4,27 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 11 built, 2026-07-07: self-directed client workouts, the Phase C that
+Ring 10 specified and deferred. A client builds their own workout by hand from
+the movement library at /training/build (no AI anywhere in that path, by the
+Coach AI guardrail) and it lives in "My workouts" beside the coach's plan,
+never replacing it: plan_type 'workout', initiated_by 'client', resting at
+draft or pending_review, and activate_plan_atomic refuses client-initiated
+plans outright so nothing can displace the coach's active plan from any
+surface. The client checks movements off the same way, optionally sends a
+workout to Gabe for a look (it appears in the Drafts list badged From the
+client, with Mark reviewed in place of Activate and Discard, stamping
+coach_approved_at/by and handing it back), and when a workout is done, logs it
+as movement with their own minutes through the existing audited logActivity
+path, so the wellness movement input gets a client-entered number, never a
+fabricated one. RLS forked from the Team Esface self-directed policies,
+retargeted to clients: create, update (status locked to the two resting
+states), and delete their own lane plus the workout tree under it. Verified
+live: the client creates, sends, and deletes their own workout; forcing it
+active fails at the policy and at the RPC for client and owner both; another
+client sees none of it; grafting rows onto an active coach plan fails; the
+coach's list shows a sent workout and never a client's private draft.
+
 Ring 10 (phases A and B) built, 2026-07-07: reusable training, coach side.
 Drafts now rest. A plan saves as a draft or creates-and-activates from the
 builder; Scout's drafted plan is saved as a real draft row with the ask it came
