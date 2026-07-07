@@ -1,4 +1,4 @@
-# Ring 9 — Reusable Training: Templates, Draft Review, and Self-Directed Workouts
+# Ring 10 — Reusable Training: Templates, Draft Review, and Self-Directed Workouts
 
 Three gaps between the spec and the built product all sit on the same spine (the
 Ring 1 `training_plans` / `workouts` / `workout_exercises` tables and the Ring 1.5
@@ -298,11 +298,11 @@ athlete→client, **without the client AI path.**
 
 ## Decisions to lock before build
 
-1. **One ring or split?** This is large (three features, three migrations). Phases A
-   and B are coach-side and tightly coupled (template → draft → activate); Phase C is
-   client-side with its own guardrail surface. **Recommend building A+B as this ring
-   and splitting Phase C (self-directed) into its own follow-up ring** so each stays
-   reviewable. Written as one spec per the request; sequencing is Gabe's call.
+1. **One ring or split?** LOCKED (2026-07-07): Phases A and B build as this ring;
+   Phase C (self-directed) splits into its own follow-up ring. Phases A and B are
+   coach-side and tightly coupled (template → draft → activate); Phase C is
+   client-side with its own guardrail surface, and it stays specified here so the
+   follow-up ring starts from this document.
 2. **Does a client's self-directed workout need Gabe's approval?** **Recommend no by
    default** (it is the client's own choice, not a prescription), with an opt-in
    "send to coach" that sets `pending_review`. The alternative (all client workouts
@@ -315,9 +315,12 @@ athlete→client, **without the client AI path.**
 5. **Scout for clients stays off, permanently.** Confirm the guardrail: no AI in the
    client builder, ever. This is the one place the Team Esface source and the Wild
    Wanderers guardrails diverge, and it must be an explicit, recorded decision.
-6. **Ring number.** Numbered Ring 9 here (Ring 8 was the Trailhead Library). Confirm
-   against the mentor-onboarding backlog, which `RING7_SPEC.md:102` and `CURRENT.md`
-   once slated for "Ring 8."
+6. **Ring number.** LOCKED (2026-07-07): Ring 10. First numbered Ring 9, but the
+   live database already carries a `ring9_movements_media` migration (movements
+   ordering plus an exercise-media bucket), applied the same day with no file in
+   this repo, so Ring 9 belongs to that in-flight movements work. Renumbered to
+   keep the two apart; the git/DB drift itself is flagged in `CURRENT.md` at the
+   final pass.
 
 ## Not in this ring (named so the shape is visible)
 
