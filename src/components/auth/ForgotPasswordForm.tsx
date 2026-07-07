@@ -42,7 +42,7 @@ export function ForgotPasswordForm() {
           set a new password.
         </p>
         <div className="mt-9 border-t border-[color:var(--border-hair)] pt-6">
-          <Link href="/login" className="ww-link text-sm font-semibold text-forest">
+          <Link href="/login" className="ww-link -m-2 inline-block p-2 text-sm font-semibold text-forest">
             Back to sign in
           </Link>
         </div>

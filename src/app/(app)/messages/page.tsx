@@ -36,7 +36,7 @@ export default async function MessagesPage({
   const messages = selected ? await getMessages(selected.id) : [];
 
   return (
-    <div className="flex h-[72dvh] overflow-hidden rounded-2xl border border-[color:var(--border-hair)] bg-card shadow-[var(--shadow-card)]">
+    <div className="flex h-[calc(100dvh-230px)] min-h-[340px] overflow-hidden rounded-2xl border border-[color:var(--border-hair)] bg-card shadow-[var(--shadow-card)] md:h-[72dvh]">
       <aside
         className={`w-full overflow-y-auto border-[color:var(--border-hair)] md:w-72 md:shrink-0 md:border-r ${
           selected ? "hidden md:block" : "block"
@@ -71,7 +71,7 @@ export default async function MessagesPage({
           <>
             <Link
               href="/messages"
-              className="flex items-center gap-1 border-b border-[color:var(--border-hair)] px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] md:hidden"
+              className="flex min-h-[44px] items-center gap-1 border-b border-[color:var(--border-hair)] px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] md:hidden"
             >
               <ChevronLeft size={16} /> Conversations
             </Link>

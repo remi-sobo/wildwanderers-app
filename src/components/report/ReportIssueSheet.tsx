@@ -183,9 +183,9 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
 
   const label = "mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.12em] text-bark";
   const textarea =
-    "w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14.5px] text-ink outline-none focus:border-amber";
+    "w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[16px] md:text-[14.5px] text-ink outline-none focus:border-amber";
   const primaryBtn =
-    "inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70";
+    "inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]";
 
   return (
     <div className="fixed inset-0 z-50">
@@ -211,7 +211,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="text-bone/70 transition-colors hover:text-bone"
+              className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center text-bone/70 transition-colors hover:text-bone"
             >
               <X size={20} aria-hidden="true" />
             </button>
@@ -219,7 +219,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-6">
           {/* Kind selector in describe, a static chip afterward. */}
           {phase === "describe" ? (
             <div className="mb-5">
@@ -233,7 +233,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
                       key={k.key}
                       type="button"
                       onClick={() => setKind(k.key)}
-                      className={`flex flex-1 basis-[120px] items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-colors ${
+                      className={`flex flex-1 basis-[120px] items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-colors max-md:min-h-[44px] ${
                         active
                           ? "border-amber bg-amber/10 text-ink"
                           : "border-[color:var(--border-hair)] text-[color:var(--color-text-muted)] hover:border-[color:var(--border-strong)]"
@@ -286,7 +286,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
                     <button
                       type="button"
                       onClick={() => setPhoto(null)}
-                      className="text-[13px] text-[color:var(--color-text-muted)] hover:text-ink"
+                      className="-m-2 p-2 text-[13px] text-[color:var(--color-text-muted)] hover:text-ink"
                     >
                       Remove screenshot
                     </button>
@@ -295,7 +295,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-dashed border-[color:var(--border-strong)] px-3.5 py-2 text-[13px] text-[color:var(--color-text-muted)] hover:text-ink"
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-dashed border-[color:var(--border-strong)] px-3.5 py-2 text-[13px] text-[color:var(--color-text-muted)] hover:text-ink max-md:min-h-[44px]"
                   >
                     <Camera size={14} aria-hidden="true" />
                     Add a screenshot
@@ -404,7 +404,7 @@ export function ReportIssueSheet({ open, onClose }: { open: boolean; onClose: ()
                     <button
                       type="button"
                       onClick={copyBrief}
-                      className="inline-flex items-center gap-1 rounded-full border border-amber px-3 py-1 text-[12px] font-semibold text-amber-deep hover:bg-amber/10"
+                      className="inline-flex items-center gap-1 rounded-full border border-amber px-3 py-1 text-[12px] font-semibold text-amber-deep hover:bg-amber/10 max-md:min-h-[44px]"
                     >
                       {copied ? <Check size={12} /> : <Copy size={12} />}
                       {copied ? "Copied" : "Copy prompt"}

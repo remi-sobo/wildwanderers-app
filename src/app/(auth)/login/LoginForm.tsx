@@ -77,7 +77,7 @@ export function LoginForm() {
           </label>
           <Link
             href="/forgot-password"
-            className="text-xs font-semibold text-amber-deep"
+            className="-m-2 inline-block p-2 text-xs font-semibold text-amber-deep"
           >
             Forgot password?
           </Link>
