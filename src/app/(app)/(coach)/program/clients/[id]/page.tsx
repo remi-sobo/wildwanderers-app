@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ChevronLeft, ClipboardList, Dumbbell, MessageCircle } from "lucide-react";
+import { CalendarClock, ChevronLeft, Dumbbell, MessageCircle } from "lucide-react";
 import { Activity } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient, getDraftPlansForClient } from "@/lib/data/plans";
@@ -266,7 +266,7 @@ export default async function ClientDetailPage({
           />
         </section>
       ) : (
-        <EmptyState icon={ClipboardList} title="No plan yet.">
+        <EmptyState title="No plan yet.">
           Build {client.first_name}&apos;s first training plan and it shows up here,
           ready for them to train.
         </EmptyState>
