@@ -6,7 +6,11 @@ import { Check, Eye, Plus, Send, Trash2 } from "lucide-react";
 import { setExerciseComplete } from "@/lib/training/actions";
 import { sendSelfWorkoutToCoach, deleteSelfWorkout } from "@/lib/training/self-actions";
 import { logActivity } from "@/lib/wellness/actions";
+import { PlanTalk } from "@/components/plans/PlanTalk";
 import type { MyWorkout } from "@/lib/data/training";
+import type { PlanComment, PlanSwap } from "@/lib/data/plan-talk";
+
+export type WorkoutTalk = { comments: PlanComment[]; swaps: PlanSwap[] };
 
 function detail(ex: MyWorkout["exercises"][number]): string {
   const parts: string[] = [];
@@ -22,9 +26,13 @@ function detail(ex: MyWorkout["exercises"][number]): string {
 export function MyWorkouts({
   workouts,
   completedIds,
+  talk,
+  viewerId,
 }: {
   workouts: MyWorkout[];
   completedIds: string[];
+  talk?: Record<string, WorkoutTalk>;
+  viewerId?: string;
 }) {
   const [done, setDone] = useState<Set<string>>(new Set(completedIds));
   const [minutes, setMinutes] = useState<Record<string, string>>({});
@@ -210,6 +218,28 @@ export function MyWorkouts({
                   </form>
                 </div>
               </div>
+
+              {/* The conversation on this workout, once there is one. */}
+              {talk?.[w.planId] &&
+              (talk[w.planId].comments.length > 0 ||
+                talk[w.planId].swaps.length > 0 ||
+                w.status === "pending_review" ||
+                w.reviewedAt) ? (
+                <div className="border-t border-[color:var(--border-hair)] px-5 py-3">
+                  <PlanTalk
+                    planId={w.planId}
+                    comments={talk[w.planId].comments}
+                    swaps={talk[w.planId].swaps}
+                    viewerId={viewerId ?? ""}
+                    viewerIsStaff={false}
+                    otherLabel="Your coach"
+                    exerciseTitles={Object.fromEntries(
+                      w.exercises.map((e) => [e.id, e.title]),
+                    )}
+                    revalidate="/training"
+                  />
+                </div>
+              ) : null}
             </div>
           );
         })
