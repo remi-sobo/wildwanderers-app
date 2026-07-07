@@ -4,6 +4,32 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 13 built, 2026-07-07: closing the loop on reusable training, plus open
+messaging. Five pieces. The drafts inbox at /program/drafts shows every
+resting draft org-wide, client-sent work first, with a live count on Program.
+Plan comments and swaps (forked from Team Esface) make the review say
+something: Gabe comments on a plan or one exercise and suggests a swap with a
+reason; the client answers on Training, and acceptance rewrites exactly the
+one agreed exercise row through a guarded definer RPC, audit-logged, the only
+path a swap touches plan content. Short client plans: the client builder takes
+up to seven days (plan_type 'short'), My workouts renders by day with per-day
+movement logging, Ring 11 invariants untouched. Shared templates: a per-
+template Share with clients toggle, default off; a shared one prefills the
+client's own builder and what they save stays in their lane. Open messaging:
+threads generalize to a client or a family on the far end, Gabe starts a
+conversation with anyone from /messages (every client, every family with a
+login), and a client or family member starts theirs with one button, past the
+fork's coach-only creation, with sender identity pinned and a directory helper
+exposing staff first names only (which also names Gabe instead of "Your
+coach"). Never member to member, anywhere. Verified live: a client starts a
+thread with the owner but cannot open one for another client or speak as the
+coach; the swap loop ran end to end on a real plan and was restored; the wrong
+client cannot answer a swap and sees zero of another's conversation; a shared
+template is visible to a client (unshared, none are) and an eight-day self
+plan is refused. The guardian lane is policy-verified only: no family login
+exists on the live DB yet to exercise it. See RING13_SPEC.md; decision 6
+resolved as one ring, all five phases.
+
 Rings 0 through 12 built. Ring 12 is coach accountability, "Alongside": the coach
 shares his own week back, so the coaching runs both ways. At /alongside Gabe
 writes a short note in his voice with a tone (a win, a lesson, a tough day), an

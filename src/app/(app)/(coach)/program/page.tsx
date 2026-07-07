@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronRight, LayoutTemplate, Plus } from "lucide-react";
+import { ChevronRight, Inbox, LayoutTemplate, Plus } from "lucide-react";
 import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
+import { getDraftsAcrossClients } from "@/lib/data/plans";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getPublishingCadence } from "@/lib/data/library";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -23,7 +24,13 @@ function StatusPill({ status }: { status: ClientStatus }) {
 }
 
 export default async function ProgramPage() {
-  const [clients, session] = await Promise.all([getClients(), getSessionProfile()]);
+  const [clients, session, drafts] = await Promise.all([
+    getClients(),
+    getSessionProfile(),
+    getDraftsAcrossClients(),
+  ]);
+  const waitingCount = drafts.filter((d) => d.initiated_by === "client").length;
+  const draftCount = drafts.length;
   // The library nudge is Gabe's, owner only. A coach cannot publish, so they
   // never see it. Fetched only for the owner to keep the read off the coach path.
   const cadence = session?.profile?.role === "owner" ? await getPublishingCadence() : null;
@@ -38,6 +45,22 @@ export default async function ProgramPage() {
             : `${clients.length} ${clients.length === 1 ? "client" : "clients"}`}
         </p>
         <div className="flex items-center gap-2">
+          <Link
+            href="/program/drafts"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset"
+          >
+            <Inbox size={15} aria-hidden="true" />
+            Drafts
+            {draftCount > 0 ? (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold leading-none ${
+                  waitingCount > 0 ? "bg-amber text-[#23170c]" : "bg-inset text-bark"
+                }`}
+              >
+                {draftCount}
+              </span>
+            ) : null}
+          </Link>
           <Link
             href="/program/templates"
             className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset"
