@@ -23,7 +23,7 @@ import { FormsTab, isSigned } from "@/components/coach/FormsTab";
 import { EnrollmentTab } from "@/components/coach/EnrollmentTab";
 import { AdventureTab } from "@/components/coach/AdventureTab";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 const TABS = ["Families", "Roster", "Forms", "Enrollment", "Schedule", "Attendance", "Badges", "Experiences", "Adventure"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -55,7 +55,7 @@ function InviteFamily({ programId, participantId }: { programId: string; partici
   return (
     <span className="flex items-center gap-2">
       <button type="button" onClick={invite} disabled={pending}
-        className="rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60">
+        className="rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]">
         {pending ? "Inviting" : "Invite family"}
       </button>
       {err ? <span className="max-w-[220px] text-[11.5px] text-[color:var(--color-state-error)]">{err}</span> : null}
@@ -109,14 +109,14 @@ function RosterTab({ detail }: { detail: Detail }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowAdd((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep">
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep max-md:min-h-[44px]">
           <Plus size={15} /> Add a kid
         </button>
         <div className="flex items-center gap-2">
           <input className={`${field} w-40`} placeholder="New cohort" value={cohort}
             onChange={(e) => setCohort(e.target.value)} />
           <button type="button" onClick={saveCohort} disabled={!cohort.trim()}
-            className="rounded-full border border-[color:var(--border-strong)] px-3 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60">
+            className="rounded-full border border-[color:var(--border-strong)] px-3 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]">
             Add cohort
           </button>
         </div>
@@ -145,10 +145,10 @@ function RosterTab({ detail }: { detail: Detail }) {
           {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
           <div className="mt-4 flex items-center gap-3">
             <button type="button" onClick={saveParticipant} disabled={pending || !p.first_name.trim() || !p.last_name.trim()}
-              className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+              className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
               {pending ? "Adding" : "Add to roster"}
             </button>
-            <button type="button" onClick={() => setShowAdd(false)} className="ww-link text-[13.5px] font-semibold text-forest">Cancel</button>
+            <button type="button" onClick={() => setShowAdd(false)} className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]">Cancel</button>
           </div>
         </div>
       ) : null}
@@ -185,7 +185,7 @@ function RosterTab({ detail }: { detail: Detail }) {
                       <InviteFamily programId={detail.program.id} participantId={kid.id} />
                     ) : null}
                     <select value={kid.group_id ?? ""} onChange={(e) => move(kid.id, e.target.value)}
-                      className="h-9 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[13px] text-ink">
+                      className="h-11 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[16px] text-ink md:h-9 md:text-[13px]">
                       <option value="">No cohort</option>
                       {detail.groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
@@ -233,7 +233,7 @@ function ScheduleTab({ detail }: { detail: Detail }) {
         </div>
         {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
         <button type="button" onClick={save} disabled={pending || !s.title.trim() || !s.starts_at}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
           <Plus size={15} /> Add session
         </button>
       </div>
@@ -316,22 +316,22 @@ function AttendanceTab({ detail }: { detail: Detail }) {
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} className={`${field} min-w-[240px]`}>
+        <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} className={`${field} w-full min-w-0 sm:w-auto sm:min-w-[240px]`}>
           {upcomingFirst.map((s) => <option key={s.id} value={s.id}>{s.title} · {whenLabel(s.starts_at)}</option>)}
         </select>
         <button type="button" onClick={allPresent} disabled={pending}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60">
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]">
           <CircleCheck size={15} /> All present
         </button>
       </div>
       <ul className="flex flex-col divide-y divide-[color:var(--border-hair)] rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 shadow-[var(--shadow-card)]">
         {detail.participants.map((p) => (
-          <li key={p.id} className="flex items-center gap-3 py-2.5">
+          <li key={p.id} className="flex flex-wrap items-center gap-3 py-2.5">
             <span className="min-w-0 flex-1 truncate text-[14px] text-forest-deep">{fullName(p)}</span>
-            <div className="flex shrink-0 gap-1">
+            <div className="flex shrink-0 gap-2 md:gap-1">
               {STATUSES.map((st) => (
                 <button key={st} type="button" onClick={() => mark(p.id, st)} disabled={pending}
-                  className={`rounded-full px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors ${
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors max-md:min-h-[44px] ${
                     marks[p.id] === st ? STYLE[st] : "bg-inset text-[color:var(--color-text-muted)] hover:bg-sand"
                   }`}>
                   {st}
@@ -390,7 +390,7 @@ function BadgesTab({ detail }: { detail: Detail }) {
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={give} disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             <Award size={15} /> Award badge
           </button>
           {saved ? <span className="flex items-center gap-1 text-[13px] text-fern"><Check size={15} /> Awarded</span> : null}
@@ -479,7 +479,7 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
         ) : null}
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={record} disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             <Sparkles size={15} /> Record experience
           </button>
           {saved ? <span className="flex items-center gap-1 text-[13px] text-fern"><Check size={15} /> Recorded</span> : null}
@@ -521,7 +521,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href="/boys" className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest">
+        <Link href="/boys" className="-m-2 inline-flex min-h-[44px] items-center gap-1 p-2 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest">
           <ChevronLeft size={16} aria-hidden="true" /> Dads &amp; Kids
         </Link>
         <div className="mt-3 flex flex-wrap items-baseline gap-3">
@@ -539,7 +539,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
       <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {TABS.map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
-            className={`shrink-0 rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors max-md:min-h-[44px] ${
               tab === t ? "bg-forest text-bone" : "border border-[color:var(--border-strong)] bg-card text-[color:var(--color-text)] hover:border-forest"
             }`}>
             {t}

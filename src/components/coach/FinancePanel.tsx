@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/business/format";
 import type { FinanceData, Offering } from "@/lib/data/business";
 
 const field =
-  "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 const REV_CATS = ["one_on_one", "small_group", "wellness", "boys_program", "other"];
 const EXP_CATS = ["facilities", "equipment", "software", "marketing", "travel", "insurance", "food", "other"];
 const label = (s: string) => s.replace(/_/g, " ");
@@ -89,12 +89,12 @@ function OfferingRow({ offering }: { offering: Offering }) {
           className={`${field} w-24`}
         />
         <button type="button" onClick={save} disabled={pending}
-          className="rounded-lg bg-inset px-3 py-2 text-[12.5px] font-semibold text-forest transition-colors hover:bg-sand disabled:opacity-60">
+          className="rounded-lg bg-inset px-3 py-2 text-[12.5px] font-semibold text-forest transition-colors hover:bg-sand disabled:opacity-60 max-md:min-h-[44px]">
           {saved ? <Check size={14} /> : "Save"}
         </button>
       </div>
       <button type="button" onClick={toggle} disabled={pending}
-        className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+        className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors max-md:min-h-[44px] ${
           offering.is_active
             ? "bg-[color:var(--color-state-good)]/12 text-[color:var(--color-state-good)]"
             : "bg-inset text-[color:var(--color-text-muted)]"
@@ -176,7 +176,7 @@ export function FinancePanel({ data }: { data: FinanceData }) {
         </div>
         <div className="mt-3 flex items-center gap-3">
           <button type="button" onClick={saveRev} disabled={savingRev || !rev.amount}
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             <Plus size={15} /> Log revenue
           </button>
           {revErr ? <span className="text-[13px] text-[color:var(--color-state-error)]">{revErr}</span> : null}
@@ -211,7 +211,7 @@ export function FinancePanel({ data }: { data: FinanceData }) {
         </div>
         <div className="mt-3 flex items-center gap-3">
           <button type="button" onClick={saveExp} disabled={savingExp || !exp.amount}
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             <Plus size={15} /> Log expense
           </button>
           {expErr ? <span className="text-[13px] text-[color:var(--color-state-error)]">{expErr}</span> : null}

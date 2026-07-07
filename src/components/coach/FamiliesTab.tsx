@@ -17,8 +17,8 @@ import type {
   MedicalRecord,
 } from "@/lib/data/boys";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
-const area = "min-h-[64px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
+const area = "min-h-[64px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[16px] md:text-[14px] text-ink";
 
 function fullName(p: { first_name: string; last_name: string }) {
   return `${p.first_name} ${p.last_name}`.trim();
@@ -99,7 +99,7 @@ function KidDetails({ detail, kid }: { detail: Detail; kid: Participant }) {
         <textarea className={`${area} sm:col-span-2`} placeholder="Anything else Gabe should know" value={m.notes ?? ""} onChange={(e) => setM({ ...m, notes: e.target.value })} />
       </div>
       <button type="button" onClick={saveMedical} disabled={pending}
-        className="mt-2 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60">
+        className="mt-2 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]">
         {pending ? "Saving" : "Save medical"}
       </button>
       {saved ? <span className="ml-2 text-[13px] text-fern">Saved.</span> : null}
@@ -121,13 +121,13 @@ function KidDetails({ detail, kid }: { detail: Detail; kid: Participant }) {
         <input className={field} placeholder="Relationship" value={ec.relationship} onChange={(e) => setEc({ ...ec, relationship: e.target.value })} />
         <input className={field} placeholder="Phone" value={ec.phone} onChange={(e) => setEc({ ...ec, phone: e.target.value })} />
         <button type="button" onClick={addContact} disabled={pending || !ec.name.trim() || !ec.phone.trim()}
-          className="rounded-full border border-[color:var(--border-strong)] px-4 text-[13px] font-semibold text-forest transition hover:bg-inset disabled:opacity-60">
+          className="rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition hover:bg-inset disabled:opacity-60 max-md:min-h-[44px] sm:py-0">
           Add
         </button>
       </div>
 
       {link ? (
-        <label className="mt-3 flex items-center gap-2 text-[13px] text-forest-deep">
+        <label className="mt-3 flex items-center gap-2 text-[13px] text-forest-deep max-md:min-h-[44px]">
           <input type="checkbox" checked={link.can_pickup} onChange={togglePickup} disabled={pending} />
           This family may pick up
         </label>
@@ -175,7 +175,7 @@ function FamilyCard({ detail, guardian }: { detail: Detail; guardian: Guardian }
           ) : null}
         </div>
         <button type="button" onClick={() => setShowAddKid((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-inset">
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-inset max-md:min-h-[44px]">
           <Plus size={14} /> Add a kid
         </button>
       </div>
@@ -191,7 +191,7 @@ function FamilyCard({ detail, guardian }: { detail: Detail; guardian: Guardian }
           </select>
           <div className="sm:col-span-2">
             <button type="button" onClick={addKid} disabled={pending || !kid.first_name.trim() || !kid.last_name.trim()}
-              className="rounded-full bg-amber px-4 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70">
+              className="rounded-full bg-amber px-4 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
               {pending ? "Adding" : "Add to the family"}
             </button>
             {err ? <span className="ml-2 text-[13px] text-[color:var(--color-state-error)]">{err}</span> : null}
@@ -204,7 +204,7 @@ function FamilyCard({ detail, guardian }: { detail: Detail; guardian: Guardian }
           {kids.map((k) => (
             <li key={k.id} className="rounded-xl border border-[color:var(--border-hair)] bg-canvas px-4 py-3">
               <button type="button" onClick={() => setOpenKid(openKid === k.id ? null : k.id)}
-                className="flex w-full items-center gap-2 text-left">
+                className="flex w-full items-center gap-2 text-left max-md:-my-3 max-md:min-h-[44px]">
                 <span className="flex-1 text-[14px] text-forest-deep">
                   {fullName(k)}{k.grade ? <span className="text-[12px] text-[color:var(--color-text-faint)]"> · grade {k.grade}</span> : null}
                 </span>
@@ -252,7 +252,7 @@ export function FamiliesTab({ detail }: { detail: Detail }) {
           The family comes first, then the kids.
         </p>
         <button type="button" onClick={() => setShowAdd((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep">
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep max-md:min-h-[44px]">
           <Plus size={15} /> Add a family
         </button>
       </div>
@@ -267,7 +267,7 @@ export function FamiliesTab({ detail }: { detail: Detail }) {
           </div>
           {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
           <button type="button" onClick={addFamily} disabled={pending || !g.first_name.trim() || !g.last_name.trim()}
-            className="mt-3 rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70">
+            className="mt-3 rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             {pending ? "Adding" : "Add family"}
           </button>
         </div>

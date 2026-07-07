@@ -16,7 +16,7 @@ import { formatMoney } from "@/lib/business/format";
 import type { BusinessTask, GoalProgress } from "@/lib/data/business";
 
 const field =
-  "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 const TASK_CATS = ["sales", "coaching", "program", "finance", "admin", "other"];
 const PRIORITIES = ["urgent", "high", "medium", "low"];
 const METRICS = [
@@ -45,7 +45,8 @@ function TaskRow({ task }: { task: BusinessTask }) {
 
   return (
     <li className="flex items-center gap-3 py-2.5">
-      <button type="button" onClick={complete} disabled={pending} aria-label="Toggle done" className="shrink-0">
+      <button type="button" onClick={complete} disabled={pending} aria-label="Toggle done"
+        className="-m-3 flex h-11 w-11 shrink-0 items-center justify-center">
         {done ? (
           <CircleCheck size={20} className="text-fern" aria-hidden="true" />
         ) : (
@@ -65,7 +66,7 @@ function TaskRow({ task }: { task: BusinessTask }) {
         {task.priority}
       </span>
       <button type="button" onClick={pin} disabled={pending} aria-label="Pin for today"
-        className={`shrink-0 transition-colors ${task.pin_today ? "text-amber-deep" : "text-[color:var(--color-text-faint)] hover:text-bark"}`}>
+        className={`-m-3.5 flex h-11 w-11 shrink-0 items-center justify-center transition-colors ${task.pin_today ? "text-amber-deep" : "text-[color:var(--color-text-faint)] hover:text-bark"}`}>
         <Pin size={16} fill={task.pin_today ? "currentColor" : "none"} aria-hidden="true" />
       </button>
     </li>
@@ -131,10 +132,10 @@ export function TasksPanel({ tasks, goals }: { tasks: BusinessTask[]; goals: Goa
           </div>
           <div className="mt-3 flex items-center gap-4">
             <button type="button" onClick={saveTask} disabled={savingT || !t.title.trim()}
-              className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
               <Plus size={15} /> Add task
             </button>
-            <label className="flex items-center gap-2 text-[13px] text-[color:var(--color-text-muted)]">
+            <label className="flex items-center gap-2 text-[13px] text-[color:var(--color-text-muted)] max-md:min-h-[44px]">
               <input type="checkbox" checked={Boolean(t.pin_today)} onChange={(e) => setT({ ...t, pin_today: e.target.checked })} />
               Pin for today
             </label>
@@ -185,7 +186,7 @@ export function TasksPanel({ tasks, goals }: { tasks: BusinessTask[]; goals: Goa
           </div>
           <div className="mt-3 flex items-center gap-3">
             <button type="button" onClick={saveGoal} disabled={savingG || !g.name.trim()}
-              className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-70">
+              className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-70 max-md:min-h-[44px]">
               <Plus size={15} /> Set goal
             </button>
             {gErr ? <span className="text-[13px] text-[color:var(--color-state-error)]">{gErr}</span> : null}
@@ -204,7 +205,7 @@ export function TasksPanel({ tasks, goals }: { tasks: BusinessTask[]; goals: Goa
                       <span className="flex items-center gap-2 text-[12.5px] text-[color:var(--color-text-muted)]">
                         {current} / {target}
                         <button type="button" onClick={() => removeGoal(goal.id)} aria-label="Delete goal"
-                          className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]">
+                          className="-m-4 flex h-11 w-11 items-center justify-center text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]">
                           <Trash2 size={13} />
                         </button>
                       </span>
