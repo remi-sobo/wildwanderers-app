@@ -90,7 +90,7 @@ export function CoachShareCard({ share, coachName }: { share: FeedShare; coachNa
           onClick={onAck}
           disabled={pending}
           aria-pressed={acked}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors disabled:opacity-60 ${
+          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors disabled:opacity-60 max-md:min-h-[44px] ${
             acked
               ? "border-fern/40 bg-fern/10 text-forest-deep"
               : "border-[color:var(--border-strong)] text-forest hover:bg-forest/5"

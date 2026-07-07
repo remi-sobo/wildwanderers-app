@@ -71,7 +71,7 @@ export function FoodCard({
             key={m}
             type="button"
             onClick={() => setMeal(m)}
-            className={`rounded-full border px-3.5 py-1.5 text-[13px] capitalize transition-colors ${
+            className={`rounded-full border px-3.5 py-1.5 text-[13px] capitalize transition-colors max-md:min-h-[44px] ${
               meal === m
                 ? "border-forest bg-forest text-bone"
                 : "border-[color:var(--border-strong)] bg-canvas text-[color:var(--color-text)] hover:border-forest"
@@ -100,7 +100,7 @@ export function FoodCard({
               }
             }}
             placeholder="Search a food, e.g. banana"
-            className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-canvas pl-9 pr-3 text-[15px] text-ink"
+            className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-canvas pl-9 pr-3 text-[16px] text-ink md:text-[15px]"
           />
         </div>
         <button
@@ -179,14 +179,14 @@ export function FoodCard({
               step="0.5"
               value={qty}
               onChange={(e) => setQty(e.target.value)}
-              className="h-10 w-20 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[15px] text-ink"
+              className="h-11 w-20 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[16px] text-ink md:h-10 md:text-[15px]"
             />
           </label>
           <button
             type="button"
             onClick={confirmLog}
             disabled={logging}
-            className="ml-auto rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80"
+            className="ml-auto inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80 max-md:min-h-[44px]"
           >
             {logging ? "Logging" : "Log food"}
           </button>
@@ -242,7 +242,7 @@ function FoodRow({ food }: { food: FoodLog }) {
             if (res.error) setRemoved(false);
           });
         }}
-        className="shrink-0 text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+        className="-mx-3 -my-3 flex h-11 w-11 shrink-0 items-center justify-center text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
       >
         <X size={14} aria-hidden="true" />
       </button>

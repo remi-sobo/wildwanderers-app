@@ -17,7 +17,7 @@ function emptyExercise(): SelfExerciseInput {
 }
 
 const fieldClass =
-  "h-11 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
   const [title, setTitle] = useState("");
@@ -82,8 +82,8 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
                   .slice(0, 8)
               : [];
           return (
-            <div key={i} className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[180px] flex-1">
+            <div key={i} className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
+              <div className="relative col-span-2 sm:min-w-[180px] sm:flex-1">
                 <Search
                   size={15}
                   aria-hidden="true"
@@ -101,7 +101,7 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
                   className={`${fieldClass} w-full pl-9`}
                 />
                 {matches.length > 0 ? (
-                  <ul className="absolute left-0 top-[calc(100%+4px)] z-30 max-h-64 w-[300px] max-w-[80vw] overflow-auto rounded-xl border border-[color:var(--border-strong)] bg-card p-1 shadow-[0_12px_30px_rgba(42,33,24,.14)]">
+                  <ul className="absolute left-0 top-[calc(100%+4px)] z-30 max-h-64 w-full min-w-[260px] max-w-[calc(100vw-2.5rem)] overflow-auto rounded-xl border border-[color:var(--border-strong)] bg-card p-1 shadow-[0_12px_30px_rgba(42,33,24,.14)]">
                     {matches.map((it) => (
                       <li key={it.id}>
                         <button
@@ -134,7 +134,7 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
               <select
                 value={ex.kind}
                 onChange={(e) => updateExercise(i, { kind: e.target.value })}
-                className={`${fieldClass} w-[120px] capitalize`}
+                className={`${fieldClass} col-span-2 w-full capitalize sm:w-[120px]`}
                 aria-label="Kind"
               >
                 {KINDS.map((k) => (
@@ -148,19 +148,19 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
                 onChange={(e) => updateExercise(i, { sets: e.target.value.replace(/[^0-9]/g, "") })}
                 placeholder="Sets"
                 inputMode="numeric"
-                className={`${fieldClass} w-[68px]`}
+                className={`${fieldClass} w-full sm:w-[68px]`}
               />
               <input
                 value={ex.reps}
                 onChange={(e) => updateExercise(i, { reps: e.target.value })}
                 placeholder="Reps"
-                className={`${fieldClass} w-[88px]`}
+                className={`${fieldClass} w-full sm:w-[88px]`}
               />
               {exercises.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => setExercises((es) => es.filter((_, j) => j !== i))}
-                  className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                  className="col-span-2 flex h-11 w-11 items-center justify-center justify-self-end text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)] sm:col-span-1"
                   aria-label="Remove movement"
                 >
                   <Trash2 size={15} />
@@ -174,7 +174,7 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
       <button
         type="button"
         onClick={() => setExercises((es) => [...es, emptyExercise()])}
-        className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-forest transition-colors hover:text-fern"
+        className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-forest transition-colors hover:text-fern max-md:min-h-[44px]"
       >
         <Plus size={15} /> Add a movement
       </button>
@@ -186,7 +186,10 @@ export function SelfWorkoutBuilder({ library }: { library: LibraryItem[] }) {
             &rarr;
           </span>
         </button>
-        <Link href="/training" className="ww-link text-sm font-semibold text-forest">
+        <Link
+          href="/training"
+          className="ww-link inline-flex items-center text-sm font-semibold text-forest max-md:min-h-[44px]"
+        >
           Cancel
         </Link>
       </div>
