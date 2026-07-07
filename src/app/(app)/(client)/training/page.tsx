@@ -1,4 +1,3 @@
-import { Dumbbell } from "lucide-react";
 import { getMyTraining } from "@/lib/data/training";
 import { ClientTraining } from "@/components/client/ClientTraining";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -8,7 +7,7 @@ export default async function TrainingPage() {
 
   if (!plan || plan.workouts.length === 0) {
     return (
-      <EmptyState icon={Dumbbell} title="Your workouts land here.">
+      <EmptyState title="Your workouts land here.">
         When your coach sets up your plan, each workout shows up with everything you
         need for the day. Check back soon.
       </EmptyState>

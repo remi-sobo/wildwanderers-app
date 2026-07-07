@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CalendarClock, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronRight } from "lucide-react";
 import { getMyTraining, currentWorkoutIndex } from "@/lib/data/training";
 import { getMyNextSession } from "@/lib/data/sessions";
 import { getMyOrg } from "@/lib/data/org";
@@ -80,7 +80,7 @@ export default async function ClientHomePage() {
           </span>
         </Link>
       ) : (
-        <EmptyState icon={CalendarDays} title="Your day starts here.">
+        <EmptyState title="Your day starts here.">
           Once your coach sets up your plan, today&apos;s workout and your next
           session show up on this screen. Nothing to do yet, and that is fine.
         </EmptyState>
