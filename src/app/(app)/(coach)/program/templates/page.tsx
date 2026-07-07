@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ChevronLeft, LayoutTemplate } from "lucide-react";
 import { getPlanTemplates } from "@/lib/data/templates";
-import { renameTemplate, setTemplateActive } from "@/lib/coach/template-actions";
+import {
+  renameTemplate,
+  setTemplateActive,
+  setTemplateClientVisible,
+} from "@/lib/coach/template-actions";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const metadata = { title: "Templates — Wild Wanderers" };
@@ -45,6 +49,7 @@ export default async function TemplatesPage() {
           {templates.map((t) => {
             const rename = renameTemplate.bind(null, t.id);
             const setActive = setTemplateActive.bind(null, t.id, !t.is_active);
+            const setShared = setTemplateClientVisible.bind(null, t.id, !t.is_client_visible);
             return (
               <li
                 key={t.id}
@@ -77,6 +82,21 @@ export default async function TemplatesPage() {
                   <span className="shrink-0 rounded-full bg-inset px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-text-muted)]">
                     Retired
                   </span>
+                ) : null}
+                {t.is_client_visible ? (
+                  <span className="shrink-0 rounded-full bg-[color:var(--color-fern)]/12 px-2.5 py-1 text-[11px] font-semibold text-forest">
+                    Shared with clients
+                  </span>
+                ) : null}
+                {t.is_active ? (
+                  <form action={setShared}>
+                    <button
+                      type="submit"
+                      className="shrink-0 rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset"
+                    >
+                      {t.is_client_visible ? "Stop sharing" : "Share with clients"}
+                    </button>
+                  </form>
                 ) : null}
                 <form action={setActive}>
                   <button

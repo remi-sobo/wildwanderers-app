@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getThreads, getMessages } from "@/lib/data/messages";
 import { Conversation } from "@/components/messaging/Conversation";
+import { NewMessage } from "@/components/messaging/NewMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +22,15 @@ export default async function MessagesPage({
 
   if (threads.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         <EmptyState title={isStaff ? "No conversations yet." : "Talk with your coach here."}>
           {isStaff
-            ? "Open a conversation from a client's page and it shows up here."
-            : "Your messages with your coach will live on this screen. They will reach out soon."}
+            ? "Start one below, or open a conversation from a client's page."
+            : "Start the conversation whenever you like; your coach reads it here too."}
         </EmptyState>
+        <div className="flex justify-center">
+          <NewMessage isStaff={isStaff} />
+        </div>
       </div>
     );
   }
@@ -36,7 +40,9 @@ export default async function MessagesPage({
   const messages = selected ? await getMessages(selected.id) : [];
 
   return (
-    <div className="flex h-[72dvh] overflow-hidden rounded-2xl border border-[color:var(--border-hair)] bg-card shadow-[var(--shadow-card)]">
+    <div className="flex flex-col gap-4">
+      <NewMessage isStaff={isStaff} />
+      <div className="flex h-[72dvh] overflow-hidden rounded-2xl border border-[color:var(--border-hair)] bg-card shadow-[var(--shadow-card)]">
       <aside
         className={`w-full overflow-y-auto border-[color:var(--border-hair)] md:w-72 md:shrink-0 md:border-r ${
           selected ? "hidden md:block" : "block"
@@ -89,6 +95,7 @@ export default async function MessagesPage({
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }
