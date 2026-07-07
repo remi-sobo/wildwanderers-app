@@ -296,3 +296,26 @@ begin
   ) as v(slug, val, wks, src)
   join public.assessments a on a.slug = v.slug and a.org_id = ww;
 end $$;
+
+-- ============================================================
+-- Ring 10 (Alongside): the demo client walks with the coach.
+-- We never author Gabe's voice as real, so the only seed here is the demo
+-- client acknowledging the labeled sample note, so the "walking with you"
+-- count shows the loop end to end. Idempotent.
+-- ============================================================
+do $$
+declare
+  ww uuid; demo_user uuid; sample uuid;
+begin
+  select id into ww from public.organizations where slug = 'wild-wanderers-fitness';
+  select id into demo_user from auth.users where email = 'demo.client@wildwanderers.life';
+  if ww is null or demo_user is null then return; end if;
+  select id into sample from public.coach_shares
+    where org_id = ww and title = 'A sample note' and status = 'published'
+    order by created_at limit 1;
+  if sample is not null then
+    insert into public.coach_share_acks (org_id, share_id, profile_id)
+      values (ww, sample, demo_user)
+      on conflict (share_id, profile_id) do nothing;
+  end if;
+end $$;
