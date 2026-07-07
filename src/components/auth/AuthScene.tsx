@@ -20,14 +20,18 @@ export function AuthScene() {
       <div aria-hidden="true" className="absolute inset-0" style={{ background: scrimVertical }} />
       <div aria-hidden="true" className="absolute inset-0" style={{ background: scrimLeft }} />
 
+      {/* The full lockup in bone opens the door, at the same optical weight
+          the text wordmark held. The scrims above keep it legible. */}
       <div className="absolute left-8 top-8 z-10 md:left-[52px] md:top-11">
-        <p
-          className="font-[family-name:var(--font-display)] text-[22px] font-medium leading-none text-bone md:text-[26px]"
-          style={{ textShadow: "0 1px 22px rgba(8,14,9,.6)" }}
-        >
-          Wild Wanderers
-        </p>
-        <p className="eyebrow mt-1.5 text-[10.5px] tracking-[0.28em] text-bone/85">
+        <img
+          src="/brand/full-bone.png"
+          alt="Wild Wanderers"
+          width={165}
+          height={40}
+          className="h-8 w-auto md:h-10"
+          style={{ filter: "drop-shadow(0 1px 14px rgba(8,14,9,.45))" }}
+        />
+        <p className="eyebrow mt-2 text-[10.5px] tracking-[0.28em] text-bone/85">
           Fitness
         </p>
       </div>
