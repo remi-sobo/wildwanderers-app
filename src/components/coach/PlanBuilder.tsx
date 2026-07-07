@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { createAndActivatePlan, type PlanDraft } from "@/lib/coach/actions";
+import { VideoBadge } from "@/components/ui/VideoEmbed";
 import type { LibraryItem } from "@/lib/data/exercises";
 
 // Where the Coach drawer stashes a drafted plan before sending Gabe here.
@@ -348,6 +349,7 @@ export function PlanBuilder({
                     placeholder="Load"
                     className={`${fieldClass} w-[96px]`}
                   />
+                  {ex.mediaUrl ? <VideoBadge url={ex.mediaUrl} /> : null}
                   {w.exercises.length > 1 ? (
                     <button
                       type="button"
