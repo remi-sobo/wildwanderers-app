@@ -109,19 +109,45 @@ export type PlanDraft = {
   }[];
 };
 
-export type CreatePlanResult = { error: string | null };
+export type SavePlanResult = { error: string | null };
 
-// Builds a whole plan in one transaction via create_plan_atomic, then activates
-// it. Only owner/coach may call it, and RLS still governs every write.
-export async function createAndActivatePlan(
+// The builder's workouts, mapped for the atomic RPCs.
+function toRpcWorkouts(draft: PlanDraft) {
+  return draft.workouts
+    .filter((w) => w.exercises.length > 0)
+    .map((w) => ({
+      day_number: w.dayNumber,
+      week_number: w.weekNumber,
+      title: w.title.trim() || null,
+      exercises: w.exercises.map((e, i) => ({
+        title: e.title.trim(),
+        kind: e.kind,
+        sets: e.sets,
+        reps: e.reps,
+        rest_seconds: e.rest_seconds,
+        load: e.load,
+        instructions: e.instructions,
+        sort_order: i,
+        is_optional: e.is_optional,
+        library_item_id: e.library_item_id,
+        media_url: e.media_url,
+      })),
+    }));
+}
+
+// Saves the builder's plan, as a new draft or over an existing resting one,
+// and activates it only when asked. Only owner/coach may call it, and RLS
+// still governs every write; activating stamps who approved and when.
+export async function savePlan(
   clientId: string,
   draft: PlanDraft,
-): Promise<CreatePlanResult> {
+  opts: { planId: string | null; activate: boolean },
+): Promise<SavePlanResult> {
   await requireOwnerOrCoach();
 
   if (!draft.title.trim()) return { error: "Give the plan a title." };
-  const workouts = draft.workouts.filter((w) => w.exercises.length > 0);
-  if (workouts.length === 0) {
+  const p_workouts = toRpcWorkouts(draft);
+  if (p_workouts.length === 0) {
     return { error: "Add at least one workout with an exercise." };
   }
 
@@ -133,39 +159,56 @@ export async function createAndActivatePlan(
     goal: draft.goal.trim() || null,
     duration_weeks: draft.durationWeeks || null,
   };
-  const p_workouts = workouts.map((w) => ({
-    day_number: w.dayNumber,
-    week_number: w.weekNumber,
-    title: w.title.trim() || null,
-    exercises: w.exercises.map((e, i) => ({
-      title: e.title.trim(),
-      kind: e.kind,
-      sets: e.sets,
-      reps: e.reps,
-      rest_seconds: e.rest_seconds,
-      load: e.load,
-      instructions: e.instructions,
-      sort_order: i,
-      is_optional: e.is_optional,
-      library_item_id: e.library_item_id,
-      media_url: e.media_url,
-    })),
-  }));
 
-  const { data, error } = await supabase.rpc("create_plan_atomic", { p_plan, p_workouts });
-  if (error || !data?.plan_id) {
-    return { error: "We could not save the plan. Try again in a moment." };
+  let planId = opts.planId;
+  if (planId) {
+    const { error } = await supabase.rpc("update_plan_atomic", {
+      p_plan_id: planId,
+      p_plan,
+      p_workouts,
+    });
+    if (error) return { error: "We could not save the draft. Try again in a moment." };
+  } else {
+    const { data, error } = await supabase.rpc("create_plan_atomic", { p_plan, p_workouts });
+    if (error || !data?.plan_id) {
+      return { error: "We could not save the plan. Try again in a moment." };
+    }
+    planId = data.plan_id as string;
   }
 
-  const { error: activateError } = await supabase.rpc("activate_plan_atomic", {
-    p_plan_id: data.plan_id,
-  });
-  if (activateError) {
-    return { error: "The plan was saved as a draft but could not be activated." };
+  if (opts.activate) {
+    const { error: activateError } = await supabase.rpc("activate_plan_atomic", {
+      p_plan_id: planId,
+    });
+    if (activateError) {
+      return { error: "The plan was saved as a draft but could not be activated." };
+    }
   }
 
   revalidatePath(`/program/clients/${clientId}`);
   redirect(`/program/clients/${clientId}`);
+}
+
+// Activates a resting draft straight from the drafts list. The RPC archives
+// any currently active plan and stamps the approval.
+export async function activateDraft(clientId: string, planId: string): Promise<void> {
+  await requireOwnerOrCoach();
+  const supabase = await createClient();
+  await supabase.rpc("activate_plan_atomic", { p_plan_id: planId });
+  revalidatePath(`/program/clients/${clientId}`);
+}
+
+// Discards a resting draft. The status filter keeps this away from anything
+// live; an active plan cannot be discarded here.
+export async function discardDraft(clientId: string, planId: string): Promise<void> {
+  await requireOwnerOrCoach();
+  const supabase = await createClient();
+  await supabase
+    .from("training_plans")
+    .delete()
+    .eq("id", planId)
+    .in("status", ["draft", "pending_review"]);
+  revalidatePath(`/program/clients/${clientId}`);
 }
 
 // --- Sessions ---
