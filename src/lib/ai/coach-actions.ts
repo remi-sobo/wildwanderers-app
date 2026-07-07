@@ -363,27 +363,32 @@ const PLAN_SCHEMA: Record<string, unknown> = {
   required: ["title", "goal", "duration_weeks", "workouts"],
 };
 
-export type DraftResult = { draft: WorkoutPlanDraft | null; error: string | null };
+export type DraftResult = {
+  draft: WorkoutPlanDraft | null;
+  planId: string | null;
+  error: string | null;
+};
 
 // Coach drafts a training plan from Gabe's request and the client's context,
-// built to lean on the exercise library. Returns a draft that pre-fills the
-// plan builder; nothing is saved or activated until Gabe approves it there.
+// built to lean on the exercise library. The draft is saved as a resting
+// 'draft' plan (never activated) and opens in the builder for Gabe to review,
+// edit, and approve. Nothing goes live until he activates it.
 export async function draftWorkoutPlan(clientId: string, ask: string): Promise<DraftResult> {
   const session = await getSessionProfile();
   if (!session?.profile || !["owner", "coach"].includes(session.profile.role)) {
-    return { draft: null, error: "You are signed out." };
+    return { draft: null, planId: null, error: "You are signed out." };
   }
   if (!coachConfigured()) {
-    return { draft: null, error: "Scout is not set up yet. Add the API key to switch it on." };
+    return { draft: null, planId: null, error: "Scout is not set up yet. Add the API key to switch it on." };
   }
-  if (!ask.trim()) return { draft: null, error: "Tell Coach what to draft." };
+  if (!ask.trim()) return { draft: null, planId: null, error: "Tell Coach what to draft." };
 
   const [client, library, org] = await Promise.all([
     getClientById(clientId),
     getExerciseLibrary(),
     getMyOrg(),
   ]);
-  if (!client) return { draft: null, error: "That client was not found." };
+  if (!client) return { draft: null, planId: null, error: "That client was not found." };
   const { coach, org: orgName } = coachIdentity(session.profile.first_name, org);
 
   // Group the library so Coach knows what it can pull from.
@@ -438,19 +443,60 @@ Draft the plan.`;
       })),
     };
 
+    // Save the draft as a resting 'draft' plan so it survives the tab and
+    // shows in the drafts list. Never activated here; Gabe does that in the
+    // builder. RLS: Gabe's own staff policy governs the write.
+    const supabase = await createClient();
+    const { data: saved, error: saveError } = await supabase.rpc("create_plan_atomic", {
+      p_plan: {
+        client_id: clientId,
+        title: draft.title.trim() || "Scout draft",
+        goal: draft.goal.trim() || null,
+        duration_weeks: draft.durationWeeks || null,
+        initiated_by: session.profile.role,
+        ai_generated: true,
+        origin_prompt: ask.trim(),
+      },
+      p_workouts: draft.workouts
+        .filter((w) => w.exercises.length > 0)
+        .map((w) => ({
+          day_number: w.dayNumber,
+          week_number: w.weekNumber,
+          title: w.title.trim() || null,
+          exercises: w.exercises.map((e, i) => ({
+            title: e.title.trim(),
+            kind: e.kind,
+            sets: e.sets,
+            reps: e.reps,
+            load: e.load,
+            sort_order: i,
+            library_item_id: e.libraryItemId,
+            media_url: e.mediaUrl,
+          })),
+        })),
+    });
+    if (saveError || !saved?.plan_id) {
+      return {
+        draft: null,
+        planId: null,
+        error: "Scout drafted it, but the draft did not save. Try again.",
+      };
+    }
+    const planId = saved.plan_id as string;
+
     await auditLog({
       actorId: session.userId,
       orgId: session.profile.org_id,
       action: "coach.draft_plan",
-      entityTable: "clients",
-      entityId: clientId,
-      metadata: { model: DRAFT_MODEL, workouts: draft.workouts.length },
+      entityTable: "training_plans",
+      entityId: planId,
+      metadata: { model: DRAFT_MODEL, clientId, workouts: draft.workouts.length },
     });
 
-    return { draft, error: null };
+    return { draft, planId, error: null };
   } catch (e) {
-    if (isConfigError(e)) return { draft: null, error: e.message };
-    return { draft: null, error: "Scout could not draft that just now. Try again." };
+    if (isConfigError(e)) return { draft: null, planId: null, error: e.message };
+    return { draft: null, planId: null, error: "Scout could not draft that just now. Try again." };
   }
 }
 

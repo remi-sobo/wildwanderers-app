@@ -4,7 +4,7 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 10 built. Ring 10 is coach accountability, "Alongside": the coach
+Rings 0 through 12 built. Ring 12 is coach accountability, "Alongside": the coach
 shares his own week back, so the coaching runs both ways. At /alongside Gabe
 writes a short note in his voice with a tone (a win, a lesson, a tough day), an
 optional photo, an optional line on what he moved, an audience (clients and
@@ -18,7 +18,50 @@ notes not drafts, can ack a published note, and is blocked from acking a draft.
 Photo upload needs SUPABASE_SERVICE_ROLE_KEY and degrades until then. No
 fabricated coach voice; the only seed is one labeled sample. Scope held out of
 this ring: a full mirror of the plan engine for Gabe's own lifts, and the
-client-autonomy arc (its own future ring). See RING10_SPEC.md.
+client-autonomy arc (its own future ring). See RING12_SPEC.md. Scout draft-assist
+is included: a "Shape with Scout" button turns Gabe's rough words into a short
+first-person note, inventing nothing, his voice always final, off until the key
+is set.
+
+Ring 11 built, 2026-07-07: self-directed client workouts, the Phase C that
+Ring 10 specified and deferred. A client builds their own workout by hand from
+the movement library at /training/build (no AI anywhere in that path, by the
+Coach AI guardrail) and it lives in "My workouts" beside the coach's plan,
+never replacing it: plan_type 'workout', initiated_by 'client', resting at
+draft or pending_review, and activate_plan_atomic refuses client-initiated
+plans outright so nothing can displace the coach's active plan from any
+surface. The client checks movements off the same way, optionally sends a
+workout to Gabe for a look (it appears in the Drafts list badged From the
+client, with Mark reviewed in place of Activate and Discard, stamping
+coach_approved_at/by and handing it back), and when a workout is done, logs it
+as movement with their own minutes through the existing audited logActivity
+path, so the wellness movement input gets a client-entered number, never a
+fabricated one. RLS forked from the Team Esface self-directed policies,
+retargeted to clients: create, update (status locked to the two resting
+states), and delete their own lane plus the workout tree under it. Verified
+live: the client creates, sends, and deletes their own workout; forcing it
+active fails at the policy and at the RPC for client and owner both; another
+client sees none of it; grafting rows onto an active coach plan fails; the
+coach's list shows a sent workout and never a client's private draft.
+
+Ring 10 (phases A and B) built, 2026-07-07: reusable training, coach side.
+Drafts now rest. A plan saves as a draft or creates-and-activates from the
+builder; Scout's drafted plan is saved as a real draft row with the ask it came
+from (no more sessionStorage handoff), and each client's Program page has a
+Drafts list to review, activate, or discard. Activation stamps who approved and
+when (coach_approved_at/by). The leak this closed: with drafts resting, the old
+client fallback could have shown one, so the client read policy and
+getPlanForClient both exclude draft and pending_review, verified on the live DB
+(client sees zero drafts and zero templates, own active plan untouched; owner
+sees and saves both; the template RPC writes under RLS). Plan templates are
+net-new dedicated tables (plan_templates, template_workouts,
+template_workout_exercises), staff-only with no client policy at all: save as a
+template from the builder, start a client's plan from one (it lands as a
+resting draft, one review path), manage at /program/templates. Phase C (client
+self-directed workouts, no AI in that path) is specified in RING10_SPEC.md and
+deferred to its own ring. This ring was renumbered from 9 mid-build when the
+Movements work below claimed Ring 9 on the live DB first; the two merged clean,
+and both rings' migrations are applied live.
 
 Ring 9 is the Movements manager and real video: Gabe
 edits the exercise library himself at /fitness/movements, adding movements,
@@ -167,10 +210,18 @@ profile, goal, and a coaching group.
   himself, arranges and retires movements, and attaches a demo video (YouTube,
   Vimeo, a hosted file, or an uploaded clip) that plays inline for the client.
   Built and verified on the live DB. See RING9_SPEC.md.
-- Ring 10: coach accountability ("Alongside"). Gabe shares his own week back, a
+- Ring 10: reusable training, coach side. Plans rest as drafts with a per-client
+  review list, activation stamps who approved and when, and plan templates to
+  start a client's plan from. Built and verified on the live DB. See
+  RING10_SPEC.md.
+- Ring 11: self-directed client workouts. A client builds their own workout by
+  hand from the movement library (no AI in that path), kept beside the coach's
+  plan and never replacing it, optionally sent to Gabe for a look. Built and
+  verified on the live DB. See RING10_SPEC.md.
+- Ring 12: coach accountability ("Alongside"). Gabe shares his own week back, a
   short note with a tone, an optional photo, and what he moved; clients and
-  families read it and send a wordless "walking with you". Built and verified on
-  the live DB. See RING10_SPEC.md.
+  families read it and send a wordless "walking with you", with optional Scout
+  draft-assist. Built and verified on the live DB. See RING12_SPEC.md.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -186,11 +237,11 @@ profile, goal, and a coaching group.
   child development, emotional intelligence, outdoor skills, leadership), and the
   brotherhood layer (book club, accountability, service, retreats) as simple
   records.
-- Movement demo uploads (Ring 9) and coach-share photos (Ring 10) both need
+- Movement demo uploads (Ring 9) and coach-share photos (Ring 12) both need
   SUPABASE_SERVICE_ROLE_KEY in Vercel. Link video and text-only notes work
   without it.
 - The client-autonomy arc (help people coach themselves, need less direction)
-  is the principle behind Ring 10 and its own future ring: self-directed
+  is the principle behind Ring 12 and its own future ring: self-directed
   logging, client-led check-ins. Not yet spec'd.
 - Alongside for a second coach: today every client and family in the org sees
   the owner's notes. When a second coach joins, decide whether a client sees
@@ -203,7 +254,7 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
-- 2026-07-07 Ring 10 built (five commits): coach accountability, "Alongside".
+- 2026-07-07 Ring 12 built (six commits): coach accountability, "Alongside".
   Schema (coach_shares + coach_share_acks + the ack-count trigger + RLS + the
   coach-media bucket + a labeled sample) applied and verified live (Phase 1); the
   data layer and actions with the photo chokepoint and the member ack toggle
