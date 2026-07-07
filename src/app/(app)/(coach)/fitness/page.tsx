@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Settings2 } from "lucide-react";
+import { Activity, Dumbbell, Settings2 } from "lucide-react";
 import { getClients, clientName } from "@/lib/data/clients";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { ClientWellnessDashboard } from "@/components/coach/ClientWellnessDashboard";
@@ -15,11 +15,20 @@ export default async function FitnessPage({
 
   if (clients.length === 0) {
     return (
-      <EmptyState icon={Activity} title="Wellness lives here.">
-        Add a client and, once they start logging, their measurements, habits, and
-        wellness score show up on this surface. It is a progress signal, never a
-        medical assessment.
-      </EmptyState>
+      <div className="flex flex-col items-center gap-5">
+        <EmptyState icon={Activity} title="Wellness lives here.">
+          Add a client and, once they start logging, their measurements, habits, and
+          wellness score show up on this surface. It is a progress signal, never a
+          medical assessment.
+        </EmptyState>
+        <Link
+          href="/fitness/movements"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+        >
+          <Dumbbell size={15} aria-hidden="true" />
+          Build your movement library
+        </Link>
+      </div>
     );
   }
 
@@ -35,13 +44,22 @@ export default async function FitnessPage({
             Coach off real data.
           </h1>
         </div>
-        <Link
-          href="/fitness/assessments"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
-        >
-          <Settings2 size={15} aria-hidden="true" />
-          Assessment tests
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/fitness/movements"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+          >
+            <Dumbbell size={15} aria-hidden="true" />
+            Movements
+          </Link>
+          <Link
+            href="/fitness/assessments"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+          >
+            <Settings2 size={15} aria-hidden="true" />
+            Assessment tests
+          </Link>
+        </div>
       </div>
 
       {/* Client picker */}
