@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Dumbbell, Settings2 } from "lucide-react";
+import { Dumbbell, Settings2 } from "lucide-react";
 import { getClients, clientName } from "@/lib/data/clients";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { ClientWellnessDashboard } from "@/components/coach/ClientWellnessDashboard";
@@ -16,7 +16,7 @@ export default async function FitnessPage({
   if (clients.length === 0) {
     return (
       <div className="flex flex-col items-center gap-5">
-        <EmptyState icon={Activity} title="Wellness lives here.">
+        <EmptyState title="Wellness lives here.">
           Add a client and, once they start logging, their measurements, habits, and
           wellness score show up on this surface. It is a progress signal, never a
           medical assessment.
