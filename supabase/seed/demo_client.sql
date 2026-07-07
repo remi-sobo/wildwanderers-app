@@ -298,7 +298,7 @@ begin
 end $$;
 
 -- ============================================================
--- Ring 10 (Alongside): the demo client walks with the coach.
+-- Ring 12 (Alongside): the demo client walks with the coach.
 -- We never author Gabe's voice as real, so the only seed here is the demo
 -- client acknowledging the labeled sample note, so the "walking with you"
 -- count shows the loop end to end. Idempotent.

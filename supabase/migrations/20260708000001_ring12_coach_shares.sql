@@ -1,5 +1,5 @@
 -- ============================================================
--- Wild Wanderers — Ring 10: Coach accountability ("Alongside")
+-- Wild Wanderers — Ring 12: Coach accountability ("Alongside")
 --
 -- Clients share to Gabe; nothing let him share back. This closes the loop: a
 -- short honest weekly note from the coach, optionally with a photo and a line on
