@@ -4,7 +4,23 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 9 built. Ring 9 is the Movements manager and real video: Gabe
+Rings 0 through 10 built. Ring 10 is coach accountability, "Alongside": the coach
+shares his own week back, so the coaching runs both ways. At /alongside Gabe
+writes a short note in his voice with a tone (a win, a lesson, a tough day), an
+optional photo, an optional line on what he moved, an audience (clients and
+families, or clients only), draft or publish. Clients and families read it at
+/from-your-coach and on a Home card, and send back a wordless "walking with you";
+its count is the mutual accountability, true and never leaking identity. Owner
+and coach compose; a client sees any published note, a family only the everyone
+tier. Schema (coach_shares, coach_share_acks with a count trigger, the public
+coach-media bucket) applied and verified on the live DB: a client reads published
+notes not drafts, can ack a published note, and is blocked from acking a draft.
+Photo upload needs SUPABASE_SERVICE_ROLE_KEY and degrades until then. No
+fabricated coach voice; the only seed is one labeled sample. Scope held out of
+this ring: a full mirror of the plan engine for Gabe's own lifts, and the
+client-autonomy arc (its own future ring). See RING10_SPEC.md.
+
+Ring 9 is the Movements manager and real video: Gabe
 edits the exercise library himself at /fitness/movements, adding movements,
 arranging them, retiring or deleting (deletes blocked while a plan uses one), and
 attaching a demo video. Video is real, not a bare link: a YouTube or Vimeo link,
@@ -151,6 +167,10 @@ profile, goal, and a coaching group.
   himself, arranges and retires movements, and attaches a demo video (YouTube,
   Vimeo, a hosted file, or an uploaded clip) that plays inline for the client.
   Built and verified on the live DB. See RING9_SPEC.md.
+- Ring 10: coach accountability ("Alongside"). Gabe shares his own week back, a
+  short note with a tone, an optional photo, and what he moved; clients and
+  families read it and send a wordless "walking with you". Built and verified on
+  the live DB. See RING10_SPEC.md.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -166,11 +186,15 @@ profile, goal, and a coaching group.
   child development, emotional intelligence, outdoor skills, leadership), and the
   brotherhood layer (book club, accountability, service, retreats) as simple
   records.
-- Coach accountability is also pending, from Gabe's ask: clients see Gabe's own
-  training and week, not only he theirs, so the coach models the work. Unbuilt,
-  not yet spec'd.
-- Movement demo uploads need SUPABASE_SERVICE_ROLE_KEY in Vercel (Ring 9). Link
-  video (YouTube, Vimeo, a file URL) works without it.
+- Movement demo uploads (Ring 9) and coach-share photos (Ring 10) both need
+  SUPABASE_SERVICE_ROLE_KEY in Vercel. Link video and text-only notes work
+  without it.
+- The client-autonomy arc (help people coach themselves, need less direction)
+  is the principle behind Ring 10 and its own future ring: self-directed
+  logging, client-led check-ins. Not yet spec'd.
+- Alongside for a second coach: today every client and family in the org sees
+  the owner's notes. When a second coach joins, decide whether a client sees
+  only their assigned coach's notes. Noted, not urgent (one org now).
 - Follow-up: audit privileged reads of medical data to the sealed ledger, as the
   wellness data already is. RLS is the protection today and is verified.
 - PWA install shell (manifest, service worker, icons), a later pass.
@@ -179,6 +203,18 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-07 Ring 10 built (five commits): coach accountability, "Alongside".
+  Schema (coach_shares + coach_share_acks + the ack-count trigger + RLS + the
+  coach-media bucket + a labeled sample) applied and verified live (Phase 1); the
+  data layer and actions with the photo chokepoint and the member ack toggle
+  (Phase 2); the /alongside composer and manage list with a cadence line (Phase
+  3); the /from-your-coach reader, the Home and family teasers, and the "walking
+  with you" ack (Phase 4); the demo client acks the sample, docs, and live
+  verification (Phase 5). Verified on the live DB under a simulated client: reads
+  published notes not drafts, acks a published note (the trigger increments the
+  count), and is blocked from acking a draft. Parent/everyone filter is policy
+  correct but not yet live-testable (no parent account). Spec confirmed and built
+  same day; name "Alongside" taken as the recommended default.
 - 2026-07-07 Ring 9 built (six commits): the Movements manager and real video.
   Schema (sort_order + public exercise-media bucket) applied and verified on the
   live DB (Phase 1); the staff data layer and write actions with usage-aware
