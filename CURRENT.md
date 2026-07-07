@@ -214,7 +214,10 @@ profile, goal, and a coaching group.
   published notes not drafts, acks a published note (the trigger increments the
   count), and is blocked from acking a draft. Parent/everyone filter is policy
   correct but not yet live-testable (no parent account). Spec confirmed and built
-  same day; name "Alongside" taken as the recommended default.
+  same day; name "Alongside" taken as the recommended default. Scout draft-assist
+  added on request: a "Shape with Scout" button turns Gabe's rough words into a
+  short first-person note, inventing nothing, his voice always final, off until
+  the API key is set.
 - 2026-07-07 Ring 9 built (six commits): the Movements manager and real video.
   Schema (sort_order + public exercise-media bucket) applied and verified on the
   live DB (Phase 1); the staff data layer and write actions with usage-aware

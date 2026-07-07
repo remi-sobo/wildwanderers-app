@@ -3,8 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, X, Sparkles } from "lucide-react";
 import { createShare, updateShare, type ShareForm } from "@/lib/coach-shares/actions";
+import { draftCoachShare } from "@/lib/ai/coach-actions";
 
 export type ShareInitial = {
   id: string;
@@ -54,7 +55,15 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
-export function ShareComposer({ mode, initial }: { mode: "create" | "edit"; initial?: ShareInitial }) {
+export function ShareComposer({
+  mode,
+  initial,
+  coachConfigured,
+}: {
+  mode: "create" | "edit";
+  initial?: ShareInitial;
+  coachConfigured: boolean;
+}) {
   const router = useRouter();
   const start = initial ?? EMPTY;
 
@@ -71,9 +80,25 @@ export function ShareComposer({ mode, initial }: { mode: "create" | "edit"; init
 
   const [error, setError] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
+  const [drafting, startDraft] = useTransition();
+  const [draftNote, setDraftNote] = useState<string | null>(null);
 
   function form(): ShareForm {
     return { tone, title, body, trainingNote, audience };
+  }
+
+  function runDraft() {
+    setDraftNote(null);
+    setError(null);
+    startDraft(async () => {
+      const res = await draftCoachShare({ tone, title, note: body, trainingNote });
+      if (res.error || !res.text) {
+        setDraftNote(res.error ?? "Scout could not draft that.");
+        return;
+      }
+      setBody(res.text);
+      setDraftNote("Scout shaped your words. Edit it so it sounds like you before you share.");
+    });
   }
 
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -165,9 +190,22 @@ export function ShareComposer({ mode, initial }: { mode: "create" | "edit"; init
         </div>
 
         <div className="mt-4">
-          <label htmlFor="body" className={labelClass}>
-            What you want to share
-          </label>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label htmlFor="body" className="text-[12.5px] font-semibold tracking-[0.01em] text-ink">
+              What you want to share
+            </label>
+            {coachConfigured ? (
+              <button
+                type="button"
+                onClick={runDraft}
+                disabled={drafting}
+                className="inline-flex items-center gap-1.5 rounded-full border border-forest/25 bg-forest/5 px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-forest/10 disabled:opacity-60"
+              >
+                <Sparkles size={13} aria-hidden="true" />
+                {drafting ? "Shaping" : "Shape with Scout"}
+              </button>
+            ) : null}
+          </div>
           <textarea
             id="body"
             value={body}
@@ -176,6 +214,14 @@ export function ShareComposer({ mode, initial }: { mode: "create" | "edit"; init
             placeholder="How your week went, what you are working on, an honest word. This is yours, in your voice."
             className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14.5px] leading-[1.55] text-ink"
           />
+          {draftNote ? (
+            <p className="mt-2 text-[12.5px] text-[color:var(--color-text-muted)]">{draftNote}</p>
+          ) : null}
+          {!coachConfigured ? (
+            <p className="mt-2 text-[12px] text-[color:var(--color-text-faint)]">
+              Scout can help shape your words here once its key is set in the deployment.
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-4">
