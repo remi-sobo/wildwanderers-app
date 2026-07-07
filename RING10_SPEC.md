@@ -337,6 +337,18 @@ fabricated shipped. Build and type check green at every commit. Phase C
 remains specified above, not built. Deviation from the phase-A text: no
 coach-wide drafts inbox yet, per its own "per-client first" recommendation.
 
+Phase C built 2026-07-07 as Ring 11, after Ring 10 merged (PR #6). Decisions
+taken from this spec: no approval needed for a client's own workout, with
+send-to-coach as the opt-in (decision 2); no AI anywhere in the client path
+(decision 5); movement credit is a client-entered minutes log through the
+existing logActivity path, chosen over an automatic write so no duration is
+ever fabricated (decision 4). Additions the build made concrete: a database
+guard in activate_plan_atomic so a client-initiated plan can never become the
+active plan, client status locked to draft/pending_review at the policy level,
+and Mark reviewed (stamping coach_approved_at/by) as the coach's act on a
+client-sent workout in place of Activate. plan_activity_comments and swaps
+stay unbuilt, as scoped.
+
 ## Not in this ring (named so the shape is visible)
 
 - Coach↔client comment threads and activity swaps on a plan
