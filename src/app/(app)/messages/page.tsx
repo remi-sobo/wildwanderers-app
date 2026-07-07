@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, MessageCircle } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getThreads, getMessages } from "@/lib/data/messages";
 import { Conversation } from "@/components/messaging/Conversation";
@@ -23,7 +23,7 @@ export default async function MessagesPage({
   if (threads.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-        <EmptyState icon={MessageCircle} title={isStaff ? "No conversations yet." : "Talk with your coach here."}>
+        <EmptyState title={isStaff ? "No conversations yet." : "Talk with your coach here."}>
           {isStaff
             ? "Start one below, or open a conversation from a client's page."
             : "Start the conversation whenever you like; your coach reads it here too."}

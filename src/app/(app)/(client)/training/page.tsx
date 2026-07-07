@@ -1,4 +1,3 @@
-import { Dumbbell } from "lucide-react";
 import { getMyTraining, getMyWorkouts } from "@/lib/data/training";
 import { getPlanConversation } from "@/lib/data/plan-talk";
 import { getSessionProfile } from "@/lib/auth/get-profile";
@@ -36,7 +35,7 @@ export default async function TrainingPage() {
   return (
     <div className="flex flex-col gap-8">
       {!plan || plan.workouts.length === 0 ? (
-        <EmptyState icon={Dumbbell} title="Your workouts land here.">
+        <EmptyState title="Your workouts land here.">
           When your coach sets up your plan, each workout shows up with everything
           you need for the day. Check back soon.
         </EmptyState>

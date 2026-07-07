@@ -5,6 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Wild Wanderers",
   description: "The coaching platform for Wild Wanderers Fitness.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Wild Wanderers",
+  },
 };
 
 export const viewport: Viewport = {

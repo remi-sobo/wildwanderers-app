@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Inbox, LayoutTemplate, Plus, Users } from "lucide-react";
+import { ChevronRight, Inbox, LayoutTemplate, Plus } from "lucide-react";
 import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
 import { getDraftsAcrossClients } from "@/lib/data/plans";
 import { getSessionProfile } from "@/lib/auth/get-profile";
@@ -79,7 +79,7 @@ export default async function ProgramPage() {
       </div>
 
       {clients.length === 0 ? (
-        <EmptyState icon={Users} title="Your clients gather here.">
+        <EmptyState title="Your clients gather here.">
           Add your first client and their training plans, workouts, and progress
           show up in Program.
         </EmptyState>
