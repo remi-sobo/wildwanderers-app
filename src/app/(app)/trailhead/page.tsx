@@ -1,4 +1,3 @@
-import { BookOpen } from "lucide-react";
 import { getTrailheadData } from "@/lib/data/trailhead";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TrailheadFeed } from "@/components/library/TrailheadFeed";
@@ -33,7 +32,7 @@ export default async function TrailheadPage() {
       </div>
 
       {posts.length === 0 ? (
-        <EmptyState icon={BookOpen} title="The first notes are on the way">
+        <EmptyState title="The first notes are on the way">
           The Trailhead Library is where Gabe shares reads, links, and a weekly challenge.
           Check back soon, the first ones post here.
         </EmptyState>

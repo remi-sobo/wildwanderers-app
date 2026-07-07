@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp, LineChart, ListChecks } from "lucide-react";
+import { LineChart, ListChecks } from "lucide-react";
 import { getMyProgress, getMyLongevity } from "@/lib/data/wellness";
 import { WellnessScoreCard } from "@/components/client/WellnessScoreCard";
 import { WeightChart } from "@/components/client/WeightChart";
@@ -12,7 +12,7 @@ export default async function ProgressPage() {
 
   if (!hasConsent) {
     return (
-      <EmptyState icon={TrendingUp} title="Watch your progress build.">
+      <EmptyState title="Watch your progress build.">
         Open your tracker and log a few things, and your graphs and wellness
         score show up here.{" "}
         <Link href="/log" className="ww-link font-medium text-forest">
@@ -87,7 +87,7 @@ export default async function ProgressPage() {
       ) : null}
 
       {!hasAnyData ? (
-        <EmptyState icon={TrendingUp} title="Nothing logged yet.">
+        <EmptyState title="Nothing logged yet.">
           Log a weight, check off a habit, or add some movement, and your graphs
           fill in here.{" "}
           <Link href="/log" className="ww-link font-medium text-forest">

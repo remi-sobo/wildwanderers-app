@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BookOpen, Eye, Flag, Link2, Users } from "lucide-react";
+import { Eye, Flag, Link2, Users } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getOwnerPosts, getPublishingCadence } from "@/lib/data/library";
 import { categoryLabel } from "@/lib/library/categories";
@@ -33,7 +33,7 @@ export default async function LibraryPage() {
       <WeekCadenceCard cadence={cadence} />
 
       {posts.length === 0 ? (
-        <EmptyState icon={BookOpen} title="Your library starts with one note">
+        <EmptyState title="Your library starts with one note">
           Paste a link or write a couple of sentences, pick a category, and publish. It
           shows up here, in the app, and on the site. Use New post above to begin.
         </EmptyState>
