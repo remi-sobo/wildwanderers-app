@@ -7,6 +7,7 @@ export type TemplateSummary = {
   goal: string | null;
   duration_weeks: number | null;
   is_active: boolean;
+  is_client_visible: boolean;
   created_at: string;
   workout_count: number;
 };
@@ -54,7 +55,9 @@ export async function getPlanTemplates(opts?: {
   const supabase = await createClient();
   let query = supabase
     .from("plan_templates")
-    .select("id, title, goal, duration_weeks, is_active, created_at, template_workouts(count)")
+    .select(
+      "id, title, goal, duration_weeks, is_active, is_client_visible, created_at, template_workouts(count)",
+    )
     .order("is_active", { ascending: false })
     .order("created_at", { ascending: false });
   if (opts?.activeOnly) query = query.eq("is_active", true);
@@ -68,6 +71,7 @@ export async function getPlanTemplates(opts?: {
     goal: t.goal,
     duration_weeks: t.duration_weeks,
     is_active: t.is_active,
+    is_client_visible: t.is_client_visible,
     created_at: t.created_at,
     workout_count: t.template_workouts?.[0]?.count ?? 0,
   }));
