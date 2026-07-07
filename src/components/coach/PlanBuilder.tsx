@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { savePlan, type PlanDraft } from "@/lib/coach/actions";
 import { saveAsTemplate } from "@/lib/coach/template-actions";
+import { VideoBadge } from "@/components/ui/VideoEmbed";
 import type { LibraryItem } from "@/lib/data/exercises";
 
 type ExerciseForm = {
@@ -173,6 +174,16 @@ export function PlanBuilder({
         </p>
       ) : null}
 
+      <div className="flex justify-end">
+        <Link
+          href="/fitness/movements"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:text-fern"
+        >
+          <Plus size={14} aria-hidden="true" />
+          Manage movements
+        </Link>
+      </div>
+
       <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 shadow-[var(--shadow-card)]">
         <p className="eyebrow text-bark">Plan</p>
         <div className="mt-4 flex flex-col gap-4">
@@ -340,6 +351,7 @@ export function PlanBuilder({
                     placeholder="Load"
                     className={`${fieldClass} w-[96px]`}
                   />
+                  {ex.mediaUrl ? <VideoBadge url={ex.mediaUrl} /> : null}
                   {w.exercises.length > 1 ? (
                     <button
                       type="button"
