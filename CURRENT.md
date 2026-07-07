@@ -4,7 +4,30 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Rings 0 through 7 built. Ring 7 completes the boys program the way a family joins
+Rings 0 through 9 built. Ring 9 is the Movements manager and real video: Gabe
+edits the exercise library himself at /fitness/movements, adding movements,
+arranging them, retiring or deleting (deletes blocked while a plan uses one), and
+attaching a demo video. Video is real, not a bare link: a YouTube or Vimeo link,
+a hosted file, or a clip Gabe uploads to the exercise-media bucket all play
+inline, and the client sees it expand right on the Training surface. Owner and
+coach both manage it, on the exercise_library staff-manage RLS already in place;
+clients read only active movements, so a retired one never reaches them. No
+fabricated demos; the seeded movements keep empty video until Gabe fills them.
+Schema (sort_order + the public exercise-media bucket) applied and verified on
+the live DB. Uploads need SUPABASE_SERVICE_ROLE_KEY set in Vercel and degrade to
+a "paste a link" message until then. See RING9_SPEC.md.
+
+Ring 8 is the Trailhead Library: Gabe's living content engine, one shared feed
+for the boys program and fitness both. Posts in six categories (podcasts,
+fitness updates, assessment breakdowns, child development and play, camping and
+the outdoors, research and field notes), a weekly challenge with a true
+completion count, and a public tier the marketing site reads and visitors see
+without signing in, plus a weekly email to a public subscriber list. The owner
+composes and publishes; members (clients and families) read member posts;
+anyone reads public ones. The assistant is named Scout in every client-facing
+string.
+
+Ring 7 completes the boys program the way a family joins
 one: a guardians family model that owns the kids (with medical, emergency
 contacts, and pickup authorization), versioned forms with a waiver that gates a
 session, a warmer enrollment path (request a spot, waitlist, offer, enroll) tied
@@ -118,8 +141,16 @@ profile, goal, and a coaching group.
 - Ring 7: the boys-program completions. A guardians family model, medical and
   emergency contacts, versioned forms with a waiver gate, the enrollment path tied
   to the Ring 4 offerings, and the adventure log with the extended family view.
-  Built and verified on the live DB. Mentor onboarding split to Ring 8. See
-  RING7_SPEC.md.
+  Built and verified on the live DB. See RING7_SPEC.md.
+- Ring 8: the Trailhead Library. One shared content feed for the boys program and
+  fitness, six categories, a weekly challenge with a true completion count, a
+  public tier the marketing site reads, and a weekly email to a public subscriber
+  list. The assistant was renamed Coach to Scout in client-facing copy. Built and
+  on main.
+- Ring 9: the Movements manager and real video. Gabe edits the exercise library
+  himself, arranges and retires movements, and attaches a demo video (YouTube,
+  Vimeo, a hosted file, or an uploaded clip) that plays inline for the client.
+  Built and verified on the live DB. See RING9_SPEC.md.
 
 ## Decisions locked
 - Fork the Team Esface backend, rebuild the UI in the Wild Wanderers aesthetic.
@@ -128,11 +159,18 @@ profile, goal, and a coaching group.
 - Wellness score is motivational, not medical.
 
 ## Open
-- Ring 8 (mentor onboarding) is next: mentor profile, certifications, background
+- Mentor onboarding is still pending. It was tentatively "Ring 8" when split out
+  of Ring 7, but the Ring 8 slot went to the Trailhead Library instead; this is
+  now a future ring, not yet spec'd: mentor profile, certifications, background
   check status, first aid, availability, the training track (philosophy, safety,
   child development, emotional intelligence, outdoor skills, leadership), and the
   brotherhood layer (book club, accountability, service, retreats) as simple
-  records. Split out of Ring 7 to keep it reviewable. Not yet spec'd.
+  records.
+- Coach accountability is also pending, from Gabe's ask: clients see Gabe's own
+  training and week, not only he theirs, so the coach models the work. Unbuilt,
+  not yet spec'd.
+- Movement demo uploads need SUPABASE_SERVICE_ROLE_KEY in Vercel (Ring 9). Link
+  video (YouTube, Vimeo, a file URL) works without it.
 - Follow-up: audit privileged reads of medical data to the sealed ledger, as the
   wellness data already is. RLS is the protection today and is verified.
 - PWA install shell (manifest, service worker, icons), a later pass.
@@ -141,6 +179,19 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-07 Ring 9 built (six commits): the Movements manager and real video.
+  Schema (sort_order + public exercise-media bucket) applied and verified on the
+  live DB (Phase 1); the staff data layer and write actions with usage-aware
+  delete and audit (Phase 2); the /fitness/movements manager UI and composer
+  with entry points from Fitness and the plan builder (Phase 3); inline video on
+  the client Training surface and a video badge in the plan builder (Phase 4);
+  browser-direct clip uploads via a staff-minted signed URL (Phase 5); docs and
+  the exercise_library RLS re-verified intact, no policy change (Phase 6). Also
+  reconciled this file: Ring 8 (Trailhead Library) and the Scout rename had not
+  been recorded, and the stale "Ring 8 = mentor onboarding" note is corrected.
+- 2026-07-06 Ring 8 built (four commits): the Trailhead Library content schema,
+  the composer, the in-app reader surface, and the weekly email; then the
+  assistant was renamed Coach to Scout in client-facing copy. On main.
 - 2026-07-04 Ring 7 built (six commits): the family, forms, enrollment, and
   adventure schema with RLS (7.1), family-first intake (7.2), forms and the waiver
   gate (7.3), the enrollment path tied to Ring 4 (7.4), the adventure log and

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Check, PlayCircle } from "lucide-react";
 import { setExerciseComplete } from "@/lib/training/actions";
+import { VideoEmbed } from "@/components/ui/VideoEmbed";
+import { resolveVideo } from "@/lib/media/video";
 import type { PlanWithWorkouts, Exercise } from "@/lib/data/plans";
 
 function detail(ex: Exercise): string {
@@ -21,6 +23,8 @@ export function ClientTraining({
   completedIds: string[];
 }) {
   const [done, setDone] = useState<Set<string>>(new Set(completedIds));
+  // Which exercise's demo is expanded inline. One at a time keeps the list calm.
+  const [openVideo, setOpenVideo] = useState<string | null>(null);
 
   async function toggle(id: string) {
     const next = new Set(done);
@@ -78,52 +82,80 @@ export function ClientTraining({
                 return (
                   <li
                     key={ex.id}
-                    className="flex items-center gap-3 border-b border-[color:var(--border-hair)] px-5 py-3 last:border-b-0"
+                    className="flex flex-col border-b border-[color:var(--border-hair)] px-5 py-3 last:border-b-0"
                   >
-                    <button
-                      type="button"
-                      onClick={() => toggle(ex.id)}
-                      aria-pressed={isDone}
-                      aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                        isDone
-                          ? "border-fern bg-fern text-bone"
-                          : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
-                      }`}
-                    >
-                      <Check size={15} strokeWidth={2.5} />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`text-[14.5px] ${
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggle(ex.id)}
+                        aria-pressed={isDone}
+                        aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
                           isDone
-                            ? "text-[color:var(--color-text-faint)] line-through"
-                            : "text-[color:var(--color-text)]"
+                            ? "border-fern bg-fern text-bone"
+                            : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
                         }`}
                       >
-                        {ex.title}
-                        {ex.is_optional ? (
-                          <span className="ml-2 text-[11px] text-[color:var(--color-text-faint)]">
-                            optional
-                          </span>
-                        ) : null}
-                      </p>
-                      {detail(ex) ? (
-                        <p className="text-[12.5px] text-[color:var(--color-text-muted)]">
-                          {detail(ex)}
+                        <Check size={15} strokeWidth={2.5} />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-[14.5px] ${
+                            isDone
+                              ? "text-[color:var(--color-text-faint)] line-through"
+                              : "text-[color:var(--color-text)]"
+                          }`}
+                        >
+                          {ex.title}
+                          {ex.is_optional ? (
+                            <span className="ml-2 text-[11px] text-[color:var(--color-text-faint)]">
+                              optional
+                            </span>
+                          ) : null}
                         </p>
-                      ) : null}
+                        {detail(ex) ? (
+                          <p className="text-[12.5px] text-[color:var(--color-text-muted)]">
+                            {detail(ex)}
+                          </p>
+                        ) : null}
+                      </div>
+                      {(() => {
+                        const v = resolveVideo(ex.media_url);
+                        if (v.kind === "none") return null;
+                        // A real player expands inline; a plain link opens out.
+                        if (v.kind === "link") {
+                          return (
+                            <a
+                              href={v.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="shrink-0 text-forest transition-colors hover:text-fern"
+                              aria-label="Watch demo"
+                            >
+                              <PlayCircle size={18} />
+                            </a>
+                          );
+                        }
+                        const open = openVideo === ex.id;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setOpenVideo(open ? null : ex.id)}
+                            aria-expanded={open}
+                            aria-label={open ? `Hide ${ex.title} demo` : `Watch ${ex.title} demo`}
+                            className={`shrink-0 transition-colors hover:text-fern ${
+                              open ? "text-fern" : "text-forest"
+                            }`}
+                          >
+                            <PlayCircle size={18} />
+                          </button>
+                        );
+                      })()}
                     </div>
-                    {ex.media_url ? (
-                      <a
-                        href={ex.media_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 text-forest transition-colors hover:text-fern"
-                        aria-label="Watch demo"
-                      >
-                        <PlayCircle size={18} />
-                      </a>
+                    {openVideo === ex.id ? (
+                      <div className="mt-3 pl-10">
+                        <VideoEmbed url={ex.media_url} title={ex.title} className="max-w-md" />
+                      </div>
                     ) : null}
                   </li>
                 );
