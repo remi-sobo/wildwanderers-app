@@ -33,6 +33,9 @@ export type BuilderInitial = {
   goal: string;
   durationWeeks: string;
   aiGenerated: boolean;
+  // The client built this one themselves. It can be reviewed and tweaked,
+  // never activated as their plan (the database refuses it too).
+  clientInitiated: boolean;
   workouts: WorkoutForm[];
 };
 
@@ -74,6 +77,7 @@ export function PlanBuilder({
   // Reviewing a resting draft rather than starting fresh.
   const editingDraft = Boolean(initial?.planId);
   const fromCoach = Boolean(initial?.aiGenerated);
+  const fromClient = Boolean(initial?.clientInitiated);
 
   function updateWorkout(i: number, patch: Partial<WorkoutForm>) {
     setWorkouts((ws) => ws.map((w, idx) => (idx === i ? { ...w, ...patch } : w)));
@@ -154,7 +158,16 @@ export function PlanBuilder({
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      {fromCoach ? (
+      {fromClient ? (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber/40 bg-amber/10 px-5 py-4">
+          <Sparkles size={17} className="mt-0.5 shrink-0 text-amber-deep" aria-hidden="true" />
+          <p className="text-[13.5px] leading-[1.55] text-forest-deep">
+            The client built this workout themselves and sent it for your eyes.
+            Tweak it if that helps, save, and mark it reviewed from their Drafts
+            list. It stays their own workout, never their plan.
+          </p>
+        </div>
+      ) : fromCoach ? (
         <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--color-fern)]/30 bg-[color:var(--color-fern)]/10 px-5 py-4">
           <Sparkles size={17} className="mt-0.5 shrink-0 text-forest" aria-hidden="true" />
           <p className="text-[13.5px] leading-[1.55] text-forest-deep">
@@ -388,23 +401,25 @@ export function PlanBuilder({
       </button>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-[color:var(--border-hair)] pt-6">
-        <button
-          type="button"
-          onClick={() => submit(true)}
-          disabled={pending}
-          className="submit !mt-0 max-w-[280px]"
-        >
-          <span className="submit-label">
-            {pending && pendingAction === "activate"
-              ? "Saving"
-              : editingDraft
-                ? "Approve and activate"
-                : "Create and activate plan"}
-          </span>
-          <span aria-hidden="true" className="submit-arrow">
-            &rarr;
-          </span>
-        </button>
+        {!fromClient ? (
+          <button
+            type="button"
+            onClick={() => submit(true)}
+            disabled={pending}
+            className="submit !mt-0 max-w-[280px]"
+          >
+            <span className="submit-label">
+              {pending && pendingAction === "activate"
+                ? "Saving"
+                : editingDraft
+                  ? "Approve and activate"
+                  : "Create and activate plan"}
+            </span>
+            <span aria-hidden="true" className="submit-arrow">
+              &rarr;
+            </span>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => submit(false)}

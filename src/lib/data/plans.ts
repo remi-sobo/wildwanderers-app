@@ -112,6 +112,7 @@ async function loadWorkoutTree(
 export type PlanWithDraftMeta = PlanWithWorkouts & {
   ai_generated: boolean;
   origin_prompt: string | null;
+  initiated_by: "owner" | "coach" | "client";
 };
 
 // One plan by id with its tree and draft metadata, for the builder's review
@@ -124,14 +125,14 @@ export async function getPlanWithWorkoutsById(
   const { data: plan } = await supabase
     .from("training_plans")
     .select(
-      "id, client_id, title, goal, status, start_date, end_date, duration_weeks, notes, ai_generated, origin_prompt",
+      "id, client_id, title, goal, status, start_date, end_date, duration_weeks, notes, ai_generated, origin_prompt, initiated_by",
     )
     .eq("id", planId)
     .maybeSingle();
   if (!plan) return null;
 
   return {
-    ...(plan as Plan & { ai_generated: boolean; origin_prompt: string | null }),
+    ...(plan as Omit<PlanWithDraftMeta, "workouts">),
     workouts: await loadWorkoutTree(supabase, plan.id as string),
   };
 }
@@ -142,20 +143,24 @@ export type DraftPlanSummary = {
   status: PlanStatus;
   ai_generated: boolean;
   origin_prompt: string | null;
+  initiated_by: "owner" | "coach" | "client";
   created_at: string;
 };
 
 // The resting drafts for one client, newest first, for the coach's review
-// list. Staff RLS scopes it; a client gets zero rows.
+// list: the coach's own drafts, plus anything the client sent for a look.
+// A client's plain drafts stay the client's business and never appear here.
+// Staff RLS scopes it; a client gets zero rows.
 export async function getDraftPlansForClient(
   clientId: string,
 ): Promise<DraftPlanSummary[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("training_plans")
-    .select("id, title, status, ai_generated, origin_prompt, created_at")
+    .select("id, title, status, ai_generated, origin_prompt, initiated_by, created_at")
     .eq("client_id", clientId)
     .in("status", ["draft", "pending_review"])
+    .or("initiated_by.neq.client,status.eq.pending_review")
     .order("created_at", { ascending: false });
   return (data as DraftPlanSummary[] | null) ?? [];
 }
