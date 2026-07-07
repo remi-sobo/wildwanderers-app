@@ -2,93 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Activity,
-  Backpack,
-  BookOpen,
-  Briefcase,
-  Footprints,
-  ClipboardList,
-  Dumbbell,
-  House,
-  MessageCircle,
-  NotebookPen,
-  Settings,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
 import type { Role } from "@/lib/auth/get-profile";
 import { Contours } from "@/components/brand/Contours";
+import { sectionsForRole } from "./nav";
 import { SignOutButton } from "./SignOutButton";
-
-type NavItem = { href: string; label: string; icon: LucideIcon; hint?: string };
-type NavSection = { label?: string; items: NavItem[] };
-
-const WORKSPACE: NavSection = {
-  label: "Workspace",
-  items: [
-    { href: "/messages", label: "Messages", icon: MessageCircle },
-    { href: "/settings", label: "Settings", icon: Settings },
-  ],
-};
-
-// Business is Gabe's back office, owner-only. A coach sees Program and Fitness.
-function coachSections(role: Role): NavSection[] {
-  const surface: NavItem[] = [
-    { href: "/program", label: "Program", icon: ClipboardList, hint: "Clients and training" },
-    { href: "/fitness", label: "Fitness", icon: Activity, hint: "Wellness and tracking" },
-    { href: "/boys", label: "Dads & Kids", icon: Backpack, hint: "The boys program" },
-  ];
-  if (role === "owner") {
-    surface.push({ href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" });
-  }
-  const sections: NavSection[] = [{ label: "Surface", items: surface }];
-  // Alongside (share your own week) is owner and coach. The Trailhead Library
-  // composer is owner only. Clients and families reach the readers from their
-  // own menus.
-  const content: NavItem[] = [
-    { href: "/alongside", label: "Alongside", icon: Footprints, hint: "Share your own week" },
-  ];
-  if (role === "owner") {
-    content.unshift({
-      href: "/library",
-      label: "Trailhead Library",
-      icon: BookOpen,
-      hint: "Your living library",
-    });
-  }
-  sections.push({ label: "Content", items: content });
-  sections.push(WORKSPACE);
-  return sections;
-}
-
-const CLIENT_SECTIONS: NavSection[] = [
-  {
-    label: "Menu",
-    items: [
-      { href: "/home", label: "Home", icon: House },
-      { href: "/training", label: "Training", icon: Dumbbell },
-      { href: "/log", label: "Log", icon: NotebookPen },
-      { href: "/progress", label: "Progress", icon: TrendingUp },
-      { href: "/from-your-coach", label: "Alongside", icon: Footprints, hint: "From your coach" },
-      { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
-    ],
-  },
-  WORKSPACE,
-];
-
-// A parent sees their family view, the library, and settings.
-const PARENT_SECTIONS: NavSection[] = [
-  {
-    label: "Menu",
-    items: [
-      { href: "/family", label: "My family", icon: Backpack, hint: "The boys program" },
-      { href: "/from-your-coach", label: "Alongside", icon: Footprints, hint: "From your coach" },
-      { href: "/trailhead", label: "Trailhead Library", icon: BookOpen, hint: "Reads and the weekly challenge" },
-    ],
-  },
-  { items: [{ href: "/settings", label: "Settings", icon: Settings }] },
-];
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -96,6 +13,9 @@ function initials(name: string) {
   return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
+// The desktop rail. On phones the shell hands navigation to MobileNav's
+// bottom tab bar instead, so this renders md-and-up only and the full
+// viewport width belongs to the work.
 export function Sidebar({
   role,
   displayName,
@@ -113,29 +33,18 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const current = activePath ?? pathname;
-  const sections =
-    role === "owner" || role === "coach"
-      ? coachSections(role)
-      : role === "parent"
-        ? PARENT_SECTIONS
-        : CLIENT_SECTIONS;
+  const sections = sectionsForRole(role);
 
   return (
-    <aside className="sticky top-0 z-20 flex h-dvh w-16 shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:w-[248px]">
+    <aside className="sticky top-0 z-20 hidden h-dvh w-[248px] shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:flex">
       <Contours className="pointer-events-none absolute inset-x-0 top-20 text-mist/10" />
 
-      {/* Brand. The org's mark carries the identity: alone on the collapsed
-          rail, beside the org name on desktop. Seeded with the Wild Wanderers
-          mark; a second org's logo_url takes over without touching this file. */}
-      <div className="relative z-10 flex items-center justify-center gap-3 px-3 pb-2 pt-6 md:justify-start md:px-5 md:pt-7">
-        <img
-          src={orgLogoUrl}
-          alt={orgName}
-          width={34}
-          height={21}
-          className="w-[30px] shrink-0 md:w-[34px]"
-        />
-        <div className="hidden md:block">
+      {/* Brand. The org's mark carries the identity beside the org name.
+          Seeded with the Wild Wanderers mark; a second org's logo_url takes
+          over without touching this file. */}
+      <div className="relative z-10 flex items-center gap-3 px-5 pb-2 pt-7">
+        <img src={orgLogoUrl} alt={orgName} width={34} height={21} className="w-[34px] shrink-0" />
+        <div>
           <p className="font-[family-name:var(--font-display)] text-[19px] font-medium leading-none text-bone">
             {orgName}
           </p>
@@ -146,13 +55,11 @@ export function Sidebar({
       </div>
 
       {/* Nav */}
-      <nav className="relative z-10 mt-4 flex-1 overflow-y-auto px-2 md:px-3">
+      <nav className="relative z-10 mt-4 flex-1 overflow-y-auto px-3">
         {sections.map((section) => (
           <div key={section.label ?? "nav"} className="mb-4">
             {section.label ? (
-              <p className="eyebrow hidden px-3 pb-2 text-[10px] text-bone/45 md:block">
-                {section.label}
-              </p>
+              <p className="eyebrow px-3 pb-2 text-[10px] text-bone/45">{section.label}</p>
             ) : null}
             <ul className="flex flex-col gap-1">
               {section.items.map((item) => {
@@ -164,7 +71,7 @@ export function Sidebar({
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       title={item.label}
-                      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors max-md:justify-center ${
+                      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
                         active ? "bg-bone/[0.08]" : "hover:bg-bone/[0.05]"
                       }`}
                     >
@@ -180,7 +87,7 @@ export function Sidebar({
                         aria-hidden="true"
                         className={active ? "text-amber" : "text-bone/70"}
                       />
-                      <span className="hidden flex-col md:flex">
+                      <span className="flex flex-col">
                         <span
                           className={`font-[family-name:var(--font-display)] text-[15px] leading-tight ${
                             active ? "text-bone" : "text-bone/85"
@@ -204,12 +111,12 @@ export function Sidebar({
       </nav>
 
       {/* Account */}
-      <div className="relative z-10 mt-auto border-t border-bone/10 px-2 py-4 md:px-4 md:py-5">
-        <div className="mb-2 flex items-center gap-2.5 max-md:justify-center">
+      <div className="relative z-10 mt-auto border-t border-bone/10 px-4 py-5">
+        <div className="mb-2 flex items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bone/[0.1] text-[12px] font-semibold text-bone/90">
             {initials(displayName)}
           </span>
-          <div className="hidden min-w-0 md:block">
+          <div className="min-w-0">
             <p className="truncate text-[13px] font-medium text-bone/90">{displayName}</p>
             {email ? <p className="truncate text-[11.5px] text-bone/50">{email}</p> : null}
           </div>

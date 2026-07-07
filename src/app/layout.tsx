@@ -16,6 +16,9 @@ export const viewport: Viewport = {
   themeColor: "#1e331f",
   width: "device-width",
   initialScale: 1,
+  // Cover lets the chrome extend under the notch and home indicator, and the
+  // shell claws the content back with safe-area insets.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
