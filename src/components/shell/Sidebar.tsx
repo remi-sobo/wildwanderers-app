@@ -7,6 +7,7 @@ import {
   Backpack,
   BookOpen,
   Briefcase,
+  Footprints,
   ClipboardList,
   Dumbbell,
   House,
@@ -42,14 +43,21 @@ function coachSections(role: Role): NavSection[] {
     surface.push({ href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" });
   }
   const sections: NavSection[] = [{ label: "Surface", items: surface }];
-  // The Trailhead Library composer is Gabe's writer surface, owner only. Clients
-  // and families reach the reader feed from their own menu.
+  // Alongside (share your own week) is owner and coach. The Trailhead Library
+  // composer is owner only. Clients and families reach the readers from their
+  // own menus.
+  const content: NavItem[] = [
+    { href: "/alongside", label: "Alongside", icon: Footprints, hint: "Share your own week" },
+  ];
   if (role === "owner") {
-    sections.push({
-      label: "Content",
-      items: [{ href: "/library", label: "Trailhead Library", icon: BookOpen, hint: "Your living library" }],
+    content.unshift({
+      href: "/library",
+      label: "Trailhead Library",
+      icon: BookOpen,
+      hint: "Your living library",
     });
   }
+  sections.push({ label: "Content", items: content });
   sections.push(WORKSPACE);
   return sections;
 }
