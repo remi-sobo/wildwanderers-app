@@ -164,3 +164,40 @@ export async function getDraftPlansForClient(
     .order("created_at", { ascending: false });
   return (data as DraftPlanSummary[] | null) ?? [];
 }
+
+export type InboxDraft = DraftPlanSummary & {
+  client_id: string;
+  client_name: string;
+};
+
+// Every resting draft the coach can see, org-wide, for the inbox: the same
+// filter as the per-client list, joined with client names, newest first.
+// In a multi-coach org this is org-wide, not per-coach.
+export async function getDraftsAcrossClients(): Promise<InboxDraft[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("training_plans")
+    .select(
+      "id, title, status, ai_generated, origin_prompt, initiated_by, created_at, client_id, clients(first_name, last_name)",
+    )
+    .in("status", ["draft", "pending_review"])
+    .or("initiated_by.neq.client,status.eq.pending_review")
+    .order("created_at", { ascending: false });
+
+  return ((data ?? []) as unknown as (DraftPlanSummary & {
+    client_id: string;
+    clients: { first_name: string; last_name: string } | null;
+  })[]).map((d) => ({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    ai_generated: d.ai_generated,
+    origin_prompt: d.origin_prompt,
+    initiated_by: d.initiated_by,
+    created_at: d.created_at,
+    client_id: d.client_id,
+    client_name:
+      [d.clients?.first_name, d.clients?.last_name].filter(Boolean).join(" ").trim() ||
+      "Client",
+  }));
+}
