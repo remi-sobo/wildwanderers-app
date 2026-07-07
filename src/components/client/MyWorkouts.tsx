@@ -65,7 +65,7 @@ export function MyWorkouts({
         </h2>
         <Link
           href="/training/build"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
         >
           <Plus size={14} aria-hidden="true" />
           Build a workout
@@ -127,13 +127,17 @@ export function MyWorkouts({
                         onClick={() => toggle(ex.id)}
                         aria-pressed={isDone}
                         aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                          isDone
-                            ? "border-fern bg-fern text-bone"
-                            : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
-                        }`}
+                        className="group/check -m-2 flex h-11 w-11 shrink-0 items-center justify-center"
                       >
-                        <Check size={15} strokeWidth={2.5} />
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${
+                            isDone
+                              ? "border-fern bg-fern text-bone"
+                              : "border-[color:var(--border-strong)] text-transparent group-hover/check:border-fern"
+                          }`}
+                        >
+                          <Check size={15} strokeWidth={2.5} />
+                        </span>
                       </button>
                       <div className="min-w-0 flex-1">
                         <p
@@ -156,9 +160,9 @@ export function MyWorkouts({
                 })}
               </ul>
 
-              <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--border-hair)] px-5 py-3">
+              <div className="flex flex-col gap-3 border-t border-[color:var(--border-hair)] px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center">
                 {complete && !logged.has(w.planId) ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
                     <input
                       value={minutes[w.planId] ?? ""}
                       onChange={(e) =>
@@ -170,13 +174,13 @@ export function MyWorkouts({
                       inputMode="numeric"
                       placeholder="Minutes"
                       aria-label="How many minutes did it take"
-                      className="h-9 w-[92px] rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[13px] text-ink"
+                      className="h-11 min-w-0 flex-1 rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[16px] text-ink sm:flex-none sm:w-[92px] md:h-9 md:text-[13px]"
                     />
                     <button
                       type="button"
                       onClick={() => logMovement(w)}
                       disabled={pending || !minutes[w.planId]?.trim()}
-                      className="rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60"
+                      className="inline-flex items-center justify-center rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
                     >
                       Log it as movement
                     </button>
@@ -187,12 +191,12 @@ export function MyWorkouts({
                     Logged. It counts toward your movement.
                   </p>
                 ) : null}
-                <div className="ml-auto flex items-center gap-3">
+                <div className="flex w-full items-center justify-end gap-3 sm:ml-auto sm:w-auto">
                   {w.status === "draft" && !w.reviewedAt ? (
                     <form action={send}>
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:text-fern"
+                        className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:text-fern max-md:min-h-[44px]"
                       >
                         <Send size={13} aria-hidden="true" />
                         Send to my coach
@@ -203,7 +207,7 @@ export function MyWorkouts({
                     <button
                       type="submit"
                       aria-label={`Delete ${w.title}`}
-                      className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                      className="-m-2 flex h-11 w-11 items-center justify-center text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
                     >
                       <Trash2 size={15} />
                     </button>

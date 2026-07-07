@@ -190,7 +190,7 @@ function MeasurementCard({ latest }: { latest: Measurement | null }) {
                 setSaved(false);
                 setValues((v) => ({ ...v, [f.key]: e.target.value }));
               }}
-              className="h-11 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[15px] text-ink"
+              className="h-11 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[16px] text-ink md:text-[15px]"
               placeholder="—"
             />
           </label>
@@ -201,7 +201,7 @@ function MeasurementCard({ latest }: { latest: Measurement | null }) {
           type="button"
           onClick={save}
           disabled={pending}
-          className="rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80"
+          className="inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80 max-md:min-h-[44px]"
         >
           {pending ? "Saving" : "Save measurement"}
         </button>
@@ -252,7 +252,7 @@ function ActivityCard({ recent }: { recent: ActivityLog[] }) {
               setSaved(false);
               setInput((v) => ({ ...v, kind: k }));
             }}
-            className={`rounded-full border px-3.5 py-1.5 text-[13px] transition-colors ${
+            className={`rounded-full border px-3.5 py-1.5 text-[13px] transition-colors max-md:min-h-[44px] ${
               input.kind === k
                 ? "border-forest bg-forest text-bone"
                 : "border-[color:var(--border-strong)] bg-canvas text-[color:var(--color-text)] hover:border-forest"
@@ -271,7 +271,7 @@ function ActivityCard({ recent }: { recent: ActivityLog[] }) {
             setInput((v) => ({ ...v, kind: e.target.value }));
           }}
           placeholder="What did you do?"
-          className="h-11 flex-1 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[15px] text-ink"
+          className="h-11 flex-1 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[16px] text-ink md:text-[15px]"
         />
         <label className="flex items-center gap-2">
           <input
@@ -284,7 +284,7 @@ function ActivityCard({ recent }: { recent: ActivityLog[] }) {
               setInput((v) => ({ ...v, duration_minutes: e.target.value }));
             }}
             placeholder="min"
-            className="h-11 w-24 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[15px] text-ink"
+            className="h-11 w-24 rounded-xl border border-[color:var(--border-strong)] bg-canvas px-3 text-[16px] text-ink md:text-[15px]"
           />
           <span className="text-[13px] text-[color:var(--color-text-muted)]">minutes</span>
         </label>
@@ -294,7 +294,7 @@ function ActivityCard({ recent }: { recent: ActivityLog[] }) {
           type="button"
           onClick={save}
           disabled={pending}
-          className="rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80"
+          className="inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-80 max-md:min-h-[44px]"
         >
           {pending ? "Saving" : "Log movement"}
         </button>
