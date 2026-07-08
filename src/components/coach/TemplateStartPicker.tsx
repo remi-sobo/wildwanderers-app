@@ -46,7 +46,7 @@ export function TemplateStartPicker({
             type="button"
             onClick={() => start(t.id)}
             disabled={pending}
-            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70 max-md:min-h-[44px]"
           >
             {pending && pendingId === t.id ? "Opening" : t.title}
             <span className="text-[11px] font-medium text-[color:var(--color-text-muted)]">

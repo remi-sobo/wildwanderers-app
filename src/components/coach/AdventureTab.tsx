@@ -6,7 +6,7 @@ import { Compass, Eye, EyeOff } from "lucide-react";
 import { addAdventureEntry } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, AdventureEntry, AdventureEntryKind } from "@/lib/data/boys";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 const KIND_LABEL: Record<AdventureEntryKind, string> = {
   journal: "Nature journal",
@@ -67,7 +67,7 @@ export function AdventureTab({ detail }: { detail: Detail }) {
             <option value="mentor_note">Mentor note (private)</option>
           </select>
           <input className={`${field} sm:col-span-2`} placeholder="Title (optional)" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="min-h-[80px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[14px] text-ink sm:col-span-2"
+          <textarea className="min-h-[80px] rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[16px] text-ink sm:col-span-2 md:text-[14px]"
             placeholder={privateNote ? "A private note for staff" : "What happened on the trail today"}
             value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
@@ -77,7 +77,7 @@ export function AdventureTab({ detail }: { detail: Detail }) {
         </p>
         {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
         <button type="button" onClick={add} disabled={pending || !body.trim()}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70">
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
           <Compass size={15} /> Add to the adventure
         </button>
       </div>

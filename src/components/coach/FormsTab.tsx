@@ -6,7 +6,7 @@ import { FileText, Check, Pencil, ShieldAlert } from "lucide-react";
 import { updateForm, acknowledgeForm } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, FormDef, Participant } from "@/lib/data/boys";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 function fullName(p: { first_name: string; last_name: string }) {
   return `${p.first_name} ${p.last_name}`.trim();
@@ -61,20 +61,20 @@ function FormEditor({ detail, form }: { detail: Detail; form: FormDef }) {
           ) : null}
         </div>
         <button type="button" onClick={() => setEditing((e) => !e)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-inset">
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition hover:bg-inset max-md:min-h-[44px]">
           <Pencil size={13} /> Edit
         </button>
       </div>
       {editing ? (
         <div className="mt-3 border-t border-[color:var(--border-hair)] pt-3">
           <input className={`${field} w-full`} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="mt-2 min-h-[120px] w-full rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[14px] text-ink"
+          <textarea className="mt-2 min-h-[120px] w-full rounded-lg border border-[color:var(--border-strong)] bg-card px-3 py-2 text-[16px] text-ink md:text-[14px]"
             value={body} onChange={(e) => setBody(e.target.value)} placeholder="The form text families read and sign" />
           <div className="mt-2 flex flex-wrap items-center gap-4">
-            <label className="flex items-center gap-2 text-[13px] text-forest-deep">
+            <label className="flex items-center gap-2 text-[13px] text-forest-deep max-md:min-h-[44px]">
               <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} /> Required
             </label>
-            <label className="flex items-center gap-2 text-[13px] text-forest-deep">
+            <label className="flex items-center gap-2 text-[13px] text-forest-deep max-md:min-h-[44px]">
               <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Active
             </label>
           </div>
@@ -84,11 +84,11 @@ function FormEditor({ detail, form }: { detail: Detail; form: FormDef }) {
           {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={save} disabled={pending}
-              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60">
+              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]">
               {pending ? "Saving" : "Save"}
             </button>
             <button type="button" onClick={() => setEditing(false)}
-              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest">
+              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest max-md:min-h-[44px]">
               Cancel
             </button>
           </div>
@@ -131,7 +131,7 @@ function SignatureRecorder({ detail, requiredForms }: { detail: Detail; required
         </select>
         <input className={field} placeholder="Signed by (name)" value={name} onChange={(e) => setName(e.target.value)} />
         <button type="button" onClick={record} disabled={pending || !name.trim()}
-          className="rounded-full bg-amber px-4 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70">
+          className="rounded-full bg-amber px-4 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px] sm:py-0">
           Record
         </button>
       </div>

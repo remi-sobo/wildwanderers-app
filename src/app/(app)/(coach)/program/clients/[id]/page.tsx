@@ -73,7 +73,7 @@ export default async function ClientDetailPage({
       <div>
         <Link
           href="/program"
-          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest"
+          className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest max-md:min-h-[44px]"
         >
           <ChevronLeft size={16} aria-hidden="true" />
           Program
@@ -89,11 +89,11 @@ export default async function ClientDetailPage({
               </p>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <form action={openThread}>
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
               >
                 <MessageCircle size={15} aria-hidden="true" />
                 Message
@@ -101,7 +101,7 @@ export default async function ClientDetailPage({
             </form>
             <Link
               href={`/program/clients/${id}/plan/new`}
-              className="rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+              className="inline-flex items-center rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
             >
               {plan ? "New plan" : "Build a plan"}
             </Link>

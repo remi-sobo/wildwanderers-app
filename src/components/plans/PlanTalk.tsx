@@ -108,7 +108,7 @@ export function PlanTalk({
                   type="button"
                   onClick={() => withdraw(s.id)}
                   disabled={pending}
-                  className="text-[12px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                  className="inline-flex items-center px-2 text-[12px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)] max-md:min-h-[44px]"
                 >
                   Withdraw
                 </button>
@@ -119,7 +119,7 @@ export function PlanTalk({
                   type="button"
                   onClick={() => answer(s.id, true)}
                   disabled={pending}
-                  className="rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-full bg-forest px-3.5 py-1.5 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
                 >
                   Swap it in
                 </button>
@@ -127,7 +127,7 @@ export function PlanTalk({
                   type="button"
                   onClick={() => answer(s.id, false)}
                   disabled={pending}
-                  className="text-[12.5px] font-semibold text-[color:var(--color-text-muted)] transition-colors hover:text-ink"
+                  className="inline-flex items-center px-2 text-[12.5px] font-semibold text-[color:var(--color-text-muted)] transition-colors hover:text-ink max-md:min-h-[44px]"
                 >
                   Not this time
                 </button>
@@ -198,13 +198,13 @@ export function PlanTalk({
             if (e.key === "Enter" && draft.trim()) submitComment();
           }}
           placeholder={viewerIsStaff ? "Leave a note on this plan" : "Ask or answer here"}
-          className="h-10 min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[13.5px] text-ink"
+          className="h-11 min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[16px] text-ink md:h-10 md:text-[13.5px]"
         />
         <button
           type="button"
           onClick={submitComment}
           disabled={pending || !draft.trim()}
-          className="rounded-full bg-forest px-4 py-2 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-forest px-4 py-2 text-[12.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
         >
           {pending ? "Sending" : "Send"}
         </button>

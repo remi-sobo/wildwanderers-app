@@ -21,7 +21,7 @@ const ORDER = STAGES.map((s) => s.value);
 const SOURCES = ["website", "referral", "walk_in", "social", "other"];
 const INTERESTS = ["one_on_one", "small_group", "wellness", "boys_program", "other"];
 const field =
-  "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 function AddLead() {
   const router = useRouter();
@@ -48,7 +48,7 @@ function AddLead() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+        className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
       >
         <Plus size={16} strokeWidth={2.2} aria-hidden="true" /> Add lead
       </button>
@@ -83,10 +83,10 @@ function AddLead() {
       {error ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{error}</p> : null}
       <div className="mt-4 flex items-center gap-3">
         <button type="button" onClick={save} disabled={pending || !v.name.trim()}
-          className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+          className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
           {pending ? "Saving" : "Add lead"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="ww-link text-[13.5px] font-semibold text-forest">
+        <button type="button" onClick={() => setOpen(false)} className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]">
           Cancel
         </button>
       </div>
@@ -143,7 +143,7 @@ function LeadCard({ lead }: { lead: Lead }) {
           value={lead.stage}
           disabled={pending}
           onChange={(e) => move(e.target.value as LeadStage)}
-          className="h-9 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[13px] text-ink"
+          className="h-11 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[16px] text-ink md:h-9 md:text-[13px]"
         >
           {STAGES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
@@ -152,7 +152,7 @@ function LeadCard({ lead }: { lead: Lead }) {
             type="button"
             onClick={convert}
             disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]"
           >
             <UserPlus size={13} aria-hidden="true" /> Convert
           </button>

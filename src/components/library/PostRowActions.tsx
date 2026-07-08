@@ -51,7 +51,7 @@ export function PostRowActions({
           type="button"
           onClick={confirmDelete}
           disabled={pending}
-          className="rounded-full bg-[color:var(--color-state-error)] px-3 py-1.5 text-[12.5px] font-semibold text-bone disabled:opacity-70"
+          className="rounded-full bg-[color:var(--color-state-error)] px-3 py-1.5 text-[12.5px] font-semibold text-bone disabled:opacity-70 max-md:min-h-[44px] max-md:px-4"
         >
           {pending ? "Deleting" : "Delete"}
         </button>
@@ -59,7 +59,7 @@ export function PostRowActions({
           type="button"
           onClick={() => setConfirming(false)}
           disabled={pending}
-          className="rounded-full px-2 py-1.5 text-[12.5px] font-semibold text-forest"
+          className="rounded-full px-2 py-1.5 text-[12.5px] font-semibold text-forest max-md:min-h-[44px] max-md:px-3"
         >
           Keep
         </button>
@@ -77,7 +77,7 @@ export function PostRowActions({
         onClick={togglePublish}
         disabled={pending}
         title={status === "published" ? "Move to draft" : "Publish"}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest disabled:opacity-60"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest disabled:opacity-60 md:h-8 md:w-8"
       >
         {status === "published" ? (
           <EyeOff size={15} aria-hidden="true" />
@@ -88,7 +88,7 @@ export function PostRowActions({
       <Link
         href={`/library/${postId}/edit`}
         title="Edit"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-inset hover:text-forest md:h-8 md:w-8"
       >
         <Pencil size={15} aria-hidden="true" />
       </Link>
@@ -96,7 +96,7 @@ export function PostRowActions({
         type="button"
         onClick={() => setConfirming(true)}
         title="Delete"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)]"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--color-text-muted)] transition-colors hover:bg-[color:var(--color-state-error)]/10 hover:text-[color:var(--color-state-error)] md:h-8 md:w-8"
       >
         <Trash2 size={15} aria-hidden="true" />
       </button>

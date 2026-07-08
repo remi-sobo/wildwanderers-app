@@ -23,7 +23,7 @@ export default async function FitnessPage({
         </EmptyState>
         <Link
           href="/fitness/movements"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
         >
           <Dumbbell size={15} aria-hidden="true" />
           Build your movement library
@@ -47,14 +47,14 @@ export default async function FitnessPage({
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/fitness/movements"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
           >
             <Dumbbell size={15} aria-hidden="true" />
             Movements
           </Link>
           <Link
             href="/fitness/assessments"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
           >
             <Settings2 size={15} aria-hidden="true" />
             Assessment tests
@@ -71,7 +71,7 @@ export default async function FitnessPage({
               key={cl.id}
               href={`/fitness?c=${cl.id}`}
               scroll={false}
-              className={`shrink-0 rounded-full border px-4 py-2 text-[13.5px] font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center rounded-full border px-4 py-2 text-[13.5px] font-medium transition-colors max-md:min-h-[44px] ${
                 active
                   ? "border-forest bg-forest text-bone"
                   : "border-[color:var(--border-strong)] bg-card text-[color:var(--color-text)] hover:border-forest"

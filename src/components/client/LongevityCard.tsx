@@ -83,7 +83,7 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
         <button
           type="button"
           onClick={() => setShowRecord((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-3.5 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-3.5 py-2 text-[13px] font-semibold text-[#23170c] transition hover:bg-amber-deep max-md:min-h-[44px]"
         >
           <Plus size={15} strokeWidth={2.2} aria-hidden="true" />
           Record
@@ -125,7 +125,7 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
                 type="button"
                 onClick={save}
                 disabled={pending || !assessmentId}
-                className="shrink-0 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60"
+                className="inline-flex shrink-0 items-center justify-center rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
               >
                 {pending ? "Saving" : "Save"}
               </button>
@@ -191,7 +191,7 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
           type="button"
           onClick={() => toggleBody(!longevity.showBodyComposition)}
           disabled={bodyPending}
-          className="ww-link text-[12.5px] font-medium text-forest disabled:opacity-60"
+          className="ww-link inline-flex items-center px-1 text-[12.5px] font-medium text-forest disabled:opacity-60 max-md:min-h-[44px]"
         >
           {longevity.showBodyComposition ? "Turn off" : "Turn on"}
         </button>

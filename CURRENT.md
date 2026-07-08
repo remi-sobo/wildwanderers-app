@@ -4,6 +4,32 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Mobile upgrade shipped, 2026-07-08: the app is now genuinely phone-first, not a
+desktop layout squeezed onto a phone. The old collapsed icon rail gave every
+phone page a 271px column; it is gone. Phones get the full viewport, a
+forest-deep bottom tab bar carries each role's daily loop (client: Home,
+Training, Log, Messages; owner: Program, Fitness, Business, Messages; coach
+swaps Business for Dads & Kids; parent: Family, Alongside, Library), and the
+rest of the map lives one tap away in a More sheet with account and sign out.
+Nav items come from one shared source (shell/nav.ts) so the sidebar and the tab
+bar cannot drift. Safe-area insets run end to end for the installed PWA, the
+org mark rides the mobile top bar, and the floating buttons lift above the tab
+bar. Under it: a 16px floor on every form field so iOS stops zooming on focus
+(desktop density unchanged via md: step-backs), a 44px touch target on every
+interactive control across all four surfaces, the plan builder and the client
+workout builder rebuilt as mobile grids with sets, reps, and load aligned, the
+messages card sized to the phone so the keyboard cannot hide the composer, and
+overflow-proofing on the rows that could blow out a 375px card. Four commits,
+one per layer: shell, client surface, back office and workspace, coach surface.
+Verified: typecheck and production build green, auth surface confirmed at 390px
+with zero horizontal overflow. The authed surfaces are code-reviewed but not
+device-tested; a pass on Gabe's phone is the natural next check. Merged over
+Ring 13: its per-day client workouts, the day builder, the new-message button,
+and the parent's Messages entry all carry the same mobile treatment, and the
+parent's tab bar gained Messages. Ring 13's new surfaces (the drafts inbox,
+plan comments and swaps) have not had their own mobile audit yet; that is the
+one known follow-up.
+
 Ring 13 built, 2026-07-07: closing the loop on reusable training, plus open
 messaging. Five pieces. The drafts inbox at /program/drafts shows every
 resting draft org-wide, client-sent work first, with a live count on Program.

@@ -25,7 +25,7 @@ function emptyDay(): SelfDayInput {
 }
 
 const fieldClass =
-  "h-11 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+  "h-11 rounded-[10px] border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 export type BuilderStart = { title: string; days: SelfDayInput[] };
 
@@ -108,13 +108,13 @@ export function SelfWorkoutBuilder({
                 value={day.title}
                 onChange={(e) => updateDay(di, { title: e.target.value })}
                 placeholder="Name this day (optional)"
-                className="h-9 min-w-0 flex-1 rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[13px] text-ink"
+                className="h-11 min-w-0 flex-1 rounded-lg border border-[color:var(--border-strong)] bg-card px-2.5 text-[16px] text-ink md:h-9 md:text-[13px]"
               />
               <button
                 type="button"
                 onClick={() => setDays((ds) => ds.filter((_, j) => j !== di))}
                 aria-label={`Remove day ${di + 1}`}
-                className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
               >
                 <Trash2 size={15} />
               </button>
@@ -136,8 +136,8 @@ export function SelfWorkoutBuilder({
                     .slice(0, 8)
                 : [];
             return (
-              <div key={i} className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-[180px] flex-1">
+              <div key={i} className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
+                <div className="relative col-span-2 sm:min-w-[180px] sm:flex-1">
                   <Search
                     size={15}
                     aria-hidden="true"
@@ -155,7 +155,7 @@ export function SelfWorkoutBuilder({
                     className={`${fieldClass} w-full pl-9`}
                   />
                   {matches.length > 0 ? (
-                    <ul className="absolute left-0 top-[calc(100%+4px)] z-30 max-h-64 w-[300px] max-w-[80vw] overflow-auto rounded-xl border border-[color:var(--border-strong)] bg-card p-1 shadow-[0_12px_30px_rgba(42,33,24,.14)]">
+                    <ul className="absolute left-0 top-[calc(100%+4px)] z-30 max-h-64 w-full min-w-[260px] max-w-[calc(100vw-2.5rem)] overflow-auto rounded-xl border border-[color:var(--border-strong)] bg-card p-1 shadow-[0_12px_30px_rgba(42,33,24,.14)]">
                       {matches.map((it) => (
                         <li key={it.id}>
                           <button
@@ -188,7 +188,7 @@ export function SelfWorkoutBuilder({
                 <select
                   value={ex.kind}
                   onChange={(e) => updateExercise(di, i, { kind: e.target.value })}
-                  className={`${fieldClass} w-[120px] capitalize`}
+                  className={`${fieldClass} col-span-2 w-full capitalize sm:w-[120px]`}
                   aria-label="Kind"
                 >
                   {KINDS.map((k) => (
@@ -202,13 +202,13 @@ export function SelfWorkoutBuilder({
                   onChange={(e) => updateExercise(di, i, { sets: e.target.value.replace(/[^0-9]/g, "") })}
                   placeholder="Sets"
                   inputMode="numeric"
-                  className={`${fieldClass} w-[68px]`}
+                  className={`${fieldClass} w-full sm:w-[68px]`}
                 />
                 <input
                   value={ex.reps}
                   onChange={(e) => updateExercise(di, i, { reps: e.target.value })}
                   placeholder="Reps"
-                  className={`${fieldClass} w-[88px]`}
+                  className={`${fieldClass} w-full sm:w-[88px]`}
                 />
                 {day.exercises.length > 1 ? (
                   <button
@@ -216,7 +216,7 @@ export function SelfWorkoutBuilder({
                     onClick={() =>
                       updateDay(di, { exercises: day.exercises.filter((_, j) => j !== i) })
                     }
-                    className="text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)]"
+                    className="col-span-2 flex h-11 w-11 items-center justify-center justify-self-end text-[color:var(--color-text-faint)] transition-colors hover:text-[color:var(--color-state-error)] sm:col-span-1"
                     aria-label="Remove movement"
                   >
                     <Trash2 size={15} />
@@ -229,7 +229,7 @@ export function SelfWorkoutBuilder({
           <button
             type="button"
             onClick={() => updateDay(di, { exercises: [...day.exercises, emptyExercise()] })}
-            className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-forest transition-colors hover:text-fern"
+            className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-forest transition-colors hover:text-fern max-md:min-h-[44px]"
           >
             <Plus size={15} /> Add a movement
           </button>
@@ -240,7 +240,7 @@ export function SelfWorkoutBuilder({
         <button
           type="button"
           onClick={() => setDays((ds) => [...ds, emptyDay()])}
-          className="inline-flex items-center gap-1.5 self-start rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset"
+          className="inline-flex items-center gap-1.5 self-start rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
         >
           <Plus size={15} /> Add a day
         </button>

@@ -13,7 +13,7 @@ const STATUS_STYLE: Record<ProgramStatus, string> = {
   completed: "bg-inset text-[color:var(--color-text-muted)]",
   archived: "bg-inset text-[color:var(--color-text-faint)]",
 };
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 function whenLabel(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -44,7 +44,7 @@ function CreateProgram() {
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep">
+        className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]">
         <Plus size={16} strokeWidth={2.2} aria-hidden="true" /> New program
       </button>
     );
@@ -67,10 +67,10 @@ function CreateProgram() {
       {error ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{error}</p> : null}
       <div className="mt-4 flex items-center gap-3">
         <button type="button" onClick={save} disabled={pending || !v.name.trim()}
-          className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+          className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
           {pending ? "Creating" : "Create program"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="ww-link text-[13.5px] font-semibold text-forest">Cancel</button>
+        <button type="button" onClick={() => setOpen(false)} className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]">Cancel</button>
       </div>
     </div>
   );
@@ -110,18 +110,19 @@ export function ProgramsList({ programs }: { programs: ProgramSummary[] }) {
                   </span>
                 </div>
                 {p.location ? <p className="mt-0.5 text-[13px] text-[color:var(--color-text-muted)]">{p.location}</p> : null}
-                <div className="mt-4 flex items-center gap-4 text-[13px] text-[color:var(--color-text-muted)]">
-                  <span className="inline-flex items-center gap-1.5">
+                <div className="mt-4 flex min-w-0 items-center gap-4 text-[13px] text-[color:var(--color-text-muted)]">
+                  <span className="inline-flex shrink-0 items-center gap-1.5">
                     <Users size={15} className="text-forest" aria-hidden="true" /> {p.roster_count}
                   </span>
                   {p.next_session_at ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarClock size={15} className="text-forest" aria-hidden="true" /> {whenLabel(p.next_session_at)}
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      <CalendarClock size={15} className="shrink-0 text-forest" aria-hidden="true" />
+                      <span className="truncate">{whenLabel(p.next_session_at)}</span>
                     </span>
                   ) : (
                     <span className="text-[color:var(--color-text-faint)]">No sessions yet</span>
                   )}
-                  <ChevronRight size={16} className="ml-auto text-[color:var(--color-text-faint)] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  <ChevronRight size={16} className="ml-auto shrink-0 text-[color:var(--color-text-faint)] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </div>
               </Link>
             </li>

@@ -80,7 +80,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
       {/* FAB + its action menu */}
       <div
         ref={menuRef}
-        className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5 md:bottom-8 md:right-8"
+        className="fixed bottom-[calc(74px+env(safe-area-inset-bottom))] right-4 z-40 flex flex-col items-end gap-2.5 md:bottom-8 md:right-8"
       >
         {menuOpen ? (
           <div className="flex flex-col gap-1 rounded-2xl border border-[color:var(--border-hair)] bg-canvas p-1.5 shadow-[0_16px_44px_rgba(42,33,24,0.28)]">
@@ -158,7 +158,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Close"
-                  className="text-bone/70 transition-colors hover:text-bone"
+                  className="-m-2 flex h-11 w-11 items-center justify-center text-bone/70 transition-colors hover:text-bone"
                 >
                   <X size={20} aria-hidden="true" />
                 </button>
@@ -194,7 +194,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                         setClientId(e.target.value);
                         resetOutputs();
                       }}
-                      className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[14.5px] text-ink"
+                      className="h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14.5px] text-ink"
                     >
                       {clients.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -220,7 +220,7 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                       type="button"
                       onClick={runSummary}
                       disabled={pending}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-70"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-[13.5px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-70 max-md:min-h-[44px]"
                     >
                       {pending ? "Reading" : "Summarize this client"}
                       {!pending ? <Send size={14} aria-hidden="true" /> : null}
@@ -261,13 +261,13 @@ export function CoachDock({ clients, configured }: { clients: CoachClient[]; con
                       onChange={(e) => setAsk(e.target.value)}
                       rows={3}
                       placeholder="What should Coach draft? e.g. a 3-day full-body week for a beginner, or add a mobility day to their plan."
-                      className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14px] text-ink"
+                      className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[16px] md:text-[14px] text-ink"
                     />
                     <button
                       type="button"
                       onClick={runDraft}
                       disabled={drafting || !ask.trim()}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
                     >
                       {drafting ? "Drafting" : "Draft with Scout"}
                       {!drafting ? <Sparkles size={14} aria-hidden="true" /> : null}

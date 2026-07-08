@@ -15,7 +15,7 @@ export default async function MovementsPage() {
         <div>
           <Link
             href="/fitness"
-            className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest"
+            className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest max-md:min-h-[44px]"
           >
             <ChevronLeft size={16} aria-hidden="true" />
             Fitness
@@ -30,7 +30,7 @@ export default async function MovementsPage() {
         </div>
         <Link
           href="/fitness/movements/new"
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-5 py-2.5 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-5 py-2.5 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
         >
           <Plus size={16} aria-hidden="true" />
           Add movement
