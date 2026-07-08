@@ -6,7 +6,7 @@ import { GraduationCap, Pencil } from "lucide-react";
 import { saveEnrollment, setEnrollmentStatus } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, Participant, Enrollment, EnrollmentStatus } from "@/lib/data/boys";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 const STATUSES: EnrollmentStatus[] = ["interested", "waitlisted", "offered", "enrolled", "withdrawn"];
 const STATUS_LABEL: Record<EnrollmentStatus, string> = {
@@ -97,22 +97,22 @@ function EnrollRow({ detail, kid }: { detail: Detail; kid: Participant }) {
         ) : null}
         {enrollment ? (
           <button type="button" onClick={() => setShowEdit((s) => !s)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-forest transition hover:bg-inset">
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-forest transition hover:bg-inset max-md:min-h-[44px]">
             <Pencil size={12} /> Tuition
           </button>
         ) : (
           <button type="button" onClick={() => move("interested")} disabled={pending}
-            className="rounded-full bg-amber px-3.5 py-1.5 text-[12.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70">
+            className="rounded-full bg-amber px-3.5 py-1.5 text-[12.5px] font-semibold text-[#23170c] transition hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             Request a spot
           </button>
         )}
       </div>
 
       {enrollment ? (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-2 flex flex-wrap gap-1.5 md:gap-1">
           {STATUSES.map((s) => (
             <button key={s} type="button" onClick={() => move(s)} disabled={pending || s === enrollment.status}
-              className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition ${
+              className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition max-md:min-h-[44px] max-md:px-3 ${
                 s === enrollment.status ? STATUS_STYLE[s] : "bg-inset text-[color:var(--color-text-muted)] hover:bg-sand"
               }`}>
               {STATUS_LABEL[s]}
@@ -145,11 +145,11 @@ function EnrollRow({ detail, kid }: { detail: Detail; kid: Participant }) {
           {err ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{err}</p> : null}
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={saveDetails} disabled={pending}
-              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60">
+              className="rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]">
               {pending ? "Saving" : "Save"}
             </button>
             <button type="button" onClick={() => setShowEdit(false)}
-              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest">
+              className="rounded-full px-4 py-2 text-[13px] font-medium text-[color:var(--color-text-muted)] hover:text-forest max-md:min-h-[44px]">
               Cancel
             </button>
           </div>

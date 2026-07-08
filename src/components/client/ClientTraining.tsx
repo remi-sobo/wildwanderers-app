@@ -90,13 +90,17 @@ export function ClientTraining({
                         onClick={() => toggle(ex.id)}
                         aria-pressed={isDone}
                         aria-label={isDone ? `Mark ${ex.title} not done` : `Mark ${ex.title} done`}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                          isDone
-                            ? "border-fern bg-fern text-bone"
-                            : "border-[color:var(--border-strong)] text-transparent hover:border-fern"
-                        }`}
+                        className="group/check -m-2 flex h-11 w-11 shrink-0 items-center justify-center"
                       >
-                        <Check size={15} strokeWidth={2.5} />
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${
+                            isDone
+                              ? "border-fern bg-fern text-bone"
+                              : "border-[color:var(--border-strong)] text-transparent group-hover/check:border-fern"
+                          }`}
+                        >
+                          <Check size={15} strokeWidth={2.5} />
+                        </span>
                       </button>
                       <div className="min-w-0 flex-1">
                         <p
@@ -129,7 +133,7 @@ export function ClientTraining({
                               href={v.href}
                               target="_blank"
                               rel="noreferrer"
-                              className="shrink-0 text-forest transition-colors hover:text-fern"
+                              className="-m-3 flex h-11 w-11 shrink-0 items-center justify-center text-forest transition-colors hover:text-fern"
                               aria-label="Watch demo"
                             >
                               <PlayCircle size={18} />
@@ -143,7 +147,7 @@ export function ClientTraining({
                             onClick={() => setOpenVideo(open ? null : ex.id)}
                             aria-expanded={open}
                             aria-label={open ? `Hide ${ex.title} demo` : `Watch ${ex.title} demo`}
-                            className={`shrink-0 transition-colors hover:text-fern ${
+                            className={`-m-3 flex h-11 w-11 shrink-0 items-center justify-center transition-colors hover:text-fern ${
                               open ? "text-fern" : "text-forest"
                             }`}
                           >

@@ -63,7 +63,7 @@ export function Conversation({
   }
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col">
+    <div className="flex h-full min-h-0 flex-col md:min-h-[420px]">
       <div className="border-b border-[color:var(--border-hair)] px-5 py-4">
         <p className="font-[family-name:var(--font-display)] text-[18px] text-forest-deep">
           {otherName}
@@ -111,7 +111,7 @@ export function Conversation({
             }}
             rows={1}
             placeholder="Write a message"
-            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-[color:var(--border-strong)] bg-card px-3.5 py-2.5 text-[14px] text-ink"
+            className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-[color:var(--border-strong)] bg-card px-3.5 py-2.5 text-[16px] text-ink md:text-[14px]"
           />
           <button
             type="button"

@@ -87,7 +87,7 @@ function FilterTab({
       type="button"
       onClick={() => onSelect(value)}
       aria-pressed={on}
-      className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+      className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors max-md:min-h-[44px] ${
         on
           ? "bg-forest text-bone"
           : "border border-[color:var(--border-hair)] text-[color:var(--color-text-muted)] hover:bg-inset"
@@ -152,7 +152,7 @@ function ChallengeFeature({
                 href={challenge.external_link!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-forest/5"
+                className="inline-flex items-center gap-1.5 rounded-full border border-forest/30 px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-forest/5 max-md:min-h-[44px]"
               >
                 Open it
                 <ArrowUpRight size={15} aria-hidden="true" />
@@ -164,7 +164,7 @@ function ChallengeFeature({
                 type="button"
                 onClick={toggle}
                 disabled={pending}
-                className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors disabled:opacity-70 ${
+                className={`inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors disabled:opacity-70 max-md:min-h-[44px] ${
                   isDone
                     ? "bg-fern/15 text-[color:var(--color-state-good)]"
                     : "bg-amber text-[#23170c] hover:bg-amber-deep"

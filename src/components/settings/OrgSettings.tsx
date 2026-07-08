@@ -6,7 +6,7 @@ import { Palette, Users, Plus, Check } from "lucide-react";
 import { updateOrgBranding, inviteCoach } from "@/lib/org/actions";
 import type { Org, OrgCoach } from "@/lib/data/org";
 
-const field = "h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[14px] text-ink";
+const field = "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
 function Card({
   icon: Icon,
@@ -86,7 +86,7 @@ export function OrgSettings({ org, coaches }: { org: Org; coaches: OrgCoach[] })
             <span className="text-[12px] font-medium text-bark">Primary color</span>
             <span className="flex items-center gap-2">
               <input type="color" value={brand.primary_color} onChange={(e) => { setBrandSaved(false); setBrand({ ...brand, primary_color: e.target.value }); }}
-                className="h-10 w-12 rounded-lg border border-[color:var(--border-strong)] bg-card" />
+                className="h-11 w-12 rounded-lg border border-[color:var(--border-strong)] bg-card md:h-10" />
               <input className={`${field} flex-1`} value={brand.primary_color}
                 onChange={(e) => { setBrandSaved(false); setBrand({ ...brand, primary_color: e.target.value }); }} />
             </span>
@@ -95,7 +95,7 @@ export function OrgSettings({ org, coaches }: { org: Org; coaches: OrgCoach[] })
             <span className="text-[12px] font-medium text-bark">Action color</span>
             <span className="flex items-center gap-2">
               <input type="color" value={brand.secondary_color} onChange={(e) => { setBrandSaved(false); setBrand({ ...brand, secondary_color: e.target.value }); }}
-                className="h-10 w-12 rounded-lg border border-[color:var(--border-strong)] bg-card" />
+                className="h-11 w-12 rounded-lg border border-[color:var(--border-strong)] bg-card md:h-10" />
               <input className={`${field} flex-1`} value={brand.secondary_color}
                 onChange={(e) => { setBrandSaved(false); setBrand({ ...brand, secondary_color: e.target.value }); }} />
             </span>
@@ -103,7 +103,7 @@ export function OrgSettings({ org, coaches }: { org: Org; coaches: OrgCoach[] })
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={saveBrand} disabled={savingBrand || !brand.name.trim()}
-            className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70">
+            className="rounded-full bg-amber px-5 py-2 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]">
             {savingBrand ? "Saving" : "Save brand"}
           </button>
           {brandSaved ? <span className="flex items-center gap-1 text-[13px] text-fern"><Check size={15} /> Saved</span> : null}
@@ -130,7 +130,7 @@ export function OrgSettings({ org, coaches }: { org: Org; coaches: OrgCoach[] })
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button type="button" onClick={addCoach} disabled={savingCoach || !coach.first_name.trim() || !coach.email.trim()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60">
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]">
             <Plus size={15} /> Invite coach
           </button>
           {coachSaved ? <span className="flex items-center gap-1 text-[13px] text-fern"><Check size={15} /> Invited</span> : null}

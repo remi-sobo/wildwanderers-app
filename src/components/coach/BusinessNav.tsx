@@ -23,7 +23,7 @@ export function BusinessNav() {
           <Link
             key={t.href}
             href={t.href}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors max-md:min-h-[44px] ${
               active
                 ? "bg-forest text-bone"
                 : "border border-[color:var(--border-strong)] bg-card text-[color:var(--color-text)] hover:border-forest"

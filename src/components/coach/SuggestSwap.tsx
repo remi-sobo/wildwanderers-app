@@ -69,7 +69,7 @@ export function SuggestSwap({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label={`Suggest a swap for ${exerciseTitle}`}
-        className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-forest"
+        className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[color:var(--color-text-faint)] transition-colors hover:text-forest max-md:min-h-[44px]"
       >
         <ArrowLeftRight size={12} aria-hidden="true" />
         Swap
@@ -83,7 +83,7 @@ export function SuggestSwap({
             value={libraryItemId}
             onChange={(e) => setLibraryItemId(e.target.value)}
             aria-label="Suggested movement"
-            className="h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-2 text-[13px] text-ink"
+            className="h-11 rounded-lg border border-[color:var(--border-strong)] bg-card px-2 text-[16px] text-ink md:h-10 md:text-[13px]"
           >
             <option value="">Pick a movement</option>
             {library.map((l) => (
@@ -96,7 +96,7 @@ export function SuggestSwap({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Why (optional, they will see it)"
-            className="h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-2 text-[13px] text-ink"
+            className="h-11 rounded-lg border border-[color:var(--border-strong)] bg-card px-2 text-[16px] text-ink md:h-10 md:text-[13px]"
           />
           {error ? (
             <p role="alert" className="text-[12px] text-[color:var(--color-state-error)]">
@@ -108,14 +108,14 @@ export function SuggestSwap({
               type="button"
               onClick={submit}
               disabled={pending}
-              className="rounded-full bg-amber px-3.5 py-1.5 text-[12.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-full bg-amber px-3.5 py-1.5 text-[12.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-60 max-md:min-h-[44px]"
             >
               {pending ? "Sending" : "Suggest it"}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-[12px] font-semibold text-[color:var(--color-text-muted)]"
+              className="inline-flex items-center px-2 text-[12px] font-semibold text-[color:var(--color-text-muted)] max-md:min-h-[44px]"
             >
               Cancel
             </button>

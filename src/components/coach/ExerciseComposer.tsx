@@ -55,7 +55,7 @@ const labelClass = "mb-2 block text-[12.5px] font-semibold tracking-[0.01em] tex
 const cardClass =
   "rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 shadow-[var(--shadow-card)]";
 const selectClass =
-  "h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[14.5px] text-ink";
+  "h-11 w-full rounded-xl border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14.5px] text-ink";
 
 export function ExerciseComposer({
   mode,
@@ -252,7 +252,7 @@ export function ExerciseComposer({
             onChange={(e) => setInstructions(e.target.value)}
             rows={3}
             placeholder="A fuller description if the cues are not enough on their own."
-            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[14.5px] leading-[1.55] text-ink"
+            className="w-full rounded-xl border border-[color:var(--border-strong)] bg-card p-3 text-[16px] leading-[1.55] text-ink md:text-[14.5px]"
           />
         </div>
       </div>
@@ -318,11 +318,14 @@ export function ExerciseComposer({
           type="button"
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-6 py-2.5 text-[14px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
         >
           {saving ? "Saving" : mode === "edit" ? "Save movement" : "Add movement"}
         </button>
-        <Link href="/fitness/movements" className="ww-link text-[13.5px] font-semibold text-forest">
+        <Link
+          href="/fitness/movements"
+          className="ww-link inline-flex items-center text-[13.5px] font-semibold text-forest max-md:min-h-[44px]"
+        >
           Cancel
         </Link>
       </div>

@@ -80,14 +80,14 @@ export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voice
         }}
         rows={3}
         placeholder="How did the week go? What felt good, what got in the way?"
-        className="w-full rounded-xl border border-[color:var(--border-strong)] bg-canvas p-3 text-[14.5px] text-ink"
+        className="w-full rounded-xl border border-[color:var(--border-strong)] bg-canvas p-3 text-[16px] text-ink md:text-[14.5px]"
       />
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={send}
           disabled={pending || !body.trim()}
-          className="rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70"
+          className="inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-[14px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
         >
           {pending ? "Sending" : "Send check-in"}
         </button>
@@ -97,7 +97,7 @@ export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voice
             <button
               type="button"
               onClick={stopRecording}
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-state-error)]/40 bg-[color:var(--color-state-error)]/8 px-4 py-2.5 text-[13.5px] font-semibold text-[color:var(--color-state-error)]"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-state-error)]/40 bg-[color:var(--color-state-error)]/8 px-4 py-2.5 text-[13.5px] font-semibold text-[color:var(--color-state-error)] max-md:min-h-[44px]"
             >
               <Square size={13} fill="currentColor" aria-hidden="true" />
               Stop and send
@@ -108,7 +108,7 @@ export function CheckInCard({ recent, voiceEnabled }: { recent: CheckIn[]; voice
               type="button"
               onClick={startRecording}
               disabled={transcribing}
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] px-4 py-2.5 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-strong)] px-4 py-2.5 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-70 max-md:min-h-[44px]"
             >
               <Mic size={15} aria-hidden="true" />
               {transcribing ? "Transcribing" : "Record instead"}

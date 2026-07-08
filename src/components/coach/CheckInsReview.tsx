@@ -78,7 +78,7 @@ function Row({ checkIn }: { checkIn: CheckIn }) {
             type="button"
             onClick={run}
             disabled={pending || !checkIn.body}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px] max-md:px-4"
           >
             <Sparkles size={13} aria-hidden="true" />
             {pending ? "Structuring" : "Structure with Scout"}

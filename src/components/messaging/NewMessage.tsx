@@ -18,7 +18,7 @@ function PersonButton({
     <form action={action}>
       <button
         type="submit"
-        className="rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset"
+        className="inline-flex items-center justify-center rounded-full border border-[color:var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
       >
         {label}
       </button>
@@ -85,7 +85,7 @@ export async function NewMessage({ isStaff }: { isStaff: boolean }) {
         <form key={s.id} action={startThreadWithStaff.bind(null, s.id)}>
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep"
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] shadow-[0_8px_20px_rgba(120,68,16,.22)] transition-colors hover:bg-amber-deep max-md:min-h-[44px]"
           >
             <PenSquare size={14} aria-hidden="true" />
             Message {s.first_name}

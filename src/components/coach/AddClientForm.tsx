@@ -86,7 +86,10 @@ export function AddClientForm() {
 
       <div className="flex items-center gap-4">
         <SubmitButton />
-        <Link href="/program" className="ww-link text-sm font-semibold text-forest">
+        <Link
+          href="/program"
+          className="ww-link inline-flex items-center text-sm font-semibold text-forest max-md:min-h-[44px]"
+        >
           Cancel
         </Link>
       </div>
