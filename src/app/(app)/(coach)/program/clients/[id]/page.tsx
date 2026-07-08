@@ -4,6 +4,9 @@ import { CalendarClock, ChevronLeft, Dumbbell, MessageCircle } from "lucide-reac
 import { Activity } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
 import { getPlanForClient, getDraftPlansForClient } from "@/lib/data/plans";
+import { getPlanConversation } from "@/lib/data/plan-talk";
+import { getExerciseLibrary } from "@/lib/data/exercises";
+import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { getClientLongevity } from "@/lib/data/longevity";
@@ -13,6 +16,8 @@ import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
 import { ClientLongevityPanel } from "@/components/coach/ClientLongevityPanel";
 import { CheckInsReview } from "@/components/coach/CheckInsReview";
 import { DraftPlansList } from "@/components/coach/DraftPlansList";
+import { PlanTalk } from "@/components/plans/PlanTalk";
+import { SuggestSwap } from "@/components/coach/SuggestSwap";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatWhen(iso: string): string {
@@ -35,14 +40,31 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, drafts, sessions, wellness, longevity, checkIns] = await Promise.all([
-    getPlanForClient(id),
-    getDraftPlansForClient(id),
-    getUpcomingSessionsForClient(id),
-    getClientWellness(id),
-    getClientLongevity(id),
-    getClientCheckIns(id),
-  ]);
+  const [plan, drafts, sessions, wellness, longevity, checkIns, session, library] =
+    await Promise.all([
+      getPlanForClient(id),
+      getDraftPlansForClient(id),
+      getUpcomingSessionsForClient(id),
+      getClientWellness(id),
+      getClientLongevity(id),
+      getClientCheckIns(id),
+      getSessionProfile(),
+      getExerciseLibrary(),
+    ]);
+
+  // The conversation on the active plan and on anything the client sent.
+  const clientSentDrafts = drafts.filter((d) => d.initiated_by === "client");
+  const talkPlanIds = [
+    ...(plan ? [plan.id] : []),
+    ...clientSentDrafts.map((d) => d.id),
+  ];
+  const talk = await getPlanConversation(talkPlanIds);
+  const viewerId = session?.userId ?? "";
+  const exerciseTitles: Record<string, string> = {};
+  for (const w of plan?.workouts ?? []) {
+    for (const ex of w.exercises) exerciseTitles[ex.id] = ex.title;
+  }
+  const revalidate = `/program/clients/${id}`;
 
   const openThread = openThreadWithClient.bind(null, id);
 
@@ -153,6 +175,25 @@ export default async function ClientDetailPage({
       {/* Resting drafts, waiting on review */}
       <DraftPlansList clientId={id} drafts={drafts} />
 
+      {/* The conversation on what the client sent */}
+      {clientSentDrafts.map((d) => (
+        <section key={d.id} className="flex flex-col gap-2">
+          <h3 className="text-[14px] font-semibold text-forest-deep">
+            About &ldquo;{d.title}&rdquo;
+          </h3>
+          <PlanTalk
+            planId={d.id}
+            comments={talk.commentsByPlan.get(d.id) ?? []}
+            swaps={talk.swapsByPlan.get(d.id) ?? []}
+            viewerId={viewerId}
+            viewerIsStaff
+            otherLabel={clientName(client)}
+            exerciseTitles={{}}
+            revalidate={revalidate}
+          />
+        </section>
+      ))}
+
       {/* Plan */}
       {plan ? (
         <section className="flex flex-col gap-4">
@@ -197,6 +238,13 @@ export default async function ClientDetailPage({
                         <span className="text-[12.5px] tabular-nums text-[color:var(--color-text-muted)]">
                           {[ex.sets ? `${ex.sets}×` : "", ex.reps ?? ""].join("").trim() || ex.load || ""}
                         </span>
+                        <SuggestSwap
+                          planId={plan.id}
+                          exerciseId={ex.id}
+                          exerciseTitle={ex.title}
+                          library={library}
+                          revalidate={revalidate}
+                        />
                       </li>
                     ))}
                   </ul>
@@ -204,6 +252,18 @@ export default async function ClientDetailPage({
               ))}
             </ul>
           )}
+
+          {/* The conversation on this plan */}
+          <PlanTalk
+            planId={plan.id}
+            comments={talk.commentsByPlan.get(plan.id) ?? []}
+            swaps={talk.swapsByPlan.get(plan.id) ?? []}
+            viewerId={viewerId}
+            viewerIsStaff
+            otherLabel={clientName(client)}
+            exerciseTitles={exerciseTitles}
+            revalidate={revalidate}
+          />
         </section>
       ) : (
         <EmptyState title="No plan yet.">

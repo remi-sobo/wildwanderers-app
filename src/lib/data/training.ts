@@ -50,20 +50,27 @@ export async function getMyTraining(): Promise<MyTraining> {
   };
 }
 
+export type MyWorkoutDay = {
+  id: string;
+  day_number: number;
+  title: string | null;
+  exercises: import("@/lib/data/plans").Exercise[];
+};
+
 export type MyWorkout = {
   planId: string;
   title: string;
   status: "draft" | "pending_review";
   reviewedAt: string | null;
   createdAt: string;
-  exercises: import("@/lib/data/plans").Exercise[];
+  days: MyWorkoutDay[];
 };
 
 export type MyWorkoutsData = { workouts: MyWorkout[]; completedIds: string[] };
 
-// The signed-in client's own self-directed workouts (one workout per plan),
-// newest first, with their completions. RLS scopes every read to the client's
-// own lane; a coach draft never appears here.
+// The signed-in client's own self-directed workouts and short plans (one to
+// seven days each), newest first, with their completions. RLS scopes every
+// read to the client's own lane; a coach draft never appears here.
 export async function getMyWorkouts(): Promise<MyWorkoutsData> {
   const client = await getMyClient();
   if (!client) return { workouts: [], completedIds: [] };
@@ -81,8 +88,9 @@ export async function getMyWorkouts(): Promise<MyWorkoutsData> {
   const planIds = plans.map((p) => p.id as string);
   const { data: workouts } = await supabase
     .from("workouts")
-    .select("id, plan_id")
-    .in("plan_id", planIds);
+    .select("id, plan_id, day_number, title")
+    .in("plan_id", planIds)
+    .order("day_number", { ascending: true });
   const workoutIds = (workouts ?? []).map((w) => w.id as string);
 
   const { data: exercises } = workoutIds.length
@@ -95,13 +103,22 @@ export async function getMyWorkouts(): Promise<MyWorkoutsData> {
         .order("sort_order", { ascending: true })
     : { data: [] };
 
-  const workoutByPlan = new Map<string, string>();
-  for (const w of workouts ?? []) workoutByPlan.set(w.plan_id as string, w.id as string);
   const exByWorkout = new Map<string, import("@/lib/data/plans").Exercise[]>();
   for (const ex of (exercises ?? []) as import("@/lib/data/plans").Exercise[]) {
     const arr = exByWorkout.get(ex.workout_id) ?? [];
     arr.push(ex);
     exByWorkout.set(ex.workout_id, arr);
+  }
+  const daysByPlan = new Map<string, MyWorkoutDay[]>();
+  for (const w of workouts ?? []) {
+    const arr = daysByPlan.get(w.plan_id as string) ?? [];
+    arr.push({
+      id: w.id as string,
+      day_number: w.day_number as number,
+      title: (w.title as string | null) ?? null,
+      exercises: exByWorkout.get(w.id as string) ?? [],
+    });
+    daysByPlan.set(w.plan_id as string, arr);
   }
 
   const { data: comps } = workoutIds.length
@@ -118,7 +135,7 @@ export async function getMyWorkouts(): Promise<MyWorkoutsData> {
       status: p.status as "draft" | "pending_review",
       reviewedAt: (p.coach_approved_at as string | null) ?? null,
       createdAt: p.created_at as string,
-      exercises: exByWorkout.get(workoutByPlan.get(p.id as string) ?? "") ?? [],
+      days: daysByPlan.get(p.id as string) ?? [],
     })),
     completedIds: (comps ?? []).map((c) => c.workout_exercise_id as string),
   };

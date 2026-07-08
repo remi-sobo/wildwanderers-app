@@ -97,9 +97,9 @@ const FAMILY: NavItem = {
   short: "Family",
 };
 
-// A parent sees their family view, the library, and settings.
+// A parent sees their family view, the library, messages, and settings.
 const PARENT_SECTIONS: NavSection[] = [
-  { label: "Menu", items: [FAMILY, FROM_YOUR_COACH, TRAILHEAD_READER] },
+  { label: "Menu", items: [FAMILY, FROM_YOUR_COACH, TRAILHEAD_READER, MESSAGES] },
   { items: [SETTINGS] },
 ];
 
@@ -126,7 +126,7 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
   }
   if (role === "parent") {
     return {
-      tabs: [FAMILY, FROM_YOUR_COACH, TRAILHEAD_READER],
+      tabs: [FAMILY, MESSAGES, FROM_YOUR_COACH, TRAILHEAD_READER],
       more: [SETTINGS],
     };
   }
