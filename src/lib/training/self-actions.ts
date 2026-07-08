@@ -17,36 +17,49 @@ export type SelfExerciseInput = {
   mediaUrl: string;
 };
 
+export type SelfDayInput = {
+  title: string;
+  exercises: SelfExerciseInput[];
+};
+
 export type CreateSelfWorkoutResult = { error: string | null };
 
-// The signed-in client saves their own workout, built by hand from the
-// movement library. No AI anywhere in this path. RLS holds it to their own
-// lane: initiated_by 'client', resting status, never their active plan.
-export async function createSelfWorkout(
+// The signed-in client saves their own workout or short plan, up to seven
+// days, built by hand from the movement library. No AI anywhere in this
+// path. RLS holds it to their own lane: initiated_by 'client', resting
+// status, never their active plan.
+export async function createSelfPlan(
   title: string,
-  exercises: SelfExerciseInput[],
+  days: SelfDayInput[],
 ): Promise<CreateSelfWorkoutResult> {
   const session = await getSessionProfile();
   const client = await getMyClient();
   if (!session?.profile || !client) return { error: "You are signed out." };
 
   const cleanTitle = title.trim();
-  if (!cleanTitle) return { error: "Give your workout a name." };
-  const rows = exercises.filter((e) => e.title.trim());
-  if (rows.length === 0) return { error: "Add at least one movement." };
+  if (!cleanTitle) return { error: "Give it a name." };
+  const cleanDays = days
+    .map((d) => ({ ...d, exercises: d.exercises.filter((e) => e.title.trim()) }))
+    .filter((d) => d.exercises.length > 0);
+  if (cleanDays.length === 0) return { error: "Add at least one movement." };
+  if (cleanDays.length > 7) return { error: "Up to seven days fits here. For more, talk with your coach." };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_self_workout_atomic", {
+  const { error } = await supabase.rpc("create_self_plan_atomic", {
     p_title: cleanTitle,
-    p_exercises: rows.map((e, i) => ({
-      title: e.title.trim(),
-      kind: e.kind,
-      sets: e.sets,
-      reps: e.reps,
-      load: e.load,
-      media_url: e.mediaUrl,
-      library_item_id: e.libraryItemId,
-      sort_order: i,
+    p_workouts: cleanDays.map((d, di) => ({
+      day_number: di + 1,
+      title: d.title.trim() || (cleanDays.length > 1 ? `Day ${di + 1}` : cleanTitle),
+      exercises: d.exercises.map((e, i) => ({
+        title: e.title.trim(),
+        kind: e.kind,
+        sets: e.sets,
+        reps: e.reps,
+        load: e.load,
+        media_url: e.mediaUrl,
+        library_item_id: e.libraryItemId,
+        sort_order: i,
+      })),
     })),
   });
   if (error) return { error: "That did not save. Try again." };
@@ -57,7 +70,10 @@ export async function createSelfWorkout(
     action: "self_workout.create",
     entityTable: "training_plans",
     entityId: client.id,
-    metadata: { exercises: rows.length },
+    metadata: {
+      days: cleanDays.length,
+      exercises: cleanDays.reduce((n, d) => n + d.exercises.length, 0),
+    },
   });
 
   revalidatePath("/training");
