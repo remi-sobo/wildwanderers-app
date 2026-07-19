@@ -305,6 +305,7 @@ export type LongevityTest = {
   higherIsBetter: boolean;
   howTo: string | null;
   isBodyComposition: boolean;
+  usesCoachJudgment: boolean;
   latestValue: number | null;
   latestValueText: string | null;
   latestBand: Band | null;
@@ -336,6 +337,7 @@ export type CatalogRow = {
   higher_is_better: boolean;
   how_to: string | null;
   is_body_composition: boolean;
+  use_coach_judgment: boolean;
 };
 
 export type ResultRow = {
@@ -378,6 +380,7 @@ export function assembleLongevity(
         higherIsBetter: a.higher_is_better,
         howTo: a.how_to ?? null,
         isBodyComposition: a.is_body_composition,
+        usesCoachJudgment: a.use_coach_judgment,
         latestValue: latest?.value ?? null,
         latestValueText: latest?.value_text ?? null,
         latestBand: latest?.band ?? null,
@@ -433,7 +436,9 @@ export async function getMyLongevity(): Promise<Longevity> {
         .maybeSingle(),
       supabase
         .from("assessments")
-        .select("id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition")
+        .select(
+          "id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition, use_coach_judgment",
+        )
         .eq("is_active", true)
         .order("name", { ascending: true }),
       supabase

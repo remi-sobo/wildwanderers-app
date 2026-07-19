@@ -22,12 +22,20 @@ function numOrNull(v: string | undefined): number | null {
 
 type RecordSource = "coach_observed" | "device_estimate";
 
-// A coach records a result for a client. The band is stamped by the trigger.
-// Defaults to coach-observed; device estimates (VO2, HRV) mark the source so
-// the profile frames them as trend fuel, never a verdict.
+// A coach records a result for a client. The band is stamped by the trigger:
+// computed from the catalog thresholds where they decide, or taken as the
+// coach's read on the day (input.band) on a judgment test. Defaults to
+// coach-observed; device estimates (VO2, HRV) mark the source so the profile
+// frames them as trend fuel, never a verdict.
 export async function recordClientAssessment(
   clientId: string,
-  input: { assessmentId: string; value?: string; valueText?: string; source?: RecordSource },
+  input: {
+    assessmentId: string;
+    value?: string;
+    valueText?: string;
+    source?: RecordSource;
+    band?: Band;
+  },
 ): Promise<LongevityResult> {
   const ctx = await staffContext();
   if (!ctx) return { error: "You are signed out." };
@@ -35,7 +43,7 @@ export async function recordClientAssessment(
 
   const value = numOrNull(input.value);
   const valueText = input.valueText?.trim() || null;
-  if (value === null && !valueText) return { error: "Enter a result." };
+  if (value === null && !valueText && !input.band) return { error: "Enter a result." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("assessment_results").insert({
@@ -45,6 +53,7 @@ export async function recordClientAssessment(
     client_id: clientId,
     value,
     value_text: valueText,
+    ...(input.band ? { band: input.band } : {}),
     source: input.source ?? "coach_observed",
     recorded_by: ctx.userId,
   });
@@ -69,7 +78,13 @@ export async function recordClientAssessment(
 // profile reflects the new starting points at once.
 export async function updateAssessment(
   assessmentId: string,
-  input: { bandImproving?: string; bandHealthy?: string; howTo?: string; isActive?: boolean },
+  input: {
+    bandImproving?: string;
+    bandHealthy?: string;
+    howTo?: string;
+    isActive?: boolean;
+    useCoachJudgment?: boolean;
+  },
 ): Promise<LongevityResult> {
   const ctx = await staffContext();
   if (!ctx) return { error: "You are signed out." };
@@ -79,6 +94,7 @@ export async function updateAssessment(
   if (input.bandHealthy !== undefined) patch.band_healthy = numOrNull(input.bandHealthy);
   if (input.howTo !== undefined) patch.how_to = input.howTo.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
+  if (input.useCoachJudgment !== undefined) patch.use_coach_judgment = input.useCoachJudgment;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -137,10 +153,13 @@ async function restampBands(
 ): Promise<void> {
   const { data: a } = await supabase
     .from("assessments")
-    .select("higher_is_better, band_improving, band_healthy")
+    .select("higher_is_better, band_improving, band_healthy, use_coach_judgment")
     .eq("id", assessmentId)
     .single();
   if (!a) return;
+  // A judgment test's bands are the coach's reads on the day, not derived
+  // from thresholds; leave them exactly as recorded.
+  if (a.use_coach_judgment) return;
   const { data: rows } = await supabase
     .from("assessment_results")
     .select("id, value")
@@ -187,6 +206,7 @@ export async function addAssessment(input: {
   howTo?: string;
   bandImproving?: string;
   bandHealthy?: string;
+  useCoachJudgment?: boolean;
 }): Promise<LongevityResult> {
   const ctx = await staffContext();
   if (!ctx) return { error: "You are signed out." };
@@ -207,6 +227,7 @@ export async function addAssessment(input: {
       how_to: input.howTo?.trim() || null,
       band_improving: numOrNull(input.bandImproving),
       band_healthy: numOrNull(input.bandHealthy),
+      use_coach_judgment: input.useCoachJudgment ?? false,
       created_by: ctx.userId,
     })
     .select("id")
