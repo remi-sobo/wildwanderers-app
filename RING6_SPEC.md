@@ -267,6 +267,25 @@ current assessment apps when we build them.
 4. **Family view of earned experiences** — held for the boys-program completions
    ring, to keep this ring tight.
 
+## Follow-up (2026-07-19): bands by coach judgment
+The assessment spec's scoring model allows a band set from a simple per-test
+target "or by his own judgment on the day." That second path is now built:
+`assessments.use_coach_judgment` flags a test as judgment-banded (Overhead
+reach seeded as the first), the coach's record surfaces (client panel and the
+boys' Experiences tab) offer the three-band read on the day for those tests,
+and the catalog editor lets Gabe switch a test between simple targets and his
+own read. The band trigger honors a staff-supplied band only where thresholds
+cannot decide; wherever they can, it computes, staff included.
+
+The same migration closed a gap in the original ring: the trigger fired only
+on value and assessment_id, so a client could update band directly on their
+own row (the manage-own policy is FOR ALL) and hand themselves "healthy." The
+trigger now fires on band writes too and clears any non-staff band, verified
+on the live DB: a client-supplied band is nulled, a client band update is
+recomputed from the value, an owner judgment band stands, and thresholds
+outrank staff on computable tests. The client self-report path still never
+sets a band, anywhere.
+
 ## Build status
 Built in five commits on `claude/ww-assessment-z1hbai`: the schema, RLS, band
 trigger, and seeded catalog (6.1); the client longevity profile (6.2); the coach

@@ -4,6 +4,24 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 6 follow-up shipped, 2026-07-19: bands by coach judgment. The assessment
+spec always allowed a band set from Gabe's simple per-test target or by his
+own judgment on the day; the second path now exists. A test can be flagged
+judgment-banded in the catalog editor (Overhead reach is the first), the
+coach's record panel and the boys' Experiences tab offer the three-band read
+on the day for those tests, and thresholds still outrank everyone where they
+can compute. The same migration closed a real gap: the band trigger did not
+fire on direct band writes, so a client could update band on their own row and
+hand themselves "healthy." It now fires on band writes, recomputes where
+thresholds decide, and clears any non-staff band. Applied and verified on the
+live DB with simulated roles; build and types green. No other gaps against the
+assessment-and-longevity build spec: the engine, both expressions, the movement
+library and demo video path (Ring 9), and the coach-accountability card (Ring
+12, "Alongside") are all live. The spec's "healthy habits pulled from Ring 2"
+stays manual entry on purpose, since Ring 2 habits are checkoffs, not steps,
+water, or protein quantities; noted as a possible later wiring if those become
+tracked numbers.
+
 Mobile upgrade shipped, 2026-07-08: the app is now genuinely phone-first, not a
 desktop layout squeezed onto a phone. The old collapsed icon rail gave every
 phone page a 271px column; it is gone. Phones get the full viewport, a
@@ -306,6 +324,13 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-07-19 Ring 6 follow-up (three commits): bands by coach judgment. The
+  use_coach_judgment flag on the catalog with Overhead reach seeded, the band
+  trigger rewritten to honor a staff read only where thresholds cannot decide
+  and to fire on band writes (closing the client PATCH-your-own-band gap,
+  verified live with simulated client and owner roles), the record actions and
+  catalog readers carrying the flag, and the three staff surfaces offering the
+  read on the day. Client self-report still never sets a band.
 - 2026-07-07 Ring 12 built (six commits): coach accountability, "Alongside".
   Schema (coach_shares + coach_share_acks + the ack-count trigger + RLS + the
   coach-media bucket + a labeled sample) applied and verified live (Phase 1); the
