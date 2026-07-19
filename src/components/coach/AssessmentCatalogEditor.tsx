@@ -17,11 +17,13 @@ function TestRow({ test }: { test: CatalogTest }) {
   const [healthy, setHealthy] = useState(test.bandHealthy?.toString() ?? "");
   const [howTo, setHowTo] = useState(test.howTo ?? "");
   const [active, setActive] = useState(test.isActive);
+  const [judgment, setJudgment] = useState(test.usesCoachJudgment);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const bandSummary =
-    test.bandImproving === null || test.bandHealthy === null
+  const bandSummary = test.usesCoachJudgment
+    ? "Banded by your read on the day"
+    : test.bandImproving === null || test.bandHealthy === null
       ? "No band set"
       : `${test.higherIsBetter ? "≥" : "≤"} ${test.bandImproving} improving · ${
           test.higherIsBetter ? "≥" : "≤"
@@ -35,6 +37,7 @@ function TestRow({ test }: { test: CatalogTest }) {
         bandHealthy: healthy,
         howTo,
         isActive: active,
+        useCoachJudgment: judgment,
       });
       if (res.error) setErr(res.error);
       else {
@@ -73,26 +76,39 @@ function TestRow({ test }: { test: CatalogTest }) {
 
       {editing ? (
         <div className="mt-3 border-t border-[color:var(--border-hair)] pt-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-[12px] text-bark">
-              Improving band ({test.higherIsBetter ? "at least" : "at most"})
-              <input
-                className={field}
-                inputMode="decimal"
-                value={improving}
-                onChange={(e) => setImproving(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-[12px] text-bark">
-              Healthy band ({test.higherIsBetter ? "at least" : "at most"})
-              <input
-                className={field}
-                inputMode="decimal"
-                value={healthy}
-                onChange={(e) => setHealthy(e.target.value)}
-              />
-            </label>
-          </div>
+          <label className="flex flex-col gap-1 text-[12px] text-bark">
+            How it is banded
+            <select
+              className={field}
+              value={judgment ? "judgment" : "thresholds"}
+              onChange={(e) => setJudgment(e.target.value === "judgment")}
+            >
+              <option value="thresholds">Simple targets I set</option>
+              <option value="judgment">My read on the day</option>
+            </select>
+          </label>
+          {!judgment ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-[12px] text-bark">
+                Improving band ({test.higherIsBetter ? "at least" : "at most"})
+                <input
+                  className={field}
+                  inputMode="decimal"
+                  value={improving}
+                  onChange={(e) => setImproving(e.target.value)}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[12px] text-bark">
+                Healthy band ({test.higherIsBetter ? "at least" : "at most"})
+                <input
+                  className={field}
+                  inputMode="decimal"
+                  value={healthy}
+                  onChange={(e) => setHealthy(e.target.value)}
+                />
+              </label>
+            </div>
+          ) : null}
           <label className="mt-3 flex flex-col gap-1 text-[12px] text-bark">
             How to measure
             <textarea
@@ -146,6 +162,7 @@ function AddTest() {
   const [higher, setHigher] = useState(true);
   const [improving, setImproving] = useState("");
   const [healthy, setHealthy] = useState("");
+  const [judgment, setJudgment] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -157,8 +174,9 @@ function AddTest() {
         pillar,
         unit,
         higherIsBetter: higher,
-        bandImproving: improving,
-        bandHealthy: healthy,
+        bandImproving: judgment ? "" : improving,
+        bandHealthy: judgment ? "" : healthy,
+        useCoachJudgment: judgment,
       });
       if (res.error) setErr(res.error);
       else {
@@ -219,20 +237,32 @@ function AddTest() {
           <option value="higher">Higher is better</option>
           <option value="lower">Lower is better</option>
         </select>
-        <input
+        <select
           className={field}
-          inputMode="decimal"
-          placeholder="Improving band (optional)"
-          value={improving}
-          onChange={(e) => setImproving(e.target.value)}
-        />
-        <input
-          className={field}
-          inputMode="decimal"
-          placeholder="Healthy band (optional)"
-          value={healthy}
-          onChange={(e) => setHealthy(e.target.value)}
-        />
+          value={judgment ? "judgment" : "thresholds"}
+          onChange={(e) => setJudgment(e.target.value === "judgment")}
+        >
+          <option value="thresholds">Banded by simple targets</option>
+          <option value="judgment">Banded by my read on the day</option>
+        </select>
+        {!judgment ? (
+          <>
+            <input
+              className={field}
+              inputMode="decimal"
+              placeholder="Improving band (optional)"
+              value={improving}
+              onChange={(e) => setImproving(e.target.value)}
+            />
+            <input
+              className={field}
+              inputMode="decimal"
+              placeholder="Healthy band (optional)"
+              value={healthy}
+              onChange={(e) => setHealthy(e.target.value)}
+            />
+          </>
+        ) : null}
       </div>
       {err ? (
         <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">
