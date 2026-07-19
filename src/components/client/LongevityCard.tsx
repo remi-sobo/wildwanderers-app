@@ -26,7 +26,11 @@ export function LongevityCard({ longevity }: { longevity: Longevity }) {
     [longevity.pillars],
   );
   const selected = allTests.find((t) => t.assessmentId === assessmentId) ?? null;
-  const isObservation = selected ? ["pass", "photo"].includes(selected.unit) : false;
+  // Judgment-banded tests read as words, not numbers. The band itself is the
+  // coach's read and is never set here.
+  const isObservation = selected
+    ? selected.usesCoachJudgment || ["pass", "photo"].includes(selected.unit)
+    : false;
 
   // Only pillars with at least one recorded result show in the profile body.
   const testedPillars = longevity.pillars

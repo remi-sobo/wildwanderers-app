@@ -17,7 +17,8 @@ import {
   type SessionInput,
 } from "@/lib/boys/actions";
 import type { ProgramDetail as Detail, Participant, ProgramGroup, EarnedExperience } from "@/lib/data/boys";
-import { BAND_DOT } from "@/components/longevity/LongevityBits";
+import { BAND_DOT, BAND_LABEL } from "@/components/longevity/LongevityBits";
+import type { Band } from "@/lib/data/wellness";
 import { FamiliesTab } from "@/components/coach/FamiliesTab";
 import { FormsTab, isSigned } from "@/components/coach/FormsTab";
 import { EnrollmentTab } from "@/components/coach/EnrollmentTab";
@@ -424,6 +425,7 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
   const [participantId, setParticipantId] = useState(detail.participants[0]?.id ?? "");
   const [assessmentId, setAssessmentId] = useState(detail.experiences[0]?.assessmentId ?? "");
   const [value, setValue] = useState("");
+  const [band, setBand] = useState<Band | "">("");
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
@@ -436,10 +438,17 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
     setErr(null);
     setSaved(false);
     start(async () => {
-      const res = await recordExperience(detail.program.id, participantId, assessmentId, value);
+      const res = await recordExperience(
+        detail.program.id,
+        participantId,
+        assessmentId,
+        value,
+        selected?.usesCoachJudgment && band ? band : undefined,
+      );
       if (res.error) setErr(res.error);
       else {
         setValue("");
+        setBand("");
         setSaved(true);
         router.refresh();
       }
@@ -467,13 +476,26 @@ function ExperiencesTab({ detail }: { detail: Detail }) {
           <select className={field} value={participantId} onChange={(e) => setParticipantId(e.target.value)}>
             {detail.participants.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
           </select>
-          <select className={field} value={assessmentId} onChange={(e) => setAssessmentId(e.target.value)}>
+          <select className={field} value={assessmentId} onChange={(e) => { setAssessmentId(e.target.value); setBand(""); }}>
             {detail.experiences.map((x) => <option key={x.assessmentId} value={x.assessmentId}>{x.experienceName}</option>)}
           </select>
           <input className={field} inputMode="decimal"
             placeholder={selected ? `What he did (${selected.unit})` : "What he did"}
             value={value} onChange={(e) => setValue(e.target.value)} />
         </div>
+        {selected?.usesCoachJudgment ? (
+          <select
+            className={`${field} mt-3 w-full sm:w-auto`}
+            value={band}
+            onChange={(e) => setBand(e.target.value as Band | "")}
+            aria-label="Your quiet read"
+          >
+            <option value="">Your quiet read (optional)</option>
+            {(["healthy", "improving", "needs_attention"] as Band[]).map((b) => (
+              <option key={b} value={b}>{BAND_LABEL[b]}</option>
+            ))}
+          </select>
+        ) : null}
         {selected?.howTo ? (
           <p className="mt-2 text-[12.5px] leading-[1.5] text-[color:var(--color-text-muted)]">{selected.howTo}</p>
         ) : null}

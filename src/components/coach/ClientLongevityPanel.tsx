@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Activity, Plus, Settings2 } from "lucide-react";
 import { recordClientAssessment } from "@/lib/longevity/actions";
-import type { Longevity } from "@/lib/data/wellness";
-import { BandChip, Trend, fmtValue } from "@/components/longevity/LongevityBits";
+import type { Band, Longevity } from "@/lib/data/wellness";
+import { BAND_DOT, BAND_LABEL, BandChip, Trend, fmtValue } from "@/components/longevity/LongevityBits";
+
+const BANDS: Band[] = ["healthy", "improving", "needs_attention"];
 
 export function ClientLongevityPanel({
   clientId,
@@ -20,13 +22,15 @@ export function ClientLongevityPanel({
   const [assessmentId, setAssessmentId] = useState("");
   const [value, setValue] = useState("");
   const [source, setSource] = useState<"coach_observed" | "device_estimate">("coach_observed");
+  const [band, setBand] = useState<Band | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
 
   const allTests = longevity.pillars.flatMap((p) => p.tests);
   const selected = allTests.find((t) => t.assessmentId === assessmentId) ?? null;
-  const isObservation = selected ? ["pass", "photo"].includes(selected.unit) : false;
+  const isJudgment = selected?.usesCoachJudgment ?? false;
+  const isObservation = isJudgment || (selected ? ["pass", "photo"].includes(selected.unit) : false);
 
   const testedPillars = longevity.pillars
     .map((p) => ({ ...p, tests: p.tests.filter((t) => t.latestValue !== null || t.latestValueText) }))
@@ -44,10 +48,12 @@ export function ClientLongevityPanel({
         assessmentId,
         source,
         ...(isObservation ? { valueText: value } : { value }),
+        ...(isJudgment && band ? { band } : {}),
       });
       if (res.error) setErr(res.error);
       else {
         setValue("");
+        setBand(null);
         setSaved(true);
         router.refresh();
       }
@@ -93,6 +99,7 @@ export function ClientLongevityPanel({
               value={assessmentId}
               onChange={(e) => {
                 setAssessmentId(e.target.value);
+                setBand(null);
                 setSaved(false);
                 setErr(null);
               }}
@@ -112,7 +119,15 @@ export function ClientLongevityPanel({
               <input
                 className="ww-input w-full sm:w-36"
                 inputMode={isObservation ? "text" : "decimal"}
-                placeholder={selected ? (isObservation ? "What you saw" : selected.unit) : "Result"}
+                placeholder={
+                  selected
+                    ? isJudgment
+                      ? "What you saw (optional)"
+                      : isObservation
+                        ? "What you saw"
+                        : selected.unit
+                    : "Result"
+                }
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               />
@@ -142,6 +157,32 @@ export function ClientLongevityPanel({
               </button>
             ))}
           </div>
+          {isJudgment ? (
+            <div className="mt-2.5">
+              <p className="text-[12px] text-bark">Your read on the day</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                {BANDS.map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBand(band === b ? null : b)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition max-md:min-h-[44px] max-md:px-4 ${
+                      band === b
+                        ? "bg-forest text-bone"
+                        : "border border-[color:var(--border-strong)] text-[color:var(--color-text-muted)] hover:bg-inset"
+                    }`}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: BAND_DOT[b] }}
+                      aria-hidden="true"
+                    />
+                    {BAND_LABEL[b]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {selected?.howTo ? (
             <p className="mt-2 text-[12.5px] leading-[1.5] text-[color:var(--color-text-muted)]">
               {selected.howTo}
