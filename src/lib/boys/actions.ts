@@ -235,12 +235,15 @@ export async function awardBadge(
 
 // Record an earned experience for a boy: the same assessment result an adult
 // logs, scored the same way by the trigger, but surfaced as encouragement with
-// the animal name, never a test he can fail. Staff-only, coach-observed.
+// the animal name, never a test he can fail. Staff-only, coach-observed. On a
+// judgment-banded movement the optional band is Gabe's quiet read on the day;
+// the trigger clears it anywhere thresholds decide instead.
 export async function recordExperience(
   programId: string,
   participantId: string,
   assessmentId: string,
   value: string,
+  band?: "healthy" | "improving" | "needs_attention",
 ): Promise<BoysResult> {
   const ctx = await staffContext();
   if (!ctx) return { error: "You are signed out." };
@@ -248,7 +251,7 @@ export async function recordExperience(
 
   const n = Number(value);
   const isNum = value.trim() !== "" && Number.isFinite(n);
-  if (!isNum && !value.trim()) return { error: "Enter what he did." };
+  if (!isNum && !value.trim() && !band) return { error: "Enter what he did." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("assessment_results").insert({
@@ -257,7 +260,8 @@ export async function recordExperience(
     subject: "participant",
     participant_id: participantId,
     value: isNum ? n : null,
-    value_text: isNum ? null : value.trim(),
+    value_text: isNum ? null : value.trim() || null,
+    ...(band ? { band } : {}),
     source: "coach_observed",
     recorded_by: ctx.userId,
   });

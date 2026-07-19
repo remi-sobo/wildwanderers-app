@@ -100,6 +100,7 @@ export type Experience = {
   pillar: PillarKey;
   unit: string;
   howTo: string | null;
+  usesCoachJudgment: boolean;
 };
 
 // One recorded experience for a boy. The band is Gabe's quiet read; the boy
@@ -246,7 +247,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
       supabase.from("program_badges").select("id, name, emoji, description").order("sort_order"),
       supabase
         .from("assessments")
-        .select("id, name, pillar, unit, how_to, boys_experience_name")
+        .select("id, name, pillar, unit, how_to, boys_experience_name, use_coach_judgment")
         .eq("is_active", true)
         .not("boys_experience_name", "is", null)
         .order("boys_experience_name"),
@@ -335,6 +336,7 @@ export async function getProgram(id: string): Promise<ProgramDetail | null> {
     pillar: a.pillar as PillarKey,
     unit: a.unit as string,
     howTo: (a.how_to as string | null) ?? null,
+    usesCoachJudgment: a.use_coach_judgment as boolean,
   }));
   const expName = new Map(experiences.map((e) => [e.assessmentId, e.experienceName] as const));
   const earned: EarnedExperience[] = ((results ?? []) as Record<string, unknown>[]).map((r) => ({

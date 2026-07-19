@@ -24,7 +24,9 @@ export async function getClientLongevity(clientId: string): Promise<Longevity> {
       .maybeSingle(),
     supabase
       .from("assessments")
-      .select("id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition")
+      .select(
+        "id, name, slug, pillar, unit, higher_is_better, how_to, is_body_composition, use_coach_judgment",
+      )
       .eq("is_active", true)
       .order("name", { ascending: true }),
     supabase
@@ -56,6 +58,7 @@ export type CatalogTest = {
   bandHealthy: number | null;
   boysExperienceName: string | null;
   isBodyComposition: boolean;
+  usesCoachJudgment: boolean;
   isActive: boolean;
 };
 
@@ -68,7 +71,7 @@ export async function getAssessmentCatalog(): Promise<CatalogGroup[]> {
   const { data } = await supabase
     .from("assessments")
     .select(
-      "id, name, slug, pillar, unit, higher_is_better, how_to, band_improving, band_healthy, boys_experience_name, is_body_composition, is_active",
+      "id, name, slug, pillar, unit, higher_is_better, how_to, band_improving, band_healthy, boys_experience_name, is_body_composition, use_coach_judgment, is_active",
     )
     .order("name", { ascending: true });
 
@@ -84,6 +87,7 @@ export async function getAssessmentCatalog(): Promise<CatalogGroup[]> {
     bandHealthy: (a.band_healthy as number | null) ?? null,
     boysExperienceName: (a.boys_experience_name as string | null) ?? null,
     isBodyComposition: a.is_body_composition as boolean,
+    usesCoachJudgment: a.use_coach_judgment as boolean,
     isActive: a.is_active as boolean,
   }));
 
