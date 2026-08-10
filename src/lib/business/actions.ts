@@ -56,6 +56,65 @@ export async function addLead(input: LeadInput): Promise<BizResult> {
   return { error: null };
 }
 
+// Edit the lead's details from the popout. Only the fields the form owns;
+// stage moves stay with moveLeadStage so the timeline entry never gets lost.
+export async function updateLead(leadId: string, input: LeadInput & { notes?: string }): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (!input.name.trim()) return { error: "A name is needed." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      name: input.name.trim(),
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+      source: input.source || "other",
+      interest: input.interest || null,
+      estimated_value_cents: dollarsToCents(input.estimated_value),
+      next_action: input.next_action?.trim() || null,
+      next_action_date: input.next_action_date || null,
+      notes: input.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+  if (error) return { error: "That did not save. Try again." };
+  revalidatePath("/business/pipeline");
+  revalidatePath("/business");
+  return { error: null };
+}
+
+// Mark a lead lost with the reason, and keep the why on the timeline.
+export async function markLeadLost(leadId: string, reason: string): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      stage: "lost",
+      lost_reason: reason.trim() || null,
+      closed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+  if (error) return { error: "That did not save. Try again." };
+
+  await supabase.from("lead_activities").insert({
+    org_id: ctx.orgId,
+    lead_id: leadId,
+    kind: "stage_change",
+    content: reason.trim() ? `Marked lost: ${reason.trim()}` : "Marked lost",
+    created_by: ctx.userId,
+  });
+
+  revalidatePath("/business/pipeline");
+  revalidatePath("/business");
+  return { error: null };
+}
+
 export async function moveLeadStage(leadId: string, stage: LeadStage): Promise<BizResult> {
   const ctx = await ownerContext();
   if (!ctx) return { error: "You are signed out." };
@@ -113,6 +172,7 @@ export type TaskInput = {
   priority?: string;
   due_date?: string;
   pin_today?: boolean;
+  lead_id?: string;
 };
 
 export async function addTask(input: TaskInput): Promise<BizResult> {
@@ -128,10 +188,12 @@ export async function addTask(input: TaskInput): Promise<BizResult> {
     priority: input.priority || "medium",
     due_date: input.due_date || null,
     pin_today: Boolean(input.pin_today),
+    lead_id: input.lead_id || null,
     created_by: ctx.userId,
   });
   if (error) return { error: "That did not save. Try again." };
   revalidatePath("/business/tasks");
+  revalidatePath("/business/pipeline");
   revalidatePath("/business");
   return { error: null };
 }
@@ -146,6 +208,7 @@ export async function setTaskDone(taskId: string, done: boolean): Promise<BizRes
     .eq("id", taskId);
   if (error) return { error: "That did not save. Try again." };
   revalidatePath("/business/tasks");
+  revalidatePath("/business/pipeline");
   revalidatePath("/business");
   return { error: null };
 }
