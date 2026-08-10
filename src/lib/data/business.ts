@@ -155,6 +155,7 @@ export type Customer = {
   lifecycle_stage: "lead" | "active" | "paused" | "churned";
   lifetime_value_cents: number;
   notes: string | null;
+  client_id: string | null;
 };
 
 export type LeadActivity = {
@@ -228,7 +229,7 @@ export async function getCustomers(): Promise<Customer[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("customers")
-    .select("id, name, email, phone, lifecycle_stage, lifetime_value_cents, notes")
+    .select("id, name, email, phone, lifecycle_stage, lifetime_value_cents, notes, client_id")
     .order("created_at", { ascending: false });
   return (data as Customer[] | null) ?? [];
 }
