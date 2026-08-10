@@ -4,6 +4,18 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 4 follow-up shipped, 2026-08-10 (second pass): convert now bridges the
+CRM to the Program roster. The root cause it fixes: customers (Ring 4
+business layer) and clients (Ring 0 program layer) were never linked, so a
+converted lead never appeared on Program and never moved the active-clients
+metric. Convert now also creates the linked clients row and sets
+customers.client_id; boys program leads except themselves (the family
+enrolls through Dads & Kids, customer record only, said in the drawer).
+Customer rows show On Program (deep link) or a one-tap Add to roster, the
+catch-up for anyone converted before the bridge. Login setup stays a
+separate step on the client's page. No schema change; the client_id FK
+existed from Ring 4. Build and types green.
+
 Ring 4 follow-up shipped, 2026-08-10: the lead popout. A lead on the
 pipeline board now opens as a drawer that is the lead's whole workspace:
 details and notes edit in place, stage moves and the big actions (convert

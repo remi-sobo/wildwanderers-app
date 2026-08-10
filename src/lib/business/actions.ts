@@ -9,7 +9,7 @@ export type BizResult = { error: string | null };
 
 async function ownerContext() {
   const session = await getSessionProfile();
-  if (!session?.profile || session.profile.role !== "owner") return null;
+  if (!session?.profile || session.profile.role !== "owner" || !session.profile.org_id) return null;
   return { userId: session.userId, orgId: session.profile.org_id };
 }
 
@@ -364,8 +364,35 @@ export async function toggleOffering(offeringId: string, isActive: boolean): Pro
   return { error: null };
 }
 
-// Convert a lead into a customer: create the customer record, link it, and mark
-// the lead won. Skips if the lead is already linked.
+function splitName(full: string): { first: string; last: string } {
+  const [first, ...rest] = full.trim().split(/\s+/);
+  return { first: first || "Client", last: rest.join(" ") };
+}
+
+// Create the Program roster record for a customer and link it back. The
+// bridge between the CRM and the coaching side: a customer without a linked
+// client is invisible to Program, the plan builder, and the active-clients
+// metric. Login setup stays a separate step on the client's page.
+async function createLinkedClient(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  customerId: string,
+  fullName: string,
+): Promise<string | null> {
+  const { first, last } = splitName(fullName);
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .insert({ org_id: orgId, first_name: first, last_name: last, status: "active" })
+    .select("id")
+    .single();
+  if (!clientRow) return null;
+  await supabase.from("customers").update({ client_id: clientRow.id }).eq("id", customerId);
+  return clientRow.id as string;
+}
+
+// Convert a lead into a customer: create the customer record, put them on the
+// Program roster (boys program families excepted, they enroll through Dads &
+// Kids), link everything, and mark the lead won. Skips if already linked.
 export async function convertLeadToCustomer(leadId: string): Promise<BizResult> {
   const ctx = await ownerContext();
   if (!ctx) return { error: "You are signed out." };
@@ -373,7 +400,7 @@ export async function convertLeadToCustomer(leadId: string): Promise<BizResult> 
   const supabase = await createClient();
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, name, email, phone, source, customer_id")
+    .select("id, name, email, phone, source, interest, customer_id")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { error: "That lead was not found." };
@@ -393,6 +420,13 @@ export async function convertLeadToCustomer(leadId: string): Promise<BizResult> 
     .single();
   if (cErr || !customer) return { error: "Could not create the customer. Check for a duplicate email." };
 
+  if (lead.interest !== "boys_program") {
+    const clientId = await createLinkedClient(supabase, ctx.orgId, customer.id as string, lead.name as string);
+    if (!clientId) {
+      return { error: "The customer was created but adding them to Program failed. Use Add to roster on the customer row." };
+    }
+  }
+
   await supabase
     .from("leads")
     .update({
@@ -405,5 +439,30 @@ export async function convertLeadToCustomer(leadId: string): Promise<BizResult> 
 
   revalidatePath("/business/pipeline");
   revalidatePath("/business");
+  revalidatePath("/program");
+  return { error: null };
+}
+
+// The catch-up for customers converted before the bridge existed, and for
+// boys program families Gabe decides belong on the roster after all.
+export async function addCustomerToRoster(customerId: string): Promise<BizResult> {
+  const ctx = await ownerContext();
+  if (!ctx) return { error: "You are signed out." };
+
+  const supabase = await createClient();
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("id, name, client_id")
+    .eq("id", customerId)
+    .maybeSingle();
+  if (!customer) return { error: "That customer was not found." };
+  if (customer.client_id) return { error: "They are already on the Program roster." };
+
+  const clientId = await createLinkedClient(supabase, ctx.orgId, customer.id as string, customer.name as string);
+  if (!clientId) return { error: "That did not save. Try again." };
+
+  revalidatePath("/business/pipeline");
+  revalidatePath("/business");
+  revalidatePath("/program");
   return { error: null };
 }

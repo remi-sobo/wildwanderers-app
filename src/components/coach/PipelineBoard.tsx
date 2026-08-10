@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, ListChecks } from "lucide-react";
-import { addLead, type LeadInput } from "@/lib/business/actions";
+import { Plus, ListChecks, UserPlus } from "lucide-react";
+import { addLead, addCustomerToRoster, type LeadInput } from "@/lib/business/actions";
 import { formatMoney } from "@/lib/business/format";
 import { LeadDrawer } from "@/components/coach/LeadDrawer";
 import type { Lead, LeadStage, Customer, LeadWorkspace } from "@/lib/data/business";
@@ -92,6 +93,60 @@ function AddLead() {
         </button>
       </div>
     </div>
+  );
+}
+
+// A customer row bridges to the coaching side: linked customers deep-link to
+// their Program page, unlinked ones (converted before the bridge existed, or
+// boys program families joining the roster after all) get a one-tap add.
+function CustomerRow({ customer: c }: { customer: Customer }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function addToRoster() {
+    setError(null);
+    start(async () => {
+      const res = await addCustomerToRoster(c.id);
+      if (res.error) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <li className="flex items-center justify-between gap-3 py-3">
+      <div className="min-w-0">
+        <p className="truncate text-[14px] text-forest-deep">{c.name}</p>
+        <p className="truncate text-[12px] text-[color:var(--color-text-muted)]">
+          {c.email || c.phone || "—"} · {c.lifecycle_stage}
+        </p>
+        {error ? (
+          <p role="alert" className="mt-0.5 text-[12px] text-[color:var(--color-state-error)]">{error}</p>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        {c.lifetime_value_cents > 0 ? (
+          <span className="text-[13px] text-bark">{formatMoney(c.lifetime_value_cents)}</span>
+        ) : null}
+        {c.client_id ? (
+          <Link
+            href={`/program/clients/${c.client_id}`}
+            className="ww-link text-[12.5px] font-semibold text-forest max-md:min-h-[44px] max-md:inline-flex max-md:items-center"
+          >
+            On Program
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={addToRoster}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]"
+          >
+            <UserPlus size={13} aria-hidden="true" /> Add to roster
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -223,17 +278,7 @@ export function PipelineBoard({
           </h2>
           <ul className="flex flex-col divide-y divide-[color:var(--border-hair)] rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 shadow-[var(--shadow-card)]">
             {customers.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[14px] text-forest-deep">{c.name}</p>
-                  <p className="truncate text-[12px] text-[color:var(--color-text-muted)]">
-                    {c.email || c.phone || "—"} · {c.lifecycle_stage}
-                  </p>
-                </div>
-                {c.lifetime_value_cents > 0 ? (
-                  <span className="shrink-0 text-[13px] text-bark">{formatMoney(c.lifetime_value_cents)}</span>
-                ) : null}
-              </li>
+              <CustomerRow key={c.id} customer={c} />
             ))}
           </ul>
         </section>
