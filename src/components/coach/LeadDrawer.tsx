@@ -243,6 +243,12 @@ export function LeadDrawer({
               </button>
             ) : null}
           </div>
+          {lead.interest === "boys_program" && !lead.customer_id ? (
+            <p className="mt-2 text-[12.5px] text-[color:var(--color-text-muted)]">
+              A boys program family enrolls through Dads &amp; Kids. Convert makes the
+              customer record only.
+            </p>
+          ) : null}
           {lead.stage === "lost" && lead.lost_reason ? (
             <p className="mt-2 text-[13px] text-[color:var(--color-text-muted)]">
               Lost: {lead.lost_reason}
