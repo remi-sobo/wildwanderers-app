@@ -141,6 +141,7 @@ export type Lead = {
   stage: LeadStage;
   next_action: string | null;
   next_action_date: string | null;
+  lost_reason: string | null;
   notes: string | null;
   customer_id: string | null;
   last_activity_at: string | null;
@@ -156,6 +157,14 @@ export type Customer = {
   notes: string | null;
 };
 
+export type LeadActivity = {
+  id: string;
+  lead_id: string;
+  kind: "call" | "text" | "email" | "in_person" | "note" | "stage_change";
+  content: string | null;
+  created_at: string;
+};
+
 // All leads for the owner, newest touch first, with the last-activity time
 // folded in for the board.
 export async function getLeads(): Promise<Lead[]> {
@@ -164,7 +173,7 @@ export async function getLeads(): Promise<Lead[]> {
     supabase
       .from("leads")
       .select(
-        "id, name, email, phone, source, interest, estimated_value_cents, stage, next_action, next_action_date, notes, customer_id",
+        "id, name, email, phone, source, interest, estimated_value_cents, stage, next_action, next_action_date, lost_reason, notes, customer_id",
       )
       .order("updated_at", { ascending: false }),
     supabase.from("lead_activities").select("lead_id, created_at"),
@@ -178,6 +187,41 @@ export async function getLeads(): Promise<Lead[]> {
     ...(l as Omit<Lead, "last_activity_at">),
     last_activity_at: lastByLead.get(l.id as string) ?? null,
   }));
+}
+
+export type LeadWorkspace = {
+  activitiesByLead: Record<string, LeadActivity[]>;
+  tasksByLead: Record<string, BusinessTask[]>;
+};
+
+// Everything the lead popout shows beyond the lead row itself: the full
+// activity timeline and the tasks that belong to each lead, grouped and
+// ready for the board. Owner RLS scopes both reads.
+export async function getLeadWorkspace(): Promise<LeadWorkspace> {
+  const supabase = await createClient();
+  const [{ data: acts }, { data: tasks }] = await Promise.all([
+    supabase
+      .from("lead_activities")
+      .select("id, lead_id, kind, content, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("business_tasks")
+      .select("id, title, description, category, priority, due_date, pin_today, status, lead_id")
+      .not("lead_id", "is", null)
+      .neq("status", "cancelled")
+      .order("status", { ascending: true })
+      .order("due_date", { ascending: true, nullsFirst: false }),
+  ]);
+
+  const activitiesByLead: Record<string, LeadActivity[]> = {};
+  for (const a of (acts ?? []) as LeadActivity[]) {
+    (activitiesByLead[a.lead_id] ??= []).push(a);
+  }
+  const tasksByLead: Record<string, BusinessTask[]> = {};
+  for (const t of (tasks ?? []) as BusinessTask[]) {
+    if (t.lead_id) (tasksByLead[t.lead_id] ??= []).push(t);
+  }
+  return { activitiesByLead, tasksByLead };
 }
 
 export async function getCustomers(): Promise<Customer[]> {
@@ -233,6 +277,7 @@ export type BusinessTask = {
   due_date: string | null;
   pin_today: boolean;
   status: "open" | "in_progress" | "done" | "cancelled";
+  lead_id: string | null;
 };
 
 // Open and recently-done tasks for the owner, pinned first.
@@ -240,7 +285,7 @@ export async function getTasks(): Promise<BusinessTask[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("business_tasks")
-    .select("id, title, description, category, priority, due_date, pin_today, status")
+    .select("id, title, description, category, priority, due_date, pin_today, status, lead_id")
     .neq("status", "cancelled")
     .order("pin_today", { ascending: false })
     .order("status", { ascending: true })
