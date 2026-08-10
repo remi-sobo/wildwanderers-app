@@ -4,6 +4,18 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Ring 4 follow-up shipped, 2026-08-10: the lead popout. A lead on the
+pipeline board now opens as a drawer that is the lead's whole workspace:
+details and notes edit in place, stage moves and the big actions (convert
+to customer, mark lost with a reason kept on the timeline) sit at the top,
+tasks that belong to the lead list beside a quick add, and the timeline
+shows every touch with a composer. One small migration, applied and
+verified live: business_tasks gains lead_id (set-null, partial index),
+covered by the existing owner-only RLS, and a simulated client still sees
+zero business rows. The card slims to the map view (name, value, next
+action, last touch, open-task count) and its inline stage and convert
+controls move into the drawer. Build and types green.
+
 Ring 6 follow-up shipped, 2026-07-19: bands by coach judgment. The assessment
 spec always allowed a band set from Gabe's simple per-test target or by his
 own judgment on the day; the second path now exists. A test can be flagged
@@ -324,6 +336,11 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-08-10 Ring 4 follow-up (three commits): the lead popout. The
+  lead_id column on business_tasks with its partial index (applied and
+  verified on the live DB, owner wall re-checked with a simulated client),
+  the data layer's getLeadWorkspace plus updateLead and markLeadLost
+  actions, and the LeadDrawer wired into a slimmed pipeline card.
 - 2026-07-19 Ring 6 follow-up (three commits): bands by coach judgment. The
   use_coach_judgment flag on the catalog with Overhead reach seeded, the band
   trigger rewritten to honor a staff read only where thresholds cannot decide
