@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, UserPlus } from "lucide-react";
-import { addLead, moveLeadStage, convertLeadToCustomer, type LeadInput } from "@/lib/business/actions";
+import { Plus, ListChecks } from "lucide-react";
+import { addLead, type LeadInput } from "@/lib/business/actions";
 import { formatMoney } from "@/lib/business/format";
-import type { Lead, LeadStage, Customer } from "@/lib/data/business";
+import { LeadDrawer } from "@/components/coach/LeadDrawer";
+import type { Lead, LeadStage, Customer, LeadWorkspace } from "@/lib/data/business";
 
 const STAGES: { value: LeadStage; label: string }[] = [
   { value: "new", label: "New" },
@@ -94,77 +95,75 @@ function AddLead() {
   );
 }
 
-function LeadCard({ lead }: { lead: Lead }) {
-  const router = useRouter();
-  const [pending, start] = useTransition();
-
-  function move(stage: LeadStage) {
-    start(async () => {
-      await moveLeadStage(lead.id, stage);
-      router.refresh();
-    });
-  }
-  function convert() {
-    start(async () => {
-      await convertLeadToCustomer(lead.id);
-      router.refresh();
-    });
-  }
-
+// The card is the map view of a lead: name, interest, value, next action,
+// last touch, open tasks. Click it and the drawer becomes the workspace.
+function LeadCard({ lead, openTaskCount, onOpen }: { lead: Lead; openTaskCount: number; onOpen: () => void }) {
   return (
-    <li className="rounded-xl border border-[color:var(--border-hair)] bg-card p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[14.5px] font-semibold text-forest-deep">{lead.name}</p>
-          <p className="text-[12px] text-[color:var(--color-text-muted)]">
-            {lead.interest ? lead.interest.replace(/_/g, " ") : "—"} · {lead.source.replace("_", " ")}
-          </p>
-        </div>
-        {lead.estimated_value_cents != null ? (
-          <span className="shrink-0 font-[family-name:var(--font-display)] text-[15px] text-bark">
-            {formatMoney(lead.estimated_value_cents)}
-          </span>
-        ) : null}
-      </div>
-
-      {lead.next_action ? (
-        <p className="mt-2 text-[13px] text-[color:var(--color-text)]">
-          {lead.next_action}
-          {lead.next_action_date ? (
-            <span className="text-[color:var(--color-state-caution)]">
-              {" "}· {new Date(lead.next_action_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="w-full rounded-xl border border-[color:var(--border-hair)] bg-card p-4 text-left shadow-[var(--shadow-card)] transition-colors hover:border-[color:var(--border-strong)]"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-[14.5px] font-semibold text-forest-deep">{lead.name}</p>
+            <p className="text-[12px] text-[color:var(--color-text-muted)]">
+              {lead.interest ? lead.interest.replace(/_/g, " ") : "—"} · {lead.source.replace("_", " ")}
+            </p>
+          </div>
+          {lead.estimated_value_cents != null ? (
+            <span className="shrink-0 font-[family-name:var(--font-display)] text-[15px] text-bark">
+              {formatMoney(lead.estimated_value_cents)}
             </span>
           ) : null}
-        </p>
-      ) : null}
+        </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select
-          value={lead.stage}
-          disabled={pending}
-          onChange={(e) => move(e.target.value as LeadStage)}
-          className="h-11 rounded-lg border border-[color:var(--border-strong)] bg-canvas px-2 text-[16px] text-ink md:h-9 md:text-[13px]"
-        >
-          {STAGES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-        {!lead.customer_id && lead.stage !== "lost" ? (
-          <button
-            type="button"
-            onClick={convert}
-            disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-3 py-1.5 text-[12.5px] font-semibold text-forest transition-colors hover:bg-inset disabled:opacity-60 max-md:min-h-[44px]"
-          >
-            <UserPlus size={13} aria-hidden="true" /> Convert
-          </button>
-        ) : lead.customer_id ? (
-          <span className="text-[12px] font-semibold text-fern">Customer</span>
+        {lead.next_action ? (
+          <p className="mt-2 text-[13px] text-[color:var(--color-text)]">
+            {lead.next_action}
+            {lead.next_action_date ? (
+              <span className="text-[color:var(--color-state-caution)]">
+                {" "}· {new Date(lead.next_action_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              </span>
+            ) : null}
+          </p>
         ) : null}
-      </div>
+
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[color:var(--color-text-muted)]">
+          {lead.customer_id ? <span className="font-semibold text-fern">Customer</span> : null}
+          {openTaskCount > 0 ? (
+            <span className="inline-flex items-center gap-1">
+              <ListChecks size={12} aria-hidden="true" />
+              {openTaskCount} {openTaskCount === 1 ? "task" : "tasks"}
+            </span>
+          ) : null}
+          {lead.last_activity_at ? (
+            <span>
+              Last touch{" "}
+              {new Date(lead.last_activity_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          ) : null}
+        </div>
+      </button>
     </li>
   );
 }
 
-export function PipelineBoard({ leads, customers }: { leads: Lead[]; customers: Customer[] }) {
+export function PipelineBoard({
+  leads,
+  customers,
+  workspace,
+}: {
+  leads: Lead[];
+  customers: Customer[];
+  workspace: LeadWorkspace;
+}) {
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  // Resolve from props each render so a refresh after any drawer action
+  // shows the updated lead, timeline, and tasks.
+  const openLead = openLeadId ? leads.find((l) => l.id === openLeadId) ?? null : null;
+
   const byStage = new Map<LeadStage, Lead[]>();
   for (const l of leads) {
     const arr = byStage.get(l.stage) ?? [];
@@ -203,7 +202,14 @@ export function PipelineBoard({ leads, customers }: { leads: Lead[]; customers: 
                 ) : null}
               </div>
               <ul className="grid gap-2.5 sm:grid-cols-2">
-                {items.map((l) => <LeadCard key={l.id} lead={l} />)}
+                {items.map((l) => (
+                  <LeadCard
+                    key={l.id}
+                    lead={l}
+                    openTaskCount={(workspace.tasksByLead[l.id] ?? []).filter((t) => t.status !== "done").length}
+                    onOpen={() => setOpenLeadId(l.id)}
+                  />
+                ))}
               </ul>
             </section>
           );
@@ -231,6 +237,16 @@ export function PipelineBoard({ leads, customers }: { leads: Lead[]; customers: 
             ))}
           </ul>
         </section>
+      ) : null}
+
+      {openLead ? (
+        <LeadDrawer
+          key={openLead.id}
+          lead={openLead}
+          activities={workspace.activitiesByLead[openLead.id] ?? []}
+          tasks={workspace.tasksByLead[openLead.id] ?? []}
+          onClose={() => setOpenLeadId(null)}
+        />
       ) : null}
     </div>
   );
