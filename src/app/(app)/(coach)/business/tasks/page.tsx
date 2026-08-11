@@ -1,10 +1,7 @@
-import { getTaskList } from "@/lib/data/tasks";
-import { getBusinessDashboard } from "@/lib/data/business";
-import { TasksPanel } from "@/components/coach/TasksPanel";
+import { redirect } from "next/navigation";
 
-// Kept as the owner's tasks-and-goals view until the /tasks surface lands
-// (Phase 3 of specs/unified-tasks.md redirects this page there).
-export default async function TasksPage() {
-  const [tasks, dashboard] = await Promise.all([getTaskList(), getBusinessDashboard()]);
-  return <TasksPanel tasks={tasks} goals={dashboard.goals} />;
+// Tasks grew into the whole-app surface at /tasks; goals moved to
+// /business/goals. See specs/unified-tasks.md.
+export default function TasksRedirect() {
+  redirect("/tasks");
 }
