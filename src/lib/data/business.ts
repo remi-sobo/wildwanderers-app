@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/business/format";
+import type { Task } from "@/lib/data/tasks";
 
 export { formatMoney };
+export type { Task };
 
 export type GoalProgress = {
   id: string;
@@ -12,6 +14,8 @@ export type GoalProgress = {
   current: number;
 };
 
+// The attention list reads open next-step tasks that are due, joined to
+// their leads; the shape keeps the old field names so the view is stable.
 export type AttentionLead = {
   id: string;
   name: string;
@@ -50,6 +54,7 @@ export async function getBusinessDashboard(): Promise<BusinessDashboard> {
     { data: leads },
     { count: pinnedTasks },
     { data: goals },
+    { data: dueSteps },
   ] = await Promise.all([
     supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase
@@ -59,7 +64,7 @@ export async function getBusinessDashboard(): Promise<BusinessDashboard> {
       .gte("occurred_at", startLast.toISOString()),
     supabase
       .from("leads")
-      .select("id, name, estimated_value_cents, stage, next_action, next_action_date")
+      .select("id, name, estimated_value_cents, stage")
       .not("stage", "in", "(won,lost)"),
     supabase
       .from("business_tasks")
@@ -67,6 +72,14 @@ export async function getBusinessDashboard(): Promise<BusinessDashboard> {
       .eq("pin_today", true)
       .in("status", ["open", "in_progress"]),
     supabase.from("business_goals").select("id, name, metric, target_value, period"),
+    supabase
+      .from("business_tasks")
+      .select("lead_id, title, due_date, leads(name)")
+      .eq("is_next_step", true)
+      .in("status", ["open", "in_progress"])
+      .lte("due_date", todayKey)
+      .order("due_date", { ascending: true })
+      .limit(6),
   ]);
 
   let revenueMtdCents = 0;
@@ -82,16 +95,16 @@ export async function getBusinessDashboard(): Promise<BusinessDashboard> {
     (sum, l) => sum + ((l.estimated_value_cents as number | null) ?? 0),
     0,
   );
-  const attention: AttentionLead[] = openLeadRows
-    .filter((l) => l.next_action_date && (l.next_action_date as string) <= todayKey)
-    .sort((a, b) => (a.next_action_date as string).localeCompare(b.next_action_date as string))
-    .slice(0, 6)
-    .map((l) => ({
-      id: l.id as string,
-      name: l.name as string,
-      next_action: (l.next_action as string | null) ?? null,
-      next_action_date: (l.next_action_date as string | null) ?? null,
-    }));
+  const attention: AttentionLead[] = (dueSteps ?? []).map((t) => {
+    const lead = t.leads as { name?: string } | { name?: string }[] | null;
+    const name = Array.isArray(lead) ? lead[0]?.name : lead?.name;
+    return {
+      id: (t.lead_id as string | null) ?? "",
+      name: name ?? "Lead",
+      next_action: (t.title as string | null) ?? null,
+      next_action_date: (t.due_date as string | null) ?? null,
+    };
+  });
 
   const current = {
     revenue_mtd: revenueMtdCents / 100,
@@ -139,8 +152,6 @@ export type Lead = {
   interest: string | null;
   estimated_value_cents: number | null;
   stage: LeadStage;
-  next_action: string | null;
-  next_action_date: string | null;
   lost_reason: string | null;
   notes: string | null;
   customer_id: string | null;
@@ -174,7 +185,7 @@ export async function getLeads(): Promise<Lead[]> {
     supabase
       .from("leads")
       .select(
-        "id, name, email, phone, source, interest, estimated_value_cents, stage, next_action, next_action_date, lost_reason, notes, customer_id",
+        "id, name, email, phone, source, interest, estimated_value_cents, stage, lost_reason, notes, customer_id",
       )
       .order("updated_at", { ascending: false }),
     supabase.from("lead_activities").select("lead_id, created_at"),
@@ -192,12 +203,12 @@ export async function getLeads(): Promise<Lead[]> {
 
 export type LeadWorkspace = {
   activitiesByLead: Record<string, LeadActivity[]>;
-  tasksByLead: Record<string, BusinessTask[]>;
+  tasksByLead: Record<string, Task[]>;
 };
 
 // Everything the lead popout shows beyond the lead row itself: the full
-// activity timeline and the tasks that belong to each lead, grouped and
-// ready for the board. Owner RLS scopes both reads.
+// activity timeline and the tasks that belong to each lead (the open
+// next-step task among them), grouped and ready for the board.
 export async function getLeadWorkspace(): Promise<LeadWorkspace> {
   const supabase = await createClient();
   const [{ data: acts }, { data: tasks }] = await Promise.all([
@@ -207,7 +218,9 @@ export async function getLeadWorkspace(): Promise<LeadWorkspace> {
       .order("created_at", { ascending: false }),
     supabase
       .from("business_tasks")
-      .select("id, title, description, category, priority, due_date, pin_today, status, lead_id")
+      .select(
+        "id, title, description, category, priority, due_date, pin_today, status, lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, created_at",
+      )
       .not("lead_id", "is", null)
       .neq("status", "cancelled")
       .order("status", { ascending: true })
@@ -218,8 +231,8 @@ export async function getLeadWorkspace(): Promise<LeadWorkspace> {
   for (const a of (acts ?? []) as LeadActivity[]) {
     (activitiesByLead[a.lead_id] ??= []).push(a);
   }
-  const tasksByLead: Record<string, BusinessTask[]> = {};
-  for (const t of (tasks ?? []) as BusinessTask[]) {
+  const tasksByLead: Record<string, Task[]> = {};
+  for (const t of (tasks ?? []) as Task[]) {
     if (t.lead_id) (tasksByLead[t.lead_id] ??= []).push(t);
   }
   return { activitiesByLead, tasksByLead };
@@ -268,31 +281,6 @@ export type FinanceData = {
   revenueMtdCents: number;
   expensesMtdCents: number;
 };
-
-export type BusinessTask = {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  priority: "urgent" | "high" | "medium" | "low";
-  due_date: string | null;
-  pin_today: boolean;
-  status: "open" | "in_progress" | "done" | "cancelled";
-  lead_id: string | null;
-};
-
-// Open and recently-done tasks for the owner, pinned first.
-export async function getTasks(): Promise<BusinessTask[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("business_tasks")
-    .select("id, title, description, category, priority, due_date, pin_today, status, lead_id")
-    .neq("status", "cancelled")
-    .order("pin_today", { ascending: false })
-    .order("status", { ascending: true })
-    .order("due_date", { ascending: true, nullsFirst: false });
-  return (data as BusinessTask[] | null) ?? [];
-}
 
 export async function getOfferings(): Promise<Offering[]> {
   const supabase = await createClient();

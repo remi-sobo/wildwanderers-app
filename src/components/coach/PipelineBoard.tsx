@@ -8,6 +8,7 @@ import { addLead, addCustomerToRoster, type LeadInput } from "@/lib/business/act
 import { formatMoney } from "@/lib/business/format";
 import { LeadDrawer } from "@/components/coach/LeadDrawer";
 import type { Lead, LeadStage, Customer, LeadWorkspace } from "@/lib/data/business";
+import type { Task } from "@/lib/data/tasks";
 
 const STAGES: { value: LeadStage; label: string }[] = [
   { value: "new", label: "New" },
@@ -150,9 +151,19 @@ function CustomerRow({ customer: c }: { customer: Customer }) {
   );
 }
 
-// The card is the map view of a lead: name, interest, value, next action,
-// last touch, open tasks. Click it and the drawer becomes the workspace.
-function LeadCard({ lead, openTaskCount, onOpen }: { lead: Lead; openTaskCount: number; onOpen: () => void }) {
+// The card is the map view of a lead: name, interest, value, the next-step
+// task, last touch, open tasks. Click it and the drawer becomes the workspace.
+function LeadCard({
+  lead,
+  nextStep,
+  openTaskCount,
+  onOpen,
+}: {
+  lead: Lead;
+  nextStep: Task | null;
+  openTaskCount: number;
+  onOpen: () => void;
+}) {
   return (
     <li>
       <button
@@ -174,12 +185,12 @@ function LeadCard({ lead, openTaskCount, onOpen }: { lead: Lead; openTaskCount: 
           ) : null}
         </div>
 
-        {lead.next_action ? (
+        {nextStep ? (
           <p className="mt-2 text-[13px] text-[color:var(--color-text)]">
-            {lead.next_action}
-            {lead.next_action_date ? (
+            {nextStep.title}
+            {nextStep.due_date ? (
               <span className="text-[color:var(--color-state-caution)]">
-                {" "}· {new Date(lead.next_action_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                {" "}· {new Date(nextStep.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
               </span>
             ) : null}
           </p>
@@ -257,14 +268,22 @@ export function PipelineBoard({
                 ) : null}
               </div>
               <ul className="grid gap-2.5 sm:grid-cols-2">
-                {items.map((l) => (
-                  <LeadCard
-                    key={l.id}
-                    lead={l}
-                    openTaskCount={(workspace.tasksByLead[l.id] ?? []).filter((t) => t.status !== "done").length}
-                    onOpen={() => setOpenLeadId(l.id)}
-                  />
-                ))}
+                {items.map((l) => {
+                  const leadTasks = workspace.tasksByLead[l.id] ?? [];
+                  const nextStep =
+                    leadTasks.find(
+                      (t) => t.is_next_step && (t.status === "open" || t.status === "in_progress"),
+                    ) ?? null;
+                  return (
+                    <LeadCard
+                      key={l.id}
+                      lead={l}
+                      nextStep={nextStep}
+                      openTaskCount={leadTasks.filter((t) => t.status !== "done" && t.id !== nextStep?.id).length}
+                      onOpen={() => setOpenLeadId(l.id)}
+                    />
+                  );
+                })}
               </ul>
             </section>
           );
