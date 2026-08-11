@@ -53,8 +53,10 @@ const TOUCH_KINDS: { value: string; label: string; icon: typeof Phone }[] = [
   { value: "note", label: "Note", icon: StickyNote },
 ];
 
-const field =
-  "h-11 md:h-10 w-full rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink outline-none focus:border-amber";
+const fieldBase =
+  "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink outline-none focus:border-amber";
+const field = `${fieldBase} w-full min-w-0`;
+const dateField = `${fieldBase} w-[8.5rem] shrink-0`;
 const label = "mb-1 block text-[11.5px] font-semibold uppercase tracking-[0.12em] text-bark";
 const sectionHead = "mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-bark";
 
@@ -341,7 +343,7 @@ export function LeadDrawer({
                     }}
                   />
                   <input
-                    className={`${field} w-auto shrink-0`}
+                    className={dateField}
                     type="date"
                     aria-label="Next step date"
                     value={stepDue}
@@ -484,7 +486,7 @@ export function LeadDrawer({
                 }}
               />
               <input
-                className={`${field} w-auto shrink-0`}
+                className={dateField}
                 type="date"
                 aria-label="Due date"
                 value={taskDue}
