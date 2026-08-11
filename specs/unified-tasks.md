@@ -178,6 +178,19 @@ verification recorded — commit point.
   lead's next step in two; the action surfaces that as "this lead already has
   a next step."
 
+## Build status
+
+Built 2026-08-11 in five commits on `claude/app-business-breakdown-vouj5e`:
+the schema pair, the data and action layer, the /tasks surface, add-from-
+anywhere, and the final pass. Phases 4 and 5 landed together because the
+type change forced the pipeline UI edits into the data commit. The
+destructive migration (part 2) applies with the deploy, after the merge,
+so live prod code never reads a dropped column. Live verification: client
+reads zero tasks and comments; the recurrence chain spawns exactly once
+(rolled back); coach isolation is policy-verified only until a coach
+account exists. The next-action count check runs inside the part-2
+migration itself.
+
 ## Decisions locked (2026-08-10)
 
 1. Next action merges into tasks; the lead columns are dropped after data

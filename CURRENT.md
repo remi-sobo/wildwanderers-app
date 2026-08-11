@@ -4,6 +4,26 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Unified tasks shipped, 2026-08-11 (specs/unified-tasks.md): one task system
+for the whole app. Tasks link to leads, clients, customers, and the boys
+program, carry an assignee, recurrence (done spawns the next occurrence,
+verified live and rolled back), and comments. The lead's next action IS a
+task now: at most one open next-step task per lead (schema-enforced), set
+and completed in the lead drawer (completing reveals set-the-next-one),
+shown on the card and the dashboard attention list, cancelled when a lead
+closes; the leads.next_action columns are migrated then dropped (part-2
+migration, applied with the deploy, count-checked in-transaction before
+the drop). The /tasks surface is top-level staff nav: quick add, category
+and link filters, Overdue / Today / This week / Later / Done groups, a
+task popout with comments, and a lazy sweep on load that grows follow-up
+tasks for stale working leads and set-the-next-step tasks for leads
+without one, dedupe-guarded. Add-a-task-from-anywhere: the top bar icon
+(staff only), each client's page, each customer row, the boys program
+header, all pre-linked. /business/tasks redirects to /tasks; goals moved
+to /business/goals. Access is staff-wide: owner sees all, a coach sees
+assigned-or-created (policy-verified only, no coach account exists yet),
+a client reads zero tasks and zero comments (verified live).
+
 Ring 4 follow-up shipped, 2026-08-10 (second pass): convert now bridges the
 CRM to the Program roster. The root cause it fixes: customers (Ring 4
 business layer) and clients (Ring 0 program layer) were never linked, so a
@@ -348,6 +368,11 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-08-11 Unified tasks (five commits, spec first): the schema pair
+  (additive live + the destructive next-action merge held for deploy), the
+  data and action layer with every next_action reference replaced, the
+  /tasks surface with the task popout and the sweep, add-from-anywhere,
+  and this final pass. See specs/unified-tasks.md.
 - 2026-08-10 Ring 4 follow-up (three commits): the lead popout. The
   lead_id column on business_tasks with its partial index (applied and
   verified on the live DB, owner wall re-checked with a simulated client),
