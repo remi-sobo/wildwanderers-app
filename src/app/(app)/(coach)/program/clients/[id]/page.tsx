@@ -18,6 +18,7 @@ import { CheckInsReview } from "@/components/coach/CheckInsReview";
 import { DraftPlansList } from "@/components/coach/DraftPlansList";
 import { PlanTalk } from "@/components/plans/PlanTalk";
 import { SuggestSwap } from "@/components/coach/SuggestSwap";
+import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatWhen(iso: string): string {
@@ -90,6 +91,9 @@ export default async function ClientDetailPage({
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <TaskQuickAdd
+              link={{ client_id: id, label: clientName(client), category: "coaching" }}
+            />
             <form action={openThread}>
               <button
                 type="submit"
