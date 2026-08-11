@@ -31,29 +31,62 @@ export type LeadInput = {
   notes?: string;
 };
 
+// The next action lives as the lead's next-step task, not a lead column;
+// the add form's next-action inputs become that task on create.
 export async function addLead(input: LeadInput): Promise<BizResult> {
   const ctx = await ownerContext();
   if (!ctx) return { error: "You are signed out." };
   if (!input.name.trim()) return { error: "A name is needed." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("leads").insert({
-    org_id: ctx.orgId,
-    name: input.name.trim(),
-    email: input.email?.trim() || null,
-    phone: input.phone?.trim() || null,
-    source: input.source || "other",
-    interest: input.interest || null,
-    estimated_value_cents: dollarsToCents(input.estimated_value),
-    next_action: input.next_action?.trim() || null,
-    next_action_date: input.next_action_date || null,
-    notes: input.notes?.trim() || null,
-    created_by: ctx.userId,
-  });
-  if (error) return { error: "That did not save. Try again." };
+  const { data: lead, error } = await supabase
+    .from("leads")
+    .insert({
+      org_id: ctx.orgId,
+      name: input.name.trim(),
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+      source: input.source || "other",
+      interest: input.interest || null,
+      estimated_value_cents: dollarsToCents(input.estimated_value),
+      notes: input.notes?.trim() || null,
+      created_by: ctx.userId,
+    })
+    .select("id")
+    .single();
+  if (error || !lead) return { error: "That did not save. Try again." };
+
+  if (input.next_action?.trim() || input.next_action_date) {
+    await supabase.from("business_tasks").insert({
+      org_id: ctx.orgId,
+      title: input.next_action?.trim() || "Follow up",
+      category: "sales",
+      priority: "medium",
+      due_date: input.next_action_date || null,
+      lead_id: lead.id,
+      is_next_step: true,
+      assigned_to: ctx.userId,
+      created_by: ctx.userId,
+    });
+  }
+
   revalidatePath("/business/pipeline");
   revalidatePath("/business");
+  revalidatePath("/tasks");
   return { error: null };
+}
+
+// A closed lead needs no next step.
+async function cancelOpenNextStep(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  leadId: string,
+) {
+  await supabase
+    .from("business_tasks")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("lead_id", leadId)
+    .eq("is_next_step", true)
+    .in("status", ["open", "in_progress"]);
 }
 
 // Edit the lead's details from the popout. Only the fields the form owns;
@@ -73,8 +106,6 @@ export async function updateLead(leadId: string, input: LeadInput & { notes?: st
       source: input.source || "other",
       interest: input.interest || null,
       estimated_value_cents: dollarsToCents(input.estimated_value),
-      next_action: input.next_action?.trim() || null,
-      next_action_date: input.next_action_date || null,
       notes: input.notes?.trim() || null,
       updated_at: new Date().toISOString(),
     })
@@ -101,6 +132,7 @@ export async function markLeadLost(leadId: string, reason: string): Promise<BizR
     })
     .eq("id", leadId);
   if (error) return { error: "That did not save. Try again." };
+  await cancelOpenNextStep(supabase, leadId);
 
   await supabase.from("lead_activities").insert({
     org_id: ctx.orgId,
@@ -130,6 +162,7 @@ export async function moveLeadStage(leadId: string, stage: LeadStage): Promise<B
     })
     .eq("id", leadId);
   if (error) return { error: "That did not save. Try again." };
+  if (terminal) await cancelOpenNextStep(supabase, leadId);
 
   await supabase.from("lead_activities").insert({
     org_id: ctx.orgId,
@@ -166,63 +199,7 @@ export async function logLeadActivity(
   return { error: null };
 }
 
-export type TaskInput = {
-  title: string;
-  category?: string;
-  priority?: string;
-  due_date?: string;
-  pin_today?: boolean;
-  lead_id?: string;
-};
-
-export async function addTask(input: TaskInput): Promise<BizResult> {
-  const ctx = await ownerContext();
-  if (!ctx) return { error: "You are signed out." };
-  if (!input.title.trim()) return { error: "A title is needed." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("business_tasks").insert({
-    org_id: ctx.orgId,
-    title: input.title.trim(),
-    category: input.category || "other",
-    priority: input.priority || "medium",
-    due_date: input.due_date || null,
-    pin_today: Boolean(input.pin_today),
-    lead_id: input.lead_id || null,
-    created_by: ctx.userId,
-  });
-  if (error) return { error: "That did not save. Try again." };
-  revalidatePath("/business/tasks");
-  revalidatePath("/business/pipeline");
-  revalidatePath("/business");
-  return { error: null };
-}
-
-export async function setTaskDone(taskId: string, done: boolean): Promise<BizResult> {
-  const ctx = await ownerContext();
-  if (!ctx) return { error: "You are signed out." };
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("business_tasks")
-    .update({ status: done ? "done" : "open", completed_at: done ? new Date().toISOString() : null })
-    .eq("id", taskId);
-  if (error) return { error: "That did not save. Try again." };
-  revalidatePath("/business/tasks");
-  revalidatePath("/business/pipeline");
-  revalidatePath("/business");
-  return { error: null };
-}
-
-export async function toggleTaskPin(taskId: string, pin: boolean): Promise<BizResult> {
-  const ctx = await ownerContext();
-  if (!ctx) return { error: "You are signed out." };
-  const supabase = await createClient();
-  const { error } = await supabase.from("business_tasks").update({ pin_today: pin }).eq("id", taskId);
-  if (error) return { error: "That did not save. Try again." };
-  revalidatePath("/business/tasks");
-  revalidatePath("/business");
-  return { error: null };
-}
+// Task writes moved to @/lib/tasks/actions with the unified task system.
 
 export type GoalInput = {
   name: string;
@@ -436,6 +413,7 @@ export async function convertLeadToCustomer(leadId: string): Promise<BizResult> 
       updated_at: new Date().toISOString(),
     })
     .eq("id", leadId);
+  await cancelOpenNextStep(supabase, leadId);
 
   revalidatePath("/business/pipeline");
   revalidatePath("/business");

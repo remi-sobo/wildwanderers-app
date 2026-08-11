@@ -26,11 +26,11 @@ import {
   markLeadLost,
   convertLeadToCustomer,
   logLeadActivity,
-  addTask,
-  setTaskDone,
 } from "@/lib/business/actions";
+import { addTask, setTaskDone, setNextStep } from "@/lib/tasks/actions";
 import { formatMoney } from "@/lib/business/format";
-import type { Lead, LeadStage, LeadActivity, BusinessTask } from "@/lib/data/business";
+import type { Lead, LeadStage, LeadActivity } from "@/lib/data/business";
+import type { Task } from "@/lib/data/tasks";
 
 const STAGES: { value: LeadStage; label: string }[] = [
   { value: "new", label: "New" },
@@ -78,7 +78,7 @@ export function LeadDrawer({
 }: {
   lead: Lead;
   activities: LeadActivity[];
-  tasks: BusinessTask[];
+  tasks: Task[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -94,8 +94,6 @@ export function LeadDrawer({
     source: lead.source,
     interest: lead.interest ?? "",
     estimated_value: lead.estimated_value_cents != null ? String(lead.estimated_value_cents / 100) : "",
-    next_action: lead.next_action ?? "",
-    next_action_date: lead.next_action_date ?? "",
     notes: lead.notes ?? "",
   });
   const [saved, setSaved] = useState(false);
@@ -106,12 +104,18 @@ export function LeadDrawer({
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDue, setTaskDue] = useState("");
 
+  const [stepTitle, setStepTitle] = useState("");
+  const [stepDue, setStepDue] = useState("");
+
   const [losing, setLosing] = useState(false);
   const [lostReason, setLostReason] = useState("");
 
   const closed = lead.stage === "won" || lead.stage === "lost";
-  const openTasks = tasks.filter((t) => t.status !== "done");
-  const doneTasks = tasks.filter((t) => t.status === "done");
+  const nextStep =
+    tasks.find((t) => t.is_next_step && (t.status === "open" || t.status === "in_progress")) ?? null;
+  const otherTasks = tasks.filter((t) => t.id !== nextStep?.id);
+  const openTasks = otherTasks.filter((t) => t.status !== "done");
+  const doneTasks = otherTasks.filter((t) => t.status === "done");
 
   function run(fn: () => Promise<{ error: string | null }>, after?: () => void) {
     setError(null);
@@ -156,6 +160,17 @@ export function LeadDrawer({
       () => {
         setTaskTitle("");
         setTaskDue("");
+      },
+    );
+  }
+
+  function saveNextStep() {
+    if (!stepTitle.trim()) return;
+    run(
+      () => setNextStep(lead.id, stepTitle, stepDue || undefined),
+      () => {
+        setStepTitle("");
+        setStepDue("");
       },
     );
   }
@@ -286,6 +301,65 @@ export function LeadDrawer({
             </div>
           ) : null}
 
+          {/* Next step: the lead's one open next-step task. Completing it
+              reveals the set-the-next-one input, so no lead drifts without
+              a next action. */}
+          {!closed ? (
+            <section className="mt-6">
+              <h3 className={sectionHead}>Next step</h3>
+              {nextStep ? (
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => run(() => setTaskDone(nextStep.id, true))}
+                    aria-label="Mark next step done"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[color:var(--border-strong)] bg-card transition-colors hover:border-fern max-md:h-7 max-md:w-7"
+                  />
+                  <span className="min-w-0 flex-1 text-[14px] text-ink">{nextStep.title}</span>
+                  {nextStep.due_date ? (
+                    <span
+                      className={`shrink-0 text-[12px] ${
+                        nextStep.due_date <= new Date().toISOString().slice(0, 10)
+                          ? "font-semibold text-[color:var(--color-state-caution)]"
+                          : "text-[color:var(--color-text-muted)]"
+                      }`}
+                    >
+                      {shortDate(nextStep.due_date)}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    className={field}
+                    placeholder="What is the next step with this lead?"
+                    value={stepTitle}
+                    onChange={(e) => setStepTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveNextStep();
+                    }}
+                  />
+                  <input
+                    className={`${field} w-auto shrink-0`}
+                    type="date"
+                    aria-label="Next step date"
+                    value={stepDue}
+                    onChange={(e) => setStepDue(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={saveNextStep}
+                    disabled={pending || !stepTitle.trim()}
+                    className="shrink-0 rounded-full bg-forest px-4 py-2 text-[13px] font-semibold text-bone transition-colors hover:bg-forest-deep disabled:opacity-60 max-md:min-h-[44px]"
+                  >
+                    Set
+                  </button>
+                </div>
+              )}
+            </section>
+          ) : null}
+
           {/* Details */}
           <section className="mt-6">
             <h3 className={sectionHead}>Details</h3>
@@ -328,17 +402,6 @@ export function LeadDrawer({
                 <span className={label}>Estimated value $</span>
                 <input className={field} inputMode="decimal" value={form.estimated_value}
                   onChange={(e) => setForm({ ...form, estimated_value: e.target.value })} />
-              </div>
-              <div>
-                <span className={label}>Next action date</span>
-                <input className={field} type="date" value={form.next_action_date}
-                  onChange={(e) => setForm({ ...form, next_action_date: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <span className={label}>Next action</span>
-                <input className={field} placeholder="e.g. call Thursday about small group"
-                  value={form.next_action}
-                  onChange={(e) => setForm({ ...form, next_action: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
                 <span className={label}>Notes</span>
