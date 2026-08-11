@@ -3,17 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pin, CircleCheck, Circle, Target, Trash2 } from "lucide-react";
-import {
-  addTask,
-  setTaskDone,
-  toggleTaskPin,
-  addGoal,
-  deleteGoal,
-  type TaskInput,
-  type GoalInput,
-} from "@/lib/business/actions";
+import { addTask, setTaskDone, toggleTaskPin, type NewTaskInput } from "@/lib/tasks/actions";
+import { addGoal, deleteGoal, type GoalInput } from "@/lib/business/actions";
 import { formatMoney } from "@/lib/business/format";
-import type { BusinessTask, GoalProgress } from "@/lib/data/business";
+import type { GoalProgress } from "@/lib/data/business";
+import type { Task } from "@/lib/data/tasks";
 
 const field =
   "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
@@ -31,7 +25,7 @@ const PRIORITY_STYLE: Record<string, string> = {
   low: "bg-inset text-[color:var(--color-text-faint)]",
 };
 
-function TaskRow({ task }: { task: BusinessTask }) {
+function TaskRow({ task }: { task: Task }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const done = task.status === "done";
@@ -80,9 +74,9 @@ function goalText(g: GoalProgress) {
   return { current: fmt(g.current), target: fmt(g.target_value), pct };
 }
 
-export function TasksPanel({ tasks, goals }: { tasks: BusinessTask[]; goals: GoalProgress[] }) {
+export function TasksPanel({ tasks, goals }: { tasks: Task[]; goals: GoalProgress[] }) {
   const router = useRouter();
-  const [t, setT] = useState<TaskInput>({ title: "", category: "sales", priority: "medium" });
+  const [t, setT] = useState<NewTaskInput>({ title: "", category: "sales", priority: "medium" });
   const [g, setG] = useState<GoalInput>({ name: "", metric: "revenue_mtd", target_value: "", period: "" });
   const [tErr, setTErr] = useState<string | null>(null);
   const [gErr, setGErr] = useState<string | null>(null);
