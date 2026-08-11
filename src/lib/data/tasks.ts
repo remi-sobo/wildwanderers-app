@@ -113,6 +113,26 @@ export async function getTaskList(): Promise<TaskListItem[]> {
   });
 }
 
+// All comments the caller can see, grouped per task for the /tasks board
+// (RLS trims to visible tasks; the scale is a solo shop, one read is fine).
+export async function getAllTaskComments(): Promise<Record<string, TaskComment[]>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("task_comments")
+    .select("id, task_id, content, created_at, author:profiles!task_comments_created_by_fkey(first_name, last_name)")
+    .order("created_at", { ascending: true });
+  const byTask: Record<string, TaskComment[]> = {};
+  for (const r of data ?? []) {
+    (byTask[r.task_id as string] ??= []).push({
+      id: r.id as string,
+      content: r.content as string,
+      created_at: r.created_at as string,
+      author_name: personName(r.author as JoinedPerson),
+    });
+  }
+  return byTask;
+}
+
 export async function getTaskComments(taskId: string): Promise<TaskComment[]> {
   const supabase = await createClient();
   const { data } = await supabase
