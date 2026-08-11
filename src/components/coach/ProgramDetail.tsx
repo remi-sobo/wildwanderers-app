@@ -19,6 +19,7 @@ import {
 import type { ProgramDetail as Detail, Participant, ProgramGroup, EarnedExperience } from "@/lib/data/boys";
 import { BAND_DOT, BAND_LABEL } from "@/components/longevity/LongevityBits";
 import type { Band } from "@/lib/data/wellness";
+import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
 import { FamiliesTab } from "@/components/coach/FamiliesTab";
 import { FormsTab, isSigned } from "@/components/coach/FormsTab";
 import { EnrollmentTab } from "@/components/coach/EnrollmentTab";
@@ -546,11 +547,16 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
         <Link href="/boys" className="-m-2 inline-flex min-h-[44px] items-center gap-1 p-2 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest">
           <ChevronLeft size={16} aria-hidden="true" /> Dads &amp; Kids
         </Link>
-        <div className="mt-3 flex flex-wrap items-baseline gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-[family-name:var(--font-display)] text-[28px] leading-tight text-forest-deep">{detail.program.name}</h1>
           <span className="text-[13px] text-[color:var(--color-text-muted)]">
             <Users size={13} className="mr-1 inline text-forest" aria-hidden="true" />
             {detail.participants.length} on the roster
+          </span>
+          <span className="ml-auto">
+            <TaskQuickAdd
+              link={{ program_id: detail.program.id, label: detail.program.name, category: "program" }}
+            />
           </span>
         </div>
         {detail.program.location ? (

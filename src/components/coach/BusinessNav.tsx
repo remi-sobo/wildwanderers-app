@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GitBranch, Wallet, ListChecks } from "lucide-react";
+import { LayoutDashboard, GitBranch, Wallet, Target } from "lucide-react";
 
 const TABS = [
   { href: "/business", label: "Dashboard", icon: LayoutDashboard },
   { href: "/business/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/business/finance", label: "Finance", icon: Wallet },
-  { href: "/business/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/business/goals", label: "Goals", icon: Target },
 ];
 
 // The Business sub-nav. A pill row across the top of every business page.

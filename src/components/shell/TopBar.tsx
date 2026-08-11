@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
 
 const TITLES: Record<string, { title: string; context: string }> = {
   "/program": { title: "Program", context: "Clients and training plans" },
@@ -27,10 +28,13 @@ export function TopBar({
   activePath,
   orgName = "Wild Wanderers",
   orgLogoUrl,
+  showTaskAdd = false,
 }: {
   activePath?: string;
   orgName?: string;
   orgLogoUrl?: string;
+  /** Staff only: the add-a-task-from-anywhere control. */
+  showTaskAdd?: boolean;
 }) {
   const pathname = usePathname();
   const current = activePath ?? pathname;
@@ -60,6 +64,11 @@ export function TopBar({
             </p>
           ) : null}
         </div>
+        {showTaskAdd ? (
+          <div className="ml-auto">
+            <TaskQuickAdd variant="icon" />
+          </div>
+        ) : null}
       </div>
     </header>
   );
