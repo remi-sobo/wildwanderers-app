@@ -7,6 +7,7 @@ import { Plus, ListChecks, UserPlus } from "lucide-react";
 import { addLead, addCustomerToRoster, type LeadInput } from "@/lib/business/actions";
 import { formatMoney } from "@/lib/business/format";
 import { LeadDrawer } from "@/components/coach/LeadDrawer";
+import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
 import type { Lead, LeadStage, Customer, LeadWorkspace } from "@/lib/data/business";
 import type { Task } from "@/lib/data/tasks";
 
@@ -129,6 +130,7 @@ function CustomerRow({ customer: c }: { customer: Customer }) {
         {c.lifetime_value_cents > 0 ? (
           <span className="text-[13px] text-bark">{formatMoney(c.lifetime_value_cents)}</span>
         ) : null}
+        <TaskQuickAdd variant="icon" link={{ customer_id: c.id, label: c.name, category: "sales" }} />
         {c.client_id ? (
           <Link
             href={`/program/clients/${c.client_id}`}

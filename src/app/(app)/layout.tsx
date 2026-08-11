@@ -37,7 +37,11 @@ export default async function AppLayout({
         orgLogoUrl={org?.logo_url ?? undefined}
       />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <TopBar orgName={org?.name ?? "Wild Wanderers"} orgLogoUrl={org?.logo_url ?? "/brand/mark-forest.png"} />
+        <TopBar
+          orgName={org?.name ?? "Wild Wanderers"}
+          orgLogoUrl={org?.logo_url ?? "/brand/mark-forest.png"}
+          showTaskAdd={profile.role === "owner" || profile.role === "coach"}
+        />
         <main className="flex-1 px-4 pb-[calc(76px+env(safe-area-inset-bottom))] pt-6 md:px-8 md:py-8">
           {children}
         </main>
