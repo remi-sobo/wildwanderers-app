@@ -35,6 +35,9 @@ export async function recordClientAssessment(
     valueText?: string;
     source?: RecordSource;
     band?: Band;
+    // 'intake_baseline' marks day one recorded through the intake flow, so
+    // the first session is data point one of the same battery.
+    context?: "standard" | "intake_baseline";
   },
 ): Promise<LongevityResult> {
   const ctx = await staffContext();
@@ -55,6 +58,7 @@ export async function recordClientAssessment(
     value_text: valueText,
     ...(input.band ? { band: input.band } : {}),
     source: input.source ?? "coach_observed",
+    context: input.context ?? "standard",
     recorded_by: ctx.userId,
   });
   if (error) return { error: "That did not save. Try again." };
