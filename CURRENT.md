@@ -4,6 +4,36 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Client profile, intake and flags shipped, 2026-08-18: the spine of the
+premium fitness experience. A guided intake Gabe fills while talking
+(the goal in their words writing clients.goal the single source, the
+story, lifestyle, each section saving on its own, select-a-phrase
+promotes to a flag), standing flags with the two prompted fields (what
+to know, what we adjust) rendered as an amber band, never red, at the
+top of the client's profile, Program page, and Fitness dashboard, with
+resolve-kept-in-history. The assembled profile at /fitness/clients/[id]
+is the thirty-second pre-session glance: flags, the goal as headline,
+today's session, the schedule, the last session note, then the story,
+assessment pillars with a cadence line, training and wellness reads,
+and session notes over time with a one-line post-session jot. The
+intake baseline records through the live Ring 6 engine marked
+context='intake_baseline' (the spec's assessment_sessions table does
+not exist here; the marker adapted to the engine as built), and the
+client list on Program carries "last assessed N weeks ago". The client
+sees their own full record at My profile: goal, story, flags with what
+we adjust, session notes; nothing withheld (no coach-private notes
+exist in this system). Schema: client_intakes and client_flags, staff-
+manage plus client-read-own RLS, applied and verified live with
+simulated roles (demo client reads own only and cannot write, second
+client and no-profile user see zero, owner manages; the baseline write
+stamps band and context and the client reads their own row). Consent
+copy and version bumped to v3 to name intake notes and training flags.
+Writes audited to the sealed ledger, field names only. Demo client
+carries a labeled demo intake, two flags, and a marked baseline.
+Still for Gabe to confirm: the seed battery stays his to tune, the ~8
+week cadence framing, and clients seeing their full record (built as
+recommended, his final say).
+
 Unified tasks shipped, 2026-08-11 (specs/unified-tasks.md): one task system
 for the whole app. Tasks link to leads, clients, customers, and the boys
 program, carry an assignee, recurrence (done spawns the next occurrence,
@@ -368,6 +398,15 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-08-18 Client profile, intake and flags (six commits): the schema
+  (client_intakes, client_flags, the intake_baseline context on
+  assessment_results, consent v3, demo seed), applied and verified live
+  with simulated roles; the guided intake with promote-to-flag and the
+  baseline recording through the longevity panel; the compact band on
+  the Program client page and Fitness dashboard; the assembled profile
+  at /fitness/clients/[id]; the cadence line on the Program client
+  list; and the client's own My profile view plus nav. Build and types
+  green throughout.
 - 2026-08-11 Unified tasks (five commits, spec first): the schema pair
   (additive live + the destructive next-action merge held for deploy), the
   data and action layer with every next_action reference replaced, the
