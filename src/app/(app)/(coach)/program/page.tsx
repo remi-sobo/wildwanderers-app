@@ -4,6 +4,7 @@ import { getClients, clientName, type ClientStatus } from "@/lib/data/clients";
 import { getDraftsAcrossClients } from "@/lib/data/plans";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { getPublishingCadence } from "@/lib/data/library";
+import { getLastAssessedByClient, assessedAgoLabel } from "@/lib/data/intake";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LibraryNudgeStrip } from "@/components/library/LibraryNudgeStrip";
 
@@ -24,10 +25,11 @@ function StatusPill({ status }: { status: ClientStatus }) {
 }
 
 export default async function ProgramPage() {
-  const [clients, session, drafts] = await Promise.all([
+  const [clients, session, drafts, lastAssessed] = await Promise.all([
     getClients(),
     getSessionProfile(),
     getDraftsAcrossClients(),
+    getLastAssessedByClient(),
   ]);
   const waitingCount = drafts.filter((d) => d.initiated_by === "client").length;
   const draftCount = drafts.length;
@@ -105,6 +107,10 @@ export default async function ProgramPage() {
                     {c.active_plan_title
                       ? c.active_plan_title
                       : c.goal || "No active plan yet"}
+                    {(() => {
+                      const ago = assessedAgoLabel(lastAssessed.get(c.id));
+                      return ago ? ` · ${ago}` : "";
+                    })()}
                   </p>
                 </div>
                 <ChevronRight
