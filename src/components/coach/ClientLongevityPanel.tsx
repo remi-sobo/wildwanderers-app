@@ -13,12 +13,17 @@ const BANDS: Band[] = ["healthy", "improving", "needs_attention"];
 export function ClientLongevityPanel({
   clientId,
   longevity,
+  recordContext = "standard",
+  startOpen = false,
 }: {
   clientId: string;
   longevity: Longevity;
+  /** 'intake_baseline' when embedded in the intake flow, so day one is data point one. */
+  recordContext?: "standard" | "intake_baseline";
+  startOpen?: boolean;
 }) {
   const router = useRouter();
-  const [showRecord, setShowRecord] = useState(false);
+  const [showRecord, setShowRecord] = useState(startOpen);
   const [assessmentId, setAssessmentId] = useState("");
   const [value, setValue] = useState("");
   const [source, setSource] = useState<"coach_observed" | "device_estimate">("coach_observed");
@@ -47,6 +52,7 @@ export function ClientLongevityPanel({
       const res = await recordClientAssessment(clientId, {
         assessmentId,
         source,
+        context: recordContext,
         ...(isObservation ? { valueText: value } : { value }),
         ...(isJudgment && band ? { band } : {}),
       });
