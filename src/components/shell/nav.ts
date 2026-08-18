@@ -3,6 +3,7 @@ import {
   Backpack,
   BookOpen,
   Briefcase,
+  CircleUserRound,
   Footprints,
   ClipboardList,
   Dumbbell,
@@ -70,6 +71,13 @@ const CLIENT_HOME: NavItem = { href: "/home", label: "Home", icon: House };
 const CLIENT_TRAINING: NavItem = { href: "/training", label: "Training", icon: Dumbbell };
 const CLIENT_LOG: NavItem = { href: "/log", label: "Log", icon: NotebookPen };
 const CLIENT_PROGRESS: NavItem = { href: "/progress", label: "Progress", icon: TrendingUp };
+const CLIENT_PROFILE: NavItem = {
+  href: "/profile",
+  label: "My profile",
+  icon: CircleUserRound,
+  hint: "Your goal, your story, your record",
+  short: "Profile",
+};
 const FROM_YOUR_COACH: NavItem = {
   href: "/from-your-coach",
   label: "Alongside",
@@ -87,7 +95,7 @@ const TRAILHEAD_READER: NavItem = {
 const CLIENT_SECTIONS: NavSection[] = [
   {
     label: "Menu",
-    items: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER],
+    items: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, CLIENT_PROGRESS, CLIENT_PROFILE, FROM_YOUR_COACH, TRAILHEAD_READER],
   },
   WORKSPACE,
 ];
@@ -135,6 +143,6 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
   }
   return {
     tabs: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, MESSAGES],
-    more: [CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
+    more: [CLIENT_PROGRESS, CLIENT_PROFILE, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
   };
 }
