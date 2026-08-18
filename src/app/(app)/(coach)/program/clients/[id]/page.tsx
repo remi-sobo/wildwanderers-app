@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, ChevronLeft, Dumbbell, MessageCircle } from "lucide-react";
+import { CalendarClock, ChevronLeft, CircleUserRound, Dumbbell, MessageCircle } from "lucide-react";
 import { Activity } from "lucide-react";
 import { getClientById, clientName } from "@/lib/data/clients";
+import { getClientFlags } from "@/lib/data/intake";
+import { FlagsBand } from "@/components/coach/FlagsBand";
 import { getPlanForClient, getDraftPlansForClient } from "@/lib/data/plans";
 import { getPlanConversation } from "@/lib/data/plan-talk";
 import { getExerciseLibrary } from "@/lib/data/exercises";
@@ -41,7 +43,7 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, drafts, sessions, wellness, longevity, checkIns, session, library] =
+  const [plan, drafts, sessions, wellness, longevity, checkIns, session, library, flags] =
     await Promise.all([
       getPlanForClient(id),
       getDraftPlansForClient(id),
@@ -51,6 +53,7 @@ export default async function ClientDetailPage({
       getClientCheckIns(id),
       getSessionProfile(),
       getExerciseLibrary(),
+      getClientFlags(id),
     ]);
 
   // The conversation on the active plan and on anything the client sent.
@@ -91,6 +94,13 @@ export default async function ClientDetailPage({
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Link
+              href={`/fitness/clients/${id}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13.5px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
+            >
+              <CircleUserRound size={15} aria-hidden="true" />
+              Profile
+            </Link>
             <TaskQuickAdd
               link={{ client_id: id, label: clientName(client), category: "coaching" }}
             />
@@ -112,6 +122,9 @@ export default async function ClientDetailPage({
           </div>
         </div>
       </div>
+
+      {/* The standing flags, in view before any session work. */}
+      <FlagsBand clientId={id} flags={flags} variant="compact" />
 
       {/* Wellness summary */}
       {wellness.hasConsent ? (
