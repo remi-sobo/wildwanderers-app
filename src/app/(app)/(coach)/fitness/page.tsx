@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { Dumbbell, Settings2 } from "lucide-react";
+import { CircleUserRound, Dumbbell, Settings2 } from "lucide-react";
 import { getClients, clientName } from "@/lib/data/clients";
 import { getClientWellness } from "@/lib/data/coach-fitness";
+import { getClientFlags } from "@/lib/data/intake";
 import { ClientWellnessDashboard } from "@/components/coach/ClientWellnessDashboard";
+import { FlagsBand } from "@/components/coach/FlagsBand";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default async function FitnessPage({
@@ -33,7 +35,10 @@ export default async function FitnessPage({
   }
 
   const selected = clients.find((cl) => cl.id === c) ?? clients[0];
-  const wellness = await getClientWellness(selected.id);
+  const [wellness, flags] = await Promise.all([
+    getClientWellness(selected.id),
+    getClientFlags(selected.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -81,6 +86,19 @@ export default async function FitnessPage({
             </Link>
           );
         })}
+      </div>
+
+      {/* The standing flags travel with the client, here too. */}
+      <FlagsBand clientId={selected.id} flags={flags} variant="compact" />
+
+      <div>
+        <Link
+          href={`/fitness/clients/${selected.id}`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-strong)] px-4 py-2 text-[13px] font-semibold text-forest transition-colors hover:bg-inset max-md:min-h-[44px]"
+        >
+          <CircleUserRound size={15} aria-hidden="true" />
+          {clientName(selected)}&apos;s full profile
+        </Link>
       </div>
 
       <ClientWellnessDashboard data={wellness} />
