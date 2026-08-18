@@ -26,6 +26,46 @@ export async function getUpcomingSessionsForClient(
   return (data as SessionRow[] | null) ?? [];
 }
 
+// Past (non-cancelled) sessions for a client, most recent first, for the
+// session-notes-over-time read on the profile.
+export async function getRecentSessionsForClient(
+  clientId: string,
+  limit = 10,
+): Promise<SessionRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("sessions")
+    .select("id, title, kind, start_at, end_at, location, notes, client_id")
+    .eq("client_id", clientId)
+    .eq("is_cancelled", false)
+    .lt("start_at", new Date().toISOString())
+    .order("start_at", { ascending: false })
+    .limit(limit);
+  return (data as SessionRow[] | null) ?? [];
+}
+
+// A session happening today for a client, if any (the pre-session glance).
+export async function getTodaySessionForClient(
+  clientId: string,
+): Promise<SessionRow | null> {
+  const supabase = await createClient();
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const { data } = await supabase
+    .from("sessions")
+    .select("id, title, kind, start_at, end_at, location, notes, client_id")
+    .eq("client_id", clientId)
+    .eq("is_cancelled", false)
+    .gte("start_at", dayStart.toISOString())
+    .lt("start_at", dayEnd.toISOString())
+    .order("start_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data as SessionRow | null) ?? null;
+}
+
 // The current user's own next upcoming session (client Home).
 export async function getMyNextSession(): Promise<SessionRow | null> {
   const supabase = await createClient();
