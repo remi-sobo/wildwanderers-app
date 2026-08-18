@@ -54,6 +54,10 @@ export function ConsentScreen({
               "Weight and body measurements, habits, movement, food, and simple fitness tests, whenever you choose. Every field is optional. Log what you have.",
             ],
             [
+              "What your coach keeps with you",
+              `Notes from your first conversation (your goal, your story, your week) and training flags, the short reminders about what ${coach} works around, like an old injury. Flags are training accommodations, never a diagnosis, and you can read every one of them here.`,
+            ],
+            [
               "Who can see it",
               `Only you and ${coach}. No other client sees your data, and it never leaves ${orgName}. Access is recorded.`,
             ],

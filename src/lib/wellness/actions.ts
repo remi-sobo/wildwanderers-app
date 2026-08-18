@@ -27,10 +27,13 @@ export async function grantConsent(): Promise<ActionResult> {
   if (!session?.profile || !client) return { error: "You are signed out." };
 
   const supabase = await createClient();
+  // v3: the copy now covers intake notes, training flags, and assessment
+  // data alongside the original tracking (v2 added the fitness tests).
   const { error } = await supabase.from("consents").insert({
     org_id: session.profile.org_id,
     client_id: client.id,
     kind: "health_tracking",
+    version: "v3",
     granted_by: session.userId,
   });
   if (error) return { error: "That did not save. Try again." };

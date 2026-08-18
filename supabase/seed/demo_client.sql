@@ -319,3 +319,57 @@ begin
       on conflict (share_id, profile_id) do nothing;
   end if;
 end $$;
+
+-- ============================================================
+-- Intake and flags: the demo client's intake record, two standing
+-- flags, and the eight-week-back results marked as the intake
+-- baseline. Demo data for the one sanctioned demo account only.
+-- Idempotent.
+-- ============================================================
+do $$
+declare
+  ww uuid; demo_user uuid; demo_c uuid; gabe uuid;
+begin
+  select id into ww from public.organizations where slug = 'wild-wanderers-fitness';
+  select id into demo_user from auth.users where email = 'demo.client@wildwanderers.life';
+  select id into gabe from auth.users where email = 'brewha07@gmail.com';
+  select c.id into demo_c from public.clients c where c.user_id = demo_user;
+  if demo_c is null then return; end if;
+
+  insert into public.client_intakes
+    (org_id, client_id, story_md, lifestyle_md, conducted_at, conducted_by)
+  values (
+    ww, demo_c,
+    'Demo intake. Ran cross country in school, then a long desk-job gap. '
+    || 'Right knee scoped in 2019 after a trail fall, cleared and pain-free '
+    || 'but cautious on steep descents. Tried a bootcamp app for two months '
+    || 'last year and stopped when the volume jumped too fast.',
+    'Demo lifestyle. Desk work, three school-day mornings free, sleeps about '
+    || 'seven hours, walks the dog daily. Prefers early sessions and being '
+    || 'outdoors over a gym floor.',
+    now() - interval '8 weeks', gabe
+  )
+  on conflict (client_id) do nothing;
+
+  insert into public.client_flags
+    (org_id, client_id, know_text, adjust_text, status, created_from, created_by, created_at)
+  select ww, demo_c, v.know, v.adjust, v.status::flag_status, 'intake', gabe,
+         now() - interval '8 weeks'
+  from (values
+    ('Right knee scope 2019', 'Build jump and descent work gradually, no loaded jumping yet', 'active'),
+    ('New to structured strength work', 'Kept starting loads light for the first month', 'resolved')
+  ) as v(know, adjust, status)
+  where not exists (
+    select 1 from public.client_flags where client_id = demo_c and know_text = v.know
+  );
+
+  update public.client_flags
+    set resolved_at = now() - interval '2 weeks'
+    where client_id = demo_c and status = 'resolved' and resolved_at is null;
+
+  -- Day one is data point one: the eight-week-back results are the baseline.
+  update public.assessment_results
+    set context = 'intake_baseline'
+    where client_id = demo_c
+      and taken_on = (select min(taken_on) from public.assessment_results where client_id = demo_c);
+end $$;
