@@ -9,6 +9,7 @@ const TITLES: Record<string, { title: string; context: string }> = {
   "/business": { title: "Business", context: "The business switch" },
   "/boys": { title: "Dads & Kids", context: "The boys program" },
   "/family": { title: "My family", context: "The boys program" },
+  "/schedule": { title: "Schedule", context: "Time blocks for the week" },
   "/library": { title: "Trailhead Library", context: "Your living content library" },
   "/trailhead": { title: "Trailhead Library", context: "Reads, links, and the weekly challenge" },
   "/alongside": { title: "Alongside", context: "Share your own week" },
