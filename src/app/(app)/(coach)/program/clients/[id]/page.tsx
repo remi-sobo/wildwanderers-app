@@ -11,6 +11,7 @@ import { getUpcomingSessionsForClient } from "@/lib/data/sessions";
 import { getClientWellness } from "@/lib/data/coach-fitness";
 import { getClientLongevity } from "@/lib/data/longevity";
 import { getClientCheckIns } from "@/lib/data/checkins";
+import { getHomeworkForClient } from "@/lib/data/homework";
 import { openThreadWithClient } from "@/lib/messaging/actions";
 import { ScheduleSessionForm } from "@/components/coach/ScheduleSessionForm";
 import { ClientLongevityPanel } from "@/components/coach/ClientLongevityPanel";
@@ -19,6 +20,7 @@ import { DraftPlansList } from "@/components/coach/DraftPlansList";
 import { PlanTalk } from "@/components/plans/PlanTalk";
 import { SuggestSwap } from "@/components/coach/SuggestSwap";
 import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
+import { HomeworkPanel } from "@/components/coach/HomeworkPanel";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatWhen(iso: string): string {
@@ -41,7 +43,7 @@ export default async function ClientDetailPage({
   const client = await getClientById(id);
   if (!client) notFound();
 
-  const [plan, drafts, sessions, wellness, longevity, checkIns, session, library] =
+  const [plan, drafts, sessions, wellness, longevity, checkIns, homework, session, library] =
     await Promise.all([
       getPlanForClient(id),
       getDraftPlansForClient(id),
@@ -49,6 +51,7 @@ export default async function ClientDetailPage({
       getClientWellness(id),
       getClientLongevity(id),
       getClientCheckIns(id),
+      getHomeworkForClient(id),
       getSessionProfile(),
       getExerciseLibrary(),
     ]);
@@ -92,7 +95,7 @@ export default async function ClientDetailPage({
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <TaskQuickAdd
-              link={{ client_id: id, label: clientName(client), category: "coaching" }}
+              link={{ client_id: id, label: clientName(client), program: "fitness" }}
             />
             <form action={openThread}>
               <button
@@ -172,6 +175,9 @@ export default async function ClientDetailPage({
         )}
         <ScheduleSessionForm clientId={id} />
       </section>
+
+      {/* Homework: the extra mile beside the plan */}
+      <HomeworkPanel clientId={id} firstName={client.first_name} items={homework} />
 
       {/* Check-ins */}
       <CheckInsReview checkIns={checkIns} />

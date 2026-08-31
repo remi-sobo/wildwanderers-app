@@ -130,7 +130,7 @@ function CustomerRow({ customer: c }: { customer: Customer }) {
         {c.lifetime_value_cents > 0 ? (
           <span className="text-[13px] text-bark">{formatMoney(c.lifetime_value_cents)}</span>
         ) : null}
-        <TaskQuickAdd variant="icon" link={{ customer_id: c.id, label: c.name, category: "sales" }} />
+        <TaskQuickAdd variant="icon" link={{ customer_id: c.id, label: c.name, program: "fitness" }} />
         {c.client_id ? (
           <Link
             href={`/program/clients/${c.client_id}`}

@@ -555,7 +555,7 @@ export function ProgramDetail({ detail }: { detail: Detail }) {
           </span>
           <span className="ml-auto">
             <TaskQuickAdd
-              link={{ program_id: detail.program.id, label: detail.program.name, category: "program" }}
+              link={{ program_id: detail.program.id, label: detail.program.name, program: "boys" }}
             />
           </span>
         </div>
