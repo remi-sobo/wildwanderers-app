@@ -3,6 +3,7 @@ import {
   Backpack,
   BookOpen,
   Briefcase,
+  CalendarDays,
   Footprints,
   ClipboardCheck,
   ClipboardList,
@@ -42,6 +43,7 @@ const WORKSPACE: NavSection = {
 
 const PROGRAM: NavItem = { href: "/program", label: "Program", icon: ClipboardList, hint: "Clients and training" };
 const TASKS: NavItem = { href: "/tasks", label: "Tasks", icon: ListChecks, hint: "What needs doing" };
+const SCHEDULE: NavItem = { href: "/schedule", label: "Schedule", icon: CalendarDays, hint: "The week, blocked" };
 const FITNESS: NavItem = { href: "/fitness", label: "Fitness", icon: Activity, hint: "Wellness and tracking" };
 const BOYS: NavItem = { href: "/boys", label: "Dads & Kids", icon: Backpack, hint: "The boys program", short: "Dads & Kids" };
 const BUSINESS: NavItem = { href: "/business", label: "Business", icon: Briefcase, hint: "The business switch" };
@@ -61,7 +63,7 @@ const LIBRARY_COMPOSER: NavItem = {
 function coachSections(role: Role): NavSection[] {
   const surface: NavItem[] = [PROGRAM, FITNESS, BOYS];
   if (role === "owner") surface.push(BUSINESS);
-  surface.push(TASKS);
+  surface.push(SCHEDULE, TASKS);
   const content: NavItem[] = [COACH_ALONGSIDE];
   if (role === "owner") content.unshift(LIBRARY_COMPOSER);
   return [{ label: "Surface", items: surface }, { label: "Content", items: content }, WORKSPACE];
@@ -125,13 +127,13 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
   if (role === "owner") {
     return {
       tabs: [PROGRAM, FITNESS, BUSINESS, MESSAGES],
-      more: [TASKS, BOYS, LIBRARY_COMPOSER, COACH_ALONGSIDE, SETTINGS],
+      more: [SCHEDULE, TASKS, BOYS, LIBRARY_COMPOSER, COACH_ALONGSIDE, SETTINGS],
     };
   }
   if (role === "coach") {
     return {
       tabs: [PROGRAM, FITNESS, BOYS, MESSAGES],
-      more: [TASKS, COACH_ALONGSIDE, SETTINGS],
+      more: [SCHEDULE, TASKS, COACH_ALONGSIDE, SETTINGS],
     };
   }
   if (role === "parent") {
