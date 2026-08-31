@@ -27,6 +27,8 @@ export type NewTaskInput = {
   title: string;
   description?: string;
   category?: string;
+  program?: string;
+  bucket_id?: string;
   priority?: string;
   due_date?: string;
   pin_today?: boolean;
@@ -50,6 +52,8 @@ export async function addTask(input: NewTaskInput): Promise<TaskResult> {
     title: input.title.trim(),
     description: input.description?.trim() || null,
     category: input.category || "other",
+    program: input.program || "general",
+    bucket_id: input.bucket_id || null,
     priority: input.priority || "medium",
     due_date: input.due_date || null,
     pin_today: Boolean(input.pin_today),
@@ -74,6 +78,8 @@ export type EditTaskInput = {
   title: string;
   description?: string;
   category?: string;
+  program?: string;
+  bucket_id?: string;
   priority?: string;
   due_date?: string;
   assigned_to?: string;
@@ -97,6 +103,8 @@ export async function updateTask(taskId: string, input: EditTaskInput): Promise<
       assigned_to: input.assigned_to || null,
       recur: input.recur || "none",
       updated_at: new Date().toISOString(),
+      // Program moves only when the caller says so; bucket rides with it.
+      ...(input.program ? { program: input.program, bucket_id: input.bucket_id || null } : {}),
     })
     .eq("id", taskId);
   if (error) return { error: "That did not save. Try again." };
@@ -190,6 +198,23 @@ export async function cancelNextStep(leadId: string): Promise<void> {
     .eq("lead_id", leadId)
     .eq("is_next_step", true)
     .in("status", ["open", "in_progress"]);
+}
+
+// Buckets for the add-a-task sheet, which opens from client components
+// that have no server-fetched bucket list of their own. Staff only, same
+// data the /tasks page reads.
+export async function listTaskBuckets(): Promise<
+  { id: string; program: string; name: string }[]
+> {
+  const ctx = await staffContext();
+  if (!ctx) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("task_buckets")
+    .select("id, program, name")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  return (data as { id: string; program: string; name: string }[] | null) ?? [];
 }
 
 // The lazy sweep; the /tasks page calls this on load. Errors are

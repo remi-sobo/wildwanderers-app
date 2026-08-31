@@ -92,7 +92,7 @@ export default async function ClientDetailPage({
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <TaskQuickAdd
-              link={{ client_id: id, label: clientName(client), category: "coaching" }}
+              link={{ client_id: id, label: clientName(client), program: "fitness" }}
             />
             <form action={openThread}>
               <button

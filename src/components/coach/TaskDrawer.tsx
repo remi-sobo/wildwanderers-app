@@ -15,9 +15,9 @@ import {
   toggleTaskPin,
   addTaskComment,
 } from "@/lib/tasks/actions";
-import type { TaskListItem, TaskComment, StaffOption } from "@/lib/data/tasks";
+import { PROGRAMS, PROGRAM_LABEL } from "@/lib/tasks/programs";
+import type { TaskBucket, TaskListItem, TaskComment, StaffOption } from "@/lib/data/tasks";
 
-const CATEGORIES = ["sales", "coaching", "program", "finance", "admin", "other"];
 const PRIORITIES = ["urgent", "high", "medium", "low"];
 const RECURS: { value: string; label: string }[] = [
   { value: "none", label: "Does not repeat" },
@@ -39,11 +39,13 @@ const label = "mb-1 block text-[11.5px] font-semibold uppercase tracking-[0.12em
 
 export function TaskDrawer({
   task,
+  buckets,
   comments,
   staff,
   onClose,
 }: {
   task: TaskListItem;
+  buckets: TaskBucket[];
   comments: TaskComment[];
   staff: StaffOption[];
   onClose: () => void;
@@ -57,12 +59,18 @@ export function TaskDrawer({
   const [form, setForm] = useState({
     title: task.title,
     description: task.description ?? "",
+    // category rides along untouched; the UI stopped using it.
     category: task.category,
+    program: task.program as string,
+    bucket_id: task.bucket_id ?? "",
     priority: task.priority as string,
     due_date: task.due_date ?? "",
     assigned_to: task.assigned_to ?? "",
     recur: task.recur as string,
   });
+
+  const bucketName = buckets.find((b) => b.id === task.bucket_id)?.name ?? null;
+  const programBuckets = buckets.filter((b) => b.program === form.program);
 
   const done = task.status === "done";
 
@@ -110,8 +118,10 @@ export function TaskDrawer({
               <h2 className="font-[family-name:var(--font-display)] text-[20px] leading-tight text-bone">
                 {task.title}
               </h2>
-              <p className="mt-1 text-[12.5px] capitalize text-bone/65">
-                {task.category} · {task.priority}
+              <p className="mt-1 text-[12.5px] text-bone/65">
+                {PROGRAM_LABEL[task.program]}
+                {bucketName ? ` · ${bucketName}` : ""}
+                <span className="capitalize"> · {task.priority}</span>
                 {task.is_next_step ? " · next step" : ""}
                 {task.source_type ? " · auto" : ""}
               </p>
@@ -187,10 +197,18 @@ export function TaskDrawer({
                 />
               </div>
               <div>
-                <span className={label}>Category</span>
-                <select className={`${field} capitalize`} value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                <span className={label}>Program</span>
+                <select className={field} value={form.program}
+                  onChange={(e) => setForm({ ...form, program: e.target.value, bucket_id: "" })}>
+                  {PROGRAMS.map((p) => <option key={p} value={p}>{PROGRAM_LABEL[p]}</option>)}
+                </select>
+              </div>
+              <div>
+                <span className={label}>Bucket</span>
+                <select className={field} value={form.bucket_id}
+                  onChange={(e) => setForm({ ...form, bucket_id: e.target.value })}>
+                  <option value="">No bucket</option>
+                  {programBuckets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
               <div>
