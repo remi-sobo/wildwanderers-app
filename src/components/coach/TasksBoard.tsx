@@ -1,12 +1,14 @@
 "use client";
 
 // The /tasks surface: program tabs (All, Fitness, Boys Program, General)
-// with open counts, work buckets inside each program as cards, and a
-// drill-in per bucket with the task rows. The All tab shows everything
-// grouped program then bucket. Pin-today and due dates keep their
-// behavior everywhere: overdue rises first, pinned and due-today next.
-// A row opens the task popout; adding a task anywhere asks for a program
-// and offers that program's buckets.
+// with open counts, and three views. Buckets: bucket cards per program
+// with a drill-in, the All tab grouped program then bucket. List: the
+// same shelves as headed lists, no cards. Timeline: the six-month phase
+// band over This week, Next week, and Later columns (week starts
+// Monday), undated tasks collapsed below; a reading view, no dragging.
+// Pin-today and due dates keep their behavior everywhere: overdue rises
+// first, pinned and due-today next. A row opens the task popout; adding
+// a task asks for a program and offers that program's buckets.
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -36,10 +38,43 @@ const UNSORTED = "unsorted";
 const field =
   "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
-function todayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+function dateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+function todayKey(): string {
+  return dateKey(new Date());
+}
+// The org's week starts Monday.
+function mondayOfThisWeek(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function plusDays(d: Date, days: number): Date {
+  const c = new Date(d);
+  c.setDate(c.getDate() + days);
+  return c;
+}
+
+// The six-month build plan as a fixed reading frame for the Timeline
+// view. Hardcoded on purpose: no tables behind it, Gabe reads the season
+// he is in. M2 through M5 carry labeled placeholders until the phase
+// names are confirmed from the build plan; do not invent them.
+const PHASES = [
+  { key: "M1", month: "2026-08", label: "August", name: "Foundation + pipeline machine" },
+  { key: "M2", month: "2026-09", label: "September", name: "[Phase name to confirm]" },
+  { key: "M3", month: "2026-10", label: "October", name: "[Phase name to confirm]" },
+  { key: "M4", month: "2026-11", label: "November", name: "[Phase name to confirm]" },
+  { key: "M5", month: "2026-12", label: "December", name: "[Phase name to confirm]" },
+  { key: "M6", month: "2027-01", label: "January", name: "Spring launch + the checkpoint" },
+] as const;
+
+const VIEWS = [
+  { key: "buckets", label: "Buckets" },
+  { key: "list", label: "List" },
+  { key: "timeline", label: "Timeline" },
+] as const;
+type ViewKey = (typeof VIEWS)[number]["key"];
 
 // Pin-today and due-date behavior, kept as ordering inside every bucket:
 // overdue first, then pinned or due today, then upcoming, then undated.
@@ -100,10 +135,10 @@ function TaskRow({
           {task.title}
         </p>
         <p className="truncate text-[11.5px] text-[color:var(--color-text-muted)]">
+          {subtitle ? <span>{subtitle}</span> : null}
+          {subtitle && task.link ? " · " : ""}
           {task.link ? (
             <span className={`font-semibold ${LINK_CHIP[task.link.kind]}`}>{task.link.name}</span>
-          ) : subtitle ? (
-            <span>{subtitle}</span>
           ) : null}
           {task.due_date ? (
             <span className={overdue ? "font-semibold text-[color:var(--color-state-error)]" : dueToday ? "font-semibold text-amber-deep" : ""}>
@@ -139,7 +174,9 @@ export function TasksBoard({
   const [error, setError] = useState<string | null>(null);
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [program, setProgram] = useState<"all" | TaskProgram>("all");
+  const [view, setView] = useState<ViewKey>("buckets");
   const [bucketKey, setBucketKey] = useState<string | null>(null);
+  const [showUndated, setShowUndated] = useState(false);
   const [quick, setQuick] = useState({
     title: "",
     due_date: "",
@@ -316,6 +353,125 @@ export function TasksBoard({
     );
   }
 
+  // The open shelves of one or more programs as headed lists. The All tab
+  // of the Buckets view and the whole List view both read from here.
+  function programSections(ps: TaskProgram[]) {
+    return ps.map((p) => {
+      const shelves = shelvesFor(p).filter((s) => s.items.length > 0);
+      if (shelves.length === 0) return null;
+      return (
+        <section key={p} className="flex flex-col gap-3">
+          <h2 className="font-[family-name:var(--font-display)] text-[20px] text-forest-deep">
+            {PROGRAM_LABEL[p]}
+          </h2>
+          {shelves.map((s) => (
+            <div key={s.key}>
+              <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-bark">
+                {s.name} <span className="font-normal normal-case tracking-normal text-[color:var(--color-text-faint)]">· {s.items.length}</span>
+              </h3>
+              {rows(s.items)}
+            </div>
+          ))}
+        </section>
+      );
+    });
+  }
+
+  // Program and bucket on one line, for the views that mix buckets.
+  function programBucketSubtitle(t: SortableTask): string {
+    const bucket = bucketById.get(t.bucket_id ?? "")?.name;
+    return bucket ? `${PROGRAM_LABEL[t.program]} · ${bucket}` : PROGRAM_LABEL[t.program];
+  }
+
+  // Timeline: the phase band over three due columns. A reading view; every
+  // row keeps the same check, pin display, and popout as everywhere else.
+  function timelineView() {
+    const monday = mondayOfThisWeek();
+    const thisWeekEnd = dateKey(plusDays(monday, 6));
+    const nextWeekEnd = dateKey(plusDays(monday, 13));
+    const visible = open.filter((t) => program === "all" || t.program === program);
+    const dated = visible.filter((t) => t.due_date != null);
+    const columns = [
+      // Overdue belongs to the week you are standing in, not the past.
+      { key: "this", label: "This week", items: dated.filter((t) => t.due_date! <= thisWeekEnd) },
+      { key: "next", label: "Next week", items: dated.filter((t) => t.due_date! > thisWeekEnd && t.due_date! <= nextWeekEnd) },
+      { key: "later", label: "Later", items: dated.filter((t) => t.due_date! > nextWeekEnd) },
+    ].map((c) => ({ ...c, items: sortOpen(c.items, today) }));
+    const undated = sortOpen(visible.filter((t) => t.due_date == null), today);
+    const monthKey = today.slice(0, 7);
+
+    return (
+      <>
+        {/* The phase band: where the six-month build stands */}
+        <div className="overflow-x-auto">
+          <ol className="flex min-w-[680px] gap-1.5">
+            {PHASES.map((ph) => {
+              const current = ph.month === monthKey;
+              return (
+                <li
+                  key={ph.key}
+                  aria-current={current ? "date" : undefined}
+                  className={`flex-1 rounded-xl border px-3 py-2.5 ${
+                    current
+                      ? "border-forest bg-forest"
+                      : "border-[color:var(--border-hair)] bg-card"
+                  }`}
+                >
+                  <p className={`text-[10.5px] font-semibold uppercase tracking-[0.14em] ${current ? "text-bone/75" : "text-bark"}`}>
+                    {ph.key} · {ph.label}
+                    {current ? <span className="ml-1 rounded-full bg-amber px-1.5 py-px normal-case tracking-normal text-[#23170c]">now</span> : null}
+                  </p>
+                  <p className={`mt-0.5 text-[12px] leading-snug ${current ? "text-bone" : "text-[color:var(--color-text-muted)]"}`}>
+                    {ph.name}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        {/* Due columns, the org's week starting Monday */}
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+          {columns.map((c) => (
+            <section key={c.key}>
+              <h2 className={`mb-1 text-[13px] font-semibold uppercase tracking-[0.12em] ${c.key === "this" ? "text-amber-deep" : "text-bark"}`}>
+                {c.label} <span className="font-normal text-[color:var(--color-text-faint)]">· {c.items.length}</span>
+              </h2>
+              {c.items.length > 0 ? (
+                rows(c.items, programBucketSubtitle)
+              ) : (
+                <p className="text-[13px] text-[color:var(--color-text-muted)]">Nothing due here.</p>
+              )}
+            </section>
+          ))}
+        </div>
+
+        {/* Undated, collapsed until asked for */}
+        {undated.length > 0 ? (
+          <section>
+            <button
+              type="button"
+              aria-expanded={showUndated}
+              onClick={() => setShowUndated(!showUndated)}
+              className="inline-flex items-center gap-1 text-[13px] font-semibold text-bark transition-colors hover:text-forest max-md:min-h-[44px]"
+            >
+              <ChevronRight
+                size={15}
+                className={`transition-transform ${showUndated ? "rotate-90" : ""}`}
+                aria-hidden="true"
+              />
+              Undated <span className="font-normal text-[color:var(--color-text-faint)]">· {undated.length}</span>
+            </button>
+            <p className="mt-0.5 text-[12.5px] text-[color:var(--color-text-muted)]">
+              These sit off the timeline until they get a date. Open one and give it a week.
+            </p>
+            {showUndated ? <div className="mt-2">{rows(undated, programBucketSubtitle)}</div> : null}
+          </section>
+        ) : null}
+      </>
+    );
+  }
+
   const totalOpen = open.length;
   const currentBucket = bucketKey && bucketKey !== UNSORTED ? bucketById.get(bucketKey) ?? null : null;
   const drillItems =
@@ -350,10 +506,57 @@ export function TasksBoard({
             </button>
           ),
         )}
+
+        {/* View toggle */}
+        <div
+          className="ml-auto flex items-center gap-0.5 rounded-full border border-[color:var(--border-strong)] bg-card p-0.5"
+          role="tablist"
+          aria-label="View"
+        >
+          {VIEWS.map((v) => (
+            <button
+              key={v.key}
+              type="button"
+              role="tab"
+              aria-selected={view === v.key}
+              onClick={() => {
+                setView(v.key);
+                setBucketKey(null);
+              }}
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors max-md:min-h-[36px] ${
+                view === v.key
+                  ? "bg-forest text-bone"
+                  : "text-[color:var(--color-text-muted)] hover:text-forest"
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* All: everything, grouped program then bucket */}
-      {program === "all" ? (
+      {view === "timeline" ? (
+        /* Timeline: the phase band and the due columns */
+        timelineView()
+      ) : view === "list" ? (
+        /* List: the shelves as headed lists, no cards, no drill-in */
+        <>
+          {addRow(program === "all" ? {} : { program })}
+          {programSections(program === "all" ? [...PROGRAMS] : [program])}
+          {(() => {
+            const doneHere = done.filter((t) => program === "all" || t.program === program).slice(0, 15);
+            return doneHere.length > 0 ? (
+              <section>
+                <h2 className="mb-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-bark">
+                  Done <span className="font-normal text-[color:var(--color-text-faint)]">· recent</span>
+                </h2>
+                {rows(doneHere as SortableTask[], programBucketSubtitle)}
+              </section>
+            ) : null;
+          })()}
+        </>
+      ) : program === "all" ? (
+        /* Buckets, All tab: everything grouped program then bucket */
         <>
           {addRow({})}
           {totalOpen === 0 && done.length === 0 ? (
@@ -363,25 +566,7 @@ export function TasksBoard({
               customer, or the boys program, and it lands on this board.
             </div>
           ) : (
-            PROGRAMS.map((p) => {
-              const shelves = shelvesFor(p).filter((s) => s.items.length > 0);
-              if (shelves.length === 0) return null;
-              return (
-                <section key={p} className="flex flex-col gap-3">
-                  <h2 className="font-[family-name:var(--font-display)] text-[20px] text-forest-deep">
-                    {PROGRAM_LABEL[p]}
-                  </h2>
-                  {shelves.map((s) => (
-                    <div key={s.key}>
-                      <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-bark">
-                        {s.name} <span className="font-normal normal-case tracking-normal text-[color:var(--color-text-faint)]">· {s.items.length}</span>
-                      </h3>
-                      {rows(s.items)}
-                    </div>
-                  ))}
-                </section>
-              );
-            })
+            programSections([...PROGRAMS])
           )}
           {done.length > 0 ? (
             <section>
