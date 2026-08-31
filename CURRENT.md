@@ -4,6 +4,28 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Schedule shipped, 2026-08-31 (design_handoff_schedule): Gabe's recurring
+work week as a time grid at /schedule, staff nav. Template-week model:
+schedule_blocks (grp ties one event across days, day 0 Monday, minutes
+from midnight), schedule_block_tasks publishing tasks into Work blocks
+per real week keyed by the local Monday (fresh week, empty blocks; the
+blocks persist), schedule_settings per staff profile. All three carry
+org_id (tenancy rule; a deliberate addition to the handoff schema) and
+staff-only RLS in the business_tasks shape, verified live: a client
+reads zero rows everywhere, task links refuse non-Work blocks. The
+grid: drag to draw (amber dashed draft), drag to move across days,
+resize, tap to edit in the centered editor (group-synced fields, day
+membership squares, repeats, group delete behind a confirm). Fill this
+block lists open tasks pinned first; a task lives on one block per
+week, moving on tap; on-block checkboxes complete through the existing
+tasks action; expired Work blocks roll open tasks to the next one.
+Travel buffer suggests after session blocks, confirm before it lands.
+Settings card: grid hours, buffer, new-block defaults, block colors
+from the earthy palette. Seeded with Gabe's real week, client names as
+labeled placeholders he edits in-app. Also today: /tasks gained a
+Timeline view (phase band M1 to M6, this week / next week / later, M2
+to M5 phase names still labeled placeholders pending confirmation).
+
 Task programs and client homework shipped, 2026-08-31: the task system grew
 a program dimension and the homework loop opened. business_tasks carries
 program (fitness, boys, general) and bucket_id; task_buckets are org-scoped
@@ -391,6 +413,14 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-08-31 Schedule (four commits, from design_handoff_schedule): the
+  schema with Gabe's seeded week (applied and verified live), the data
+  and action layer, the /schedule grid with the editor, task fill,
+  rollover, and travel toast, and the Settings card plus docs.
+- 2026-08-31 Tasks Timeline view (one commit): the Buckets · List ·
+  Timeline toggle on /tasks, the six-month phase band, due columns by
+  week, undated collapsed. M2 to M5 phase names are labeled
+  placeholders until confirmed.
 - 2026-08-31 Task programs and client homework (four commits): the schema
   (task_program, task_buckets, business_tasks program and bucket_id,
   client_homework with the client column guard, seeds, applied and
