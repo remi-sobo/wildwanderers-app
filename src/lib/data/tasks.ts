@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 // RLS scopes everything: the owner sees the org, a coach sees only tasks
 // assigned to them or created by them, clients see nothing.
 
+import type { TaskProgram } from "@/lib/tasks/programs";
+
+export type { TaskProgram };
+
 export type TaskStatus = "open" | "in_progress" | "done" | "cancelled";
 export type TaskRecur = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 export type TaskPriority = "urgent" | "high" | "medium" | "low";
@@ -18,6 +22,8 @@ export type Task = {
   due_date: string | null;
   pin_today: boolean;
   status: TaskStatus;
+  program: TaskProgram;
+  bucket_id: string | null;
   lead_id: string | null;
   client_id: string | null;
   customer_id: string | null;
@@ -50,8 +56,27 @@ export type TaskComment = {
 export type StaffOption = { id: string; name: string };
 
 const TASK_COLUMNS =
-  "id, title, description, category, priority, due_date, pin_today, status, " +
+  "id, title, description, category, priority, due_date, pin_today, status, program, bucket_id, " +
   "lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, created_at";
+
+export type TaskBucket = {
+  id: string;
+  program: TaskProgram;
+  name: string;
+  slug: string;
+  sort_order: number;
+};
+
+// The org's work buckets, in order. Staff-readable; the owner shapes them.
+export async function getTaskBuckets(): Promise<TaskBucket[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("task_buckets")
+    .select("id, program, name, slug, sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  return (data as TaskBucket[] | null) ?? [];
+}
 
 type JoinedName = { name?: string | null } | { name?: string | null }[] | null;
 type JoinedPerson =

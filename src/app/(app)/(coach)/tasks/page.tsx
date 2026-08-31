@@ -1,4 +1,4 @@
-import { getTaskList, getAllTaskComments, getStaffOptions } from "@/lib/data/tasks";
+import { getTaskList, getAllTaskComments, getStaffOptions, getTaskBuckets } from "@/lib/data/tasks";
 import { runTaskSweep } from "@/lib/tasks/actions";
 import { TasksBoard } from "@/components/coach/TasksBoard";
 
@@ -8,8 +8,9 @@ import { TasksBoard } from "@/components/coach/TasksBoard";
 // moment it renders.
 export default async function TasksPage() {
   await runTaskSweep();
-  const [tasks, commentsByTask, staff] = await Promise.all([
+  const [tasks, buckets, commentsByTask, staff] = await Promise.all([
     getTaskList(),
+    getTaskBuckets(),
     getAllTaskComments(),
     getStaffOptions(),
   ]);
@@ -22,7 +23,7 @@ export default async function TasksPage() {
           What needs doing.
         </h1>
       </div>
-      <TasksBoard tasks={tasks} commentsByTask={commentsByTask} staff={staff} />
+      <TasksBoard tasks={tasks} buckets={buckets} commentsByTask={commentsByTask} staff={staff} />
     </div>
   );
 }

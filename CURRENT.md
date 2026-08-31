@@ -4,6 +4,29 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Task programs and client homework shipped, 2026-08-31: the task system grew
+a program dimension and the homework loop opened. business_tasks carries
+program (fitness, boys, general) and bucket_id; task_buckets are org-scoped
+rows Gabe renames freely (eleven seeded, with the 44 real tasks from the
+six-month build, org-scoped and owner-created; category stays untouched, the
+UI stopped using it). /tasks runs on program tabs with open counts, bucket
+cards, and a per-bucket drill-in; the All tab groups program then bucket;
+pin-today and due behavior hold everywhere (overdue first, pinned and
+due-today next). Adding a task anywhere asks for a program and offers its
+buckets; lead-linked tasks file themselves by lead interest (boys enrollment
+or fitness sales) via a trigger, and the recurrence spawn carries program
+and bucket. Client homework: the coach assigns from the client profile
+(title, optional details and due date), the client's Homework screen shows
+open first, one tap done, an optional "how did it go" note saveable after
+the fact, done collapsed below. client_homework RLS verified live with
+simulated roles: staff full within the org; a client reads only their own
+rows and may update only status, completed_at, and completion_note (guard
+trigger, 42501 otherwise); cross-client update hits zero rows; client
+insert refused; anon reaches nothing. Homework is not the training plan and
+prospects get none; completion notes are the client's own words, no AI on
+them. Homework due-date nudges deliberately not built; watch real use two
+weeks first.
+
 Unified tasks shipped, 2026-08-11 (specs/unified-tasks.md): one task system
 for the whole app. Tasks link to leads, clients, customers, and the boys
 program, carry an assignee, recurrence (done spawns the next occurrence,
@@ -368,6 +391,12 @@ profile, goal, and a coaching group.
   playback, invite-by-email). Coach and voice degrade gracefully until set.
 
 ## Log
+- 2026-08-31 Task programs and client homework (four commits): the schema
+  (task_program, task_buckets, business_tasks program and bucket_id,
+  client_homework with the client column guard, seeds, applied and
+  cross-role verified live), the /tasks program-and-bucket surface, the
+  coach Homework panel on the client profile, and the client Homework
+  screen with nav.
 - 2026-08-11 Unified tasks (five commits, spec first): the schema pair
   (additive live + the destructive next-action merge held for deploy), the
   data and action layer with every next_action reference replaced, the
