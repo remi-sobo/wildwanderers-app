@@ -1,27 +1,22 @@
 "use client";
 
-// The /tasks surface: everything the caller can see, grouped by when it
-// needs doing (Overdue, Today, This week, Later, recently Done), filtered
-// by category or by what the task is linked to. A row opens the task
-// popout; the quick add at the top captures a task in one line.
+// The /tasks surface: program tabs (All, Fitness, Boys Program, General)
+// with open counts, work buckets inside each program as cards, and a
+// drill-in per bucket with the task rows. The All tab shows everything
+// grouped program then bucket. Pin-today and due dates keep their
+// behavior everywhere: overdue rises first, pinned and due-today next.
+// A row opens the task popout; adding a task anywhere asks for a program
+// and offers that program's buckets.
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pin, CircleCheck, Circle, ListChecks } from "lucide-react";
+import { Plus, Pin, ChevronLeft, ChevronRight, CircleCheck, Circle, ListChecks } from "lucide-react";
 import { addTask, setTaskDone } from "@/lib/tasks/actions";
 import { TaskDrawer } from "@/components/coach/TaskDrawer";
-import type { TaskListItem, TaskComment, StaffOption } from "@/lib/data/tasks";
+import { PROGRAMS, PROGRAM_LABEL, type TaskProgram } from "@/lib/tasks/programs";
+import type { TaskBucket, TaskListItem, TaskComment, StaffOption } from "@/lib/data/tasks";
 
-const CATEGORIES = ["sales", "coaching", "program", "finance", "admin", "other"];
 const PRIORITIES = ["urgent", "high", "medium", "low"];
-const LINK_FILTERS: { value: string; label: string }[] = [
-  { value: "all", label: "Everything" },
-  { value: "lead", label: "Leads" },
-  { value: "client", label: "Clients" },
-  { value: "customer", label: "Customers" },
-  { value: "program", label: "Boys program" },
-  { value: "none", label: "Unlinked" },
-];
 const PRIORITY_STYLE: Record<string, string> = {
   urgent: "bg-[color:var(--color-state-error)]/12 text-[color:var(--color-state-error)]",
   high: "bg-[color:var(--color-state-caution)]/15 text-[color:var(--color-state-caution)]",
@@ -35,6 +30,9 @@ const LINK_CHIP: Record<string, string> = {
   program: "text-fern",
 };
 
+// Tasks that never got a bucket still need a shelf inside their program.
+const UNSORTED = "unsorted";
+
 const field =
   "h-11 md:h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink";
 
@@ -42,33 +40,45 @@ function todayKey(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
-function plusDaysKey(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// Pin-today and due-date behavior, kept as ordering inside every bucket:
+// overdue first, then pinned or due today, then upcoming, then undated.
+function dueRank(t: TaskListItem, today: string): number {
+  if (t.due_date && t.due_date < today) return 0;
+  if (t.pin_today || t.due_date === today) return 1;
+  if (t.due_date) return 2;
+  return 3;
+}
+function sortOpen(items: SortableTask[], today: string): SortableTask[] {
+  return [...items].sort((a, b) => {
+    const r = dueRank(a, today) - dueRank(b, today);
+    if (r !== 0) return r;
+    if (a.due_date && b.due_date && a.due_date !== b.due_date)
+      return a.due_date < b.due_date ? -1 : 1;
+    return a.sort_orderSafe - b.sort_orderSafe;
+  });
 }
 
-type GroupKey = "overdue" | "today" | "week" | "later" | "done";
-const GROUPS: { key: GroupKey; label: string }[] = [
-  { key: "overdue", label: "Overdue" },
-  { key: "today", label: "Today" },
-  { key: "week", label: "This week" },
-  { key: "later", label: "Later" },
-  { key: "done", label: "Done" },
-];
+type SortableTask = TaskListItem & { sort_orderSafe: number };
 
 function TaskRow({
   task,
+  today,
+  subtitle,
   onOpen,
   onToggle,
   pending,
 }: {
   task: TaskListItem;
+  today: string;
+  subtitle: string | null;
   onOpen: () => void;
   onToggle: () => void;
   pending: boolean;
 }) {
   const done = task.status === "done";
+  const overdue = !done && task.due_date != null && task.due_date < today;
+  const dueToday = !done && task.due_date === today;
   return (
     <li className="flex items-center gap-2.5 py-2">
       <button
@@ -92,12 +102,16 @@ function TaskRow({
         <p className="truncate text-[11.5px] text-[color:var(--color-text-muted)]">
           {task.link ? (
             <span className={`font-semibold ${LINK_CHIP[task.link.kind]}`}>{task.link.name}</span>
-          ) : (
-            <span className="capitalize">{task.category}</span>
-          )}
-          {task.due_date
-            ? ` · due ${new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-            : ""}
+          ) : subtitle ? (
+            <span>{subtitle}</span>
+          ) : null}
+          {task.due_date ? (
+            <span className={overdue ? "font-semibold text-[color:var(--color-state-error)]" : dueToday ? "font-semibold text-amber-deep" : ""}>
+              {task.link || subtitle ? " · " : ""}
+              {overdue ? "overdue, " : ""}due{" "}
+              {new Date(task.due_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          ) : null}
           {task.recur !== "none" ? " · repeats" : ""}
           {task.is_next_step ? " · next step" : ""}
         </p>
@@ -111,10 +125,12 @@ function TaskRow({
 
 export function TasksBoard({
   tasks,
+  buckets,
   commentsByTask,
   staff,
 }: {
   tasks: TaskListItem[];
+  buckets: TaskBucket[];
   commentsByTask: Record<string, TaskComment[]>;
   staff: StaffOption[];
 }) {
@@ -122,41 +138,67 @@ export function TasksBoard({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
-  const [category, setCategory] = useState("all");
-  const [linkKind, setLinkKind] = useState("all");
-  const [quick, setQuick] = useState({ title: "", due_date: "", priority: "medium", category: "other", assigned_to: "" });
+  const [program, setProgram] = useState<"all" | TaskProgram>("all");
+  const [bucketKey, setBucketKey] = useState<string | null>(null);
+  const [quick, setQuick] = useState({
+    title: "",
+    due_date: "",
+    priority: "medium",
+    assigned_to: "",
+    program: "general" as TaskProgram,
+    bucket_id: "",
+  });
 
+  const today = todayKey();
   const openTask = openTaskId ? tasks.find((t) => t.id === openTaskId) ?? null : null;
+  const bucketById = useMemo(() => new Map(buckets.map((b) => [b.id, b])), [buckets]);
 
-  const filtered = useMemo(() => {
-    return tasks.filter((t) => {
-      if (category !== "all" && t.category !== category) return false;
-      if (linkKind === "none" && t.link) return false;
-      if (linkKind !== "all" && linkKind !== "none" && t.link?.kind !== linkKind) return false;
-      return true;
-    });
-  }, [tasks, category, linkKind]);
+  const sortable: SortableTask[] = useMemo(() => {
+    // The reader orders by due date then recency; keep that as the tiebreak.
+    return tasks.map((t, i) => ({ ...t, sort_orderSafe: i }));
+  }, [tasks]);
 
+  const open = useMemo(() => sortable.filter((t) => t.status !== "done"), [sortable]);
+  const done = useMemo(() => sortable.filter((t) => t.status === "done"), [sortable]);
+
+  const openByProgram = useMemo(() => {
+    const counts: Record<TaskProgram, number> = { fitness: 0, boys: 0, general: 0 };
+    for (const t of open) counts[t.program] += 1;
+    return counts;
+  }, [open]);
+
+  function bucketKeyOf(t: TaskListItem): string {
+    return t.bucket_id && bucketById.has(t.bucket_id) ? t.bucket_id : UNSORTED;
+  }
+
+  // program -> bucket key -> open tasks, already sorted for display.
   const grouped = useMemo(() => {
-    const today = todayKey();
-    const weekEnd = plusDaysKey(7);
-    const g: Record<GroupKey, TaskListItem[]> = { overdue: [], today: [], week: [], later: [], done: [] };
-    for (const t of filtered) {
-      if (t.status === "done") {
-        g.done.push(t);
-      } else if (t.due_date && t.due_date < today) {
-        g.overdue.push(t);
-      } else if (t.pin_today || t.due_date === today) {
-        g.today.push(t);
-      } else if (t.due_date && t.due_date <= weekEnd) {
-        g.week.push(t);
-      } else {
-        g.later.push(t);
-      }
+    const g = new Map<TaskProgram, Map<string, SortableTask[]>>();
+    for (const p of PROGRAMS) g.set(p, new Map());
+    for (const t of open) {
+      const perBucket = g.get(t.program)!;
+      const key = bucketKeyOf(t);
+      const list = perBucket.get(key);
+      if (list) list.push(t);
+      else perBucket.set(key, [t]);
     }
-    g.done = g.done.slice(0, 15);
+    for (const perBucket of g.values()) {
+      for (const [key, list] of perBucket) perBucket.set(key, sortOpen(list, today) as SortableTask[]);
+    }
     return g;
-  }, [filtered]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, bucketById, today]);
+
+  // The bucket shelves of one program, in the owner's order, unsorted last.
+  function shelvesFor(p: TaskProgram): { key: string; name: string; items: SortableTask[] }[] {
+    const perBucket = grouped.get(p) ?? new Map<string, SortableTask[]>();
+    const shelves = buckets
+      .filter((b) => b.program === p)
+      .map((b) => ({ key: b.id, name: b.name, items: perBucket.get(b.id) ?? [] }));
+    const unsorted = perBucket.get(UNSORTED);
+    if (unsorted && unsorted.length > 0) shelves.push({ key: UNSORTED, name: "Unsorted", items: unsorted });
+    return shelves;
+  }
 
   function toggle(task: TaskListItem) {
     setError(null);
@@ -167,7 +209,7 @@ export function TasksBoard({
     });
   }
 
-  function quickAdd() {
+  function quickAdd(preset: { program: TaskProgram; bucket_id?: string }) {
     if (!quick.title.trim()) return;
     setError(null);
     start(async () => {
@@ -175,8 +217,9 @@ export function TasksBoard({
         title: quick.title,
         due_date: quick.due_date || undefined,
         priority: quick.priority,
-        category: quick.category,
         assigned_to: quick.assigned_to || undefined,
+        program: preset.program,
+        bucket_id: preset.bucket_id || undefined,
       });
       if (res.error) setError(res.error);
       else {
@@ -186,124 +229,237 @@ export function TasksBoard({
     });
   }
 
-  const openCount = tasks.filter((t) => t.status !== "done").length;
+  function selectProgram(next: "all" | TaskProgram) {
+    setProgram(next);
+    setBucketKey(null);
+    if (next !== "all") setQuick((q) => ({ ...q, program: next, bucket_id: "" }));
+  }
 
-  return (
-    <div className="flex flex-col gap-5">
-      {/* Quick add */}
+  // The add row, rendered by plain call so the inputs keep focus across
+  // re-renders. Context decides how much it asks: the All tab asks for a
+  // program and offers its buckets; a program tab presets the program; a
+  // bucket drill-in presets both and asks only for the task.
+  function addRow(preset: { program?: TaskProgram; bucket_id?: string }) {
+    const effectiveProgram = preset.program ?? quick.program;
+    const effectiveBucket = preset.bucket_id ?? quick.bucket_id;
+    const programBuckets = buckets.filter((b) => b.program === effectiveProgram);
+    return (
       <section className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-4 shadow-[var(--shadow-card)]">
-        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_auto_auto_auto]">
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_auto_auto]">
           <input
             className={field}
             placeholder="Add a task, e.g. text Sara about Thursday"
             value={quick.title}
             onChange={(e) => setQuick({ ...quick, title: e.target.value })}
             onKeyDown={(e) => {
-              if (e.key === "Enter") quickAdd();
+              if (e.key === "Enter")
+                quickAdd({ program: effectiveProgram, bucket_id: effectiveBucket || undefined });
             }}
           />
           <input className={field} type="date" aria-label="Due date" value={quick.due_date}
             onChange={(e) => setQuick({ ...quick, due_date: e.target.value })} />
-          <select className={`${field} capitalize`} aria-label="Category" value={quick.category}
-            onChange={(e) => setQuick({ ...quick, category: e.target.value })}>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
           <select className={`${field} capitalize`} aria-label="Priority" value={quick.priority}
             onChange={(e) => setQuick({ ...quick, priority: e.target.value })}>
             {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
           <button
             type="button"
-            onClick={quickAdd}
+            onClick={() => quickAdd({ program: effectiveProgram, bucket_id: effectiveBucket || undefined })}
             disabled={pending || !quick.title.trim()}
             className="inline-flex items-center justify-center gap-1.5 rounded-full bg-amber px-4 py-2 text-[13.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep disabled:opacity-70 max-md:min-h-[44px]"
           >
             <Plus size={15} aria-hidden="true" /> Add
           </button>
         </div>
-        {staff.length > 1 ? (
-          <div className="mt-2.5">
+        <div className="mt-2.5 flex flex-wrap gap-2.5">
+          {preset.program == null ? (
+            <select className={field} aria-label="Program" value={quick.program}
+              onChange={(e) => setQuick({ ...quick, program: e.target.value as TaskProgram, bucket_id: "" })}>
+              {PROGRAMS.map((p) => <option key={p} value={p}>{PROGRAM_LABEL[p]}</option>)}
+            </select>
+          ) : null}
+          {preset.bucket_id == null ? (
+            <select className={field} aria-label="Bucket" value={quick.bucket_id}
+              onChange={(e) => setQuick({ ...quick, bucket_id: e.target.value })}>
+              <option value="">No bucket</option>
+              {programBuckets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          ) : null}
+          {staff.length > 1 ? (
             <select className={field} aria-label="Assign to" value={quick.assigned_to}
               onChange={(e) => setQuick({ ...quick, assigned_to: e.target.value })}>
               <option value="">Assign to me</option>
               {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         {error ? <p role="alert" className="mt-2 text-[13px] text-[color:var(--color-state-error)]">{error}</p> : null}
       </section>
+    );
+  }
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {LINK_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => setLinkKind(f.value)}
-            className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors max-md:min-h-[40px] ${
-              linkKind === f.value
-                ? "bg-forest text-bone"
-                : "border border-[color:var(--border-strong)] bg-card text-[color:var(--color-text)] hover:border-forest"
-            }`}
-          >
-            {f.label}
-          </button>
+  function rows(items: SortableTask[], subtitleFor?: (t: SortableTask) => string | null) {
+    return (
+      <ul className="flex flex-col divide-y divide-[color:var(--border-hair)] rounded-2xl border border-[color:var(--border-hair)] bg-card px-4 shadow-[var(--shadow-card)]">
+        {items.map((t) => (
+          <TaskRow
+            key={t.id}
+            task={t}
+            today={today}
+            subtitle={subtitleFor ? subtitleFor(t) : null}
+            pending={pending}
+            onOpen={() => setOpenTaskId(t.id)}
+            onToggle={() => toggle(t)}
+          />
         ))}
-        <select
-          className="ml-auto h-10 rounded-lg border border-[color:var(--border-strong)] bg-card px-2 text-[13px] capitalize text-ink max-md:h-11 max-md:text-[16px]"
-          aria-label="Category filter"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="all">All categories</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+      </ul>
+    );
+  }
+
+  const totalOpen = open.length;
+  const currentBucket = bucketKey && bucketKey !== UNSORTED ? bucketById.get(bucketKey) ?? null : null;
+  const drillItems =
+    program !== "all" && bucketKey
+      ? (grouped.get(program)?.get(bucketKey) ?? [])
+      : [];
+  const drillDone =
+    program !== "all" && bucketKey
+      ? done.filter((t) => t.program === program && bucketKeyOf(t) === bucketKey).slice(0, 15)
+      : [];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Program tabs */}
+      <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Program">
+        {([["all", "All", totalOpen] as const, ...PROGRAMS.map((p) => [p, PROGRAM_LABEL[p], openByProgram[p]] as const)]).map(
+          ([value, tabLabel, count]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={program === value}
+              onClick={() => selectProgram(value)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors max-md:min-h-[40px] ${
+                program === value
+                  ? "bg-forest text-bone"
+                  : "border border-[color:var(--border-strong)] bg-card text-[color:var(--color-text)] hover:border-forest"
+              }`}
+            >
+              {tabLabel}
+              <span className={program === value ? "text-bone/70" : "text-[color:var(--color-text-faint)]"}>{count}</span>
+            </button>
+          ),
+        )}
       </div>
 
-      {/* Groups */}
-      {openCount === 0 && grouped.done.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 text-[14px] leading-[1.55] text-[color:var(--color-text-muted)] shadow-[var(--shadow-card)]">
-          <ListChecks size={18} className="mb-2 text-[color:var(--color-text-faint)]" aria-hidden="true" />
-          Nothing here yet. Add a task above, or from any lead, client,
-          customer, or the boys program, and it lands on this board.
-        </div>
-      ) : (
-        GROUPS.map((g) => {
-          const items = grouped[g.key];
-          if (items.length === 0) return null;
-          return (
-            <section key={g.key}>
-              <h2
-                className={`mb-1 text-[13px] font-semibold uppercase tracking-[0.12em] ${
-                  g.key === "overdue"
-                    ? "text-[color:var(--color-state-error)]"
-                    : g.key === "today"
-                      ? "text-amber-deep"
-                      : "text-bark"
-                }`}
-              >
-                {g.label} <span className="font-normal text-[color:var(--color-text-faint)]">· {items.length}</span>
+      {/* All: everything, grouped program then bucket */}
+      {program === "all" ? (
+        <>
+          {addRow({})}
+          {totalOpen === 0 && done.length === 0 ? (
+            <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 text-[14px] leading-[1.55] text-[color:var(--color-text-muted)] shadow-[var(--shadow-card)]">
+              <ListChecks size={18} className="mb-2 text-[color:var(--color-text-faint)]" aria-hidden="true" />
+              Nothing here yet. Add a task above, or from any lead, client,
+              customer, or the boys program, and it lands on this board.
+            </div>
+          ) : (
+            PROGRAMS.map((p) => {
+              const shelves = shelvesFor(p).filter((s) => s.items.length > 0);
+              if (shelves.length === 0) return null;
+              return (
+                <section key={p} className="flex flex-col gap-3">
+                  <h2 className="font-[family-name:var(--font-display)] text-[20px] text-forest-deep">
+                    {PROGRAM_LABEL[p]}
+                  </h2>
+                  {shelves.map((s) => (
+                    <div key={s.key}>
+                      <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-bark">
+                        {s.name} <span className="font-normal normal-case tracking-normal text-[color:var(--color-text-faint)]">· {s.items.length}</span>
+                      </h3>
+                      {rows(s.items)}
+                    </div>
+                  ))}
+                </section>
+              );
+            })
+          )}
+          {done.length > 0 ? (
+            <section>
+              <h2 className="mb-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-bark">
+                Done <span className="font-normal text-[color:var(--color-text-faint)]">· recent</span>
               </h2>
-              <ul className="flex flex-col divide-y divide-[color:var(--border-hair)] rounded-2xl border border-[color:var(--border-hair)] bg-card px-4 shadow-[var(--shadow-card)]">
-                {items.map((t) => (
-                  <TaskRow
-                    key={t.id}
-                    task={t}
-                    pending={pending}
-                    onOpen={() => setOpenTaskId(t.id)}
-                    onToggle={() => toggle(t)}
-                  />
-                ))}
-              </ul>
+              {rows(done.slice(0, 15) as SortableTask[], (t) => bucketById.get(t.bucket_id ?? "")?.name ?? PROGRAM_LABEL[t.program])}
             </section>
-          );
-        })
+          ) : null}
+        </>
+      ) : bucketKey == null ? (
+        /* One program: its bucket cards */
+        <>
+          {addRow({ program })}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {shelvesFor(program).map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setBucketKey(s.key)}
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--border-hair)] bg-card px-5 py-4 text-left shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-[color:var(--border-strong)]"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-[family-name:var(--font-display)] text-[17px] text-forest-deep">
+                    {s.name}
+                  </span>
+                  <span className="block text-[12px] text-[color:var(--color-text-muted)]">
+                    {s.items.length === 0 ? "Nothing open" : s.items.length === 1 ? "1 open" : `${s.items.length} open`}
+                  </span>
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-[color:var(--color-text-faint)] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          {shelvesFor(program).every((s) => s.items.length === 0) ? (
+            <p className="text-[13.5px] text-[color:var(--color-text-muted)]">
+              Everything in {PROGRAM_LABEL[program]} is done. Add the next piece of work above.
+            </p>
+          ) : null}
+        </>
+      ) : (
+        /* Bucket drill-in */
+        <>
+          <div>
+            <button
+              type="button"
+              onClick={() => setBucketKey(null)}
+              className="inline-flex items-center gap-1 text-[13px] font-medium text-[color:var(--color-text-muted)] transition-colors hover:text-forest max-md:min-h-[44px]"
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              {PROGRAM_LABEL[program]}
+            </button>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-[20px] text-forest-deep">
+              {currentBucket?.name ?? "Unsorted"}
+            </h2>
+          </div>
+          {addRow({ program, bucket_id: currentBucket?.id ?? "" })}
+          {drillItems.length > 0 ? (
+            rows(drillItems)
+          ) : (
+            <p className="text-[13.5px] text-[color:var(--color-text-muted)]">
+              Nothing open in this bucket. Add the next piece of work above.
+            </p>
+          )}
+          {drillDone.length > 0 ? (
+            <section>
+              <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-bark">Done</h3>
+              {rows(drillDone as SortableTask[])}
+            </section>
+          ) : null}
+        </>
       )}
 
       {openTask ? (
         <TaskDrawer
           key={openTask.id}
           task={openTask}
+          buckets={buckets}
           comments={commentsByTask[openTask.id] ?? []}
           staff={staff}
           onClose={() => setOpenTaskId(null)}

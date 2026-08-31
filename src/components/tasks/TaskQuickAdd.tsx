@@ -3,18 +3,21 @@
 // Add a task from wherever you are standing. One shared control: an icon
 // in the top bar (unlinked), and a labeled button on records (the lead
 // drawer has its own inline adds). Whatever context it is given rides
-// along as the task's link, and the task lands on /tasks.
+// along as the task's link. Every add names a program and offers that
+// program's buckets, loaded when the sheet opens.
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ListChecks, Plus, X } from "lucide-react";
-import { addTask } from "@/lib/tasks/actions";
+import { addTask, listTaskBuckets } from "@/lib/tasks/actions";
+import { PROGRAMS, PROGRAM_LABEL, type TaskProgram } from "@/lib/tasks/programs";
 
 const PRIORITIES = ["urgent", "high", "medium", "low"];
-const CATEGORIES = ["sales", "coaching", "program", "finance", "admin", "other"];
 
 const field =
   "h-11 md:h-10 w-full rounded-lg border border-[color:var(--border-strong)] bg-card px-3 text-[16px] md:text-[14px] text-ink outline-none focus:border-amber";
+
+type BucketOption = { id: string; program: string; name: string };
 
 export type TaskLinkContext = {
   lead_id?: string;
@@ -23,8 +26,8 @@ export type TaskLinkContext = {
   program_id?: string;
   /** What the link points at, shown in the sheet ("for Sara Brewer"). */
   label?: string;
-  /** Default category when the context implies one. */
-  category?: string;
+  /** Default program when the context implies one. */
+  program?: TaskProgram;
 };
 
 export function TaskQuickAdd({
@@ -38,12 +41,27 @@ export function TaskQuickAdd({
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [buckets, setBuckets] = useState<BucketOption[] | null>(null);
   const [form, setForm] = useState({
     title: "",
     due_date: "",
     priority: "medium",
-    category: link?.category ?? "other",
+    program: (link?.program ?? "general") as TaskProgram,
+    bucket_id: "",
   });
+
+  useEffect(() => {
+    if (!open || buckets !== null) return;
+    let cancelled = false;
+    listTaskBuckets().then((b) => {
+      if (!cancelled) setBuckets(b);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, buckets]);
+
+  const programBuckets = (buckets ?? []).filter((b) => b.program === form.program);
 
   function save() {
     if (!form.title.trim()) return;
@@ -53,7 +71,8 @@ export function TaskQuickAdd({
         title: form.title,
         due_date: form.due_date || undefined,
         priority: form.priority,
-        category: form.category,
+        program: form.program,
+        bucket_id: form.bucket_id || undefined,
         lead_id: link?.lead_id,
         client_id: link?.client_id,
         customer_id: link?.customer_id,
@@ -128,16 +147,23 @@ export function TaskQuickAdd({
                   if (e.key === "Enter") save();
                 }}
               />
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <select className={field} aria-label="Program" value={form.program}
+                  onChange={(e) => setForm({ ...form, program: e.target.value as TaskProgram, bucket_id: "" })}>
+                  {PROGRAMS.map((p) => <option key={p} value={p}>{PROGRAM_LABEL[p]}</option>)}
+                </select>
+                <select className={field} aria-label="Bucket" value={form.bucket_id}
+                  onChange={(e) => setForm({ ...form, bucket_id: e.target.value })}>
+                  <option value="">No bucket</option>
+                  {programBuckets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
                 <input className={field} type="date" aria-label="Due date" value={form.due_date}
                   onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
                 <select className={`${field} capitalize`} aria-label="Priority" value={form.priority}
                   onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                   {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <select className={`${field} capitalize`} aria-label="Category" value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               {error ? (

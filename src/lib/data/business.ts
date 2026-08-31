@@ -219,7 +219,7 @@ export async function getLeadWorkspace(): Promise<LeadWorkspace> {
     supabase
       .from("business_tasks")
       .select(
-        "id, title, description, category, priority, due_date, pin_today, status, lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, created_at",
+        "id, title, description, category, priority, due_date, pin_today, status, program, bucket_id, lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, created_at",
       )
       .not("lead_id", "is", null)
       .neq("status", "cancelled")
