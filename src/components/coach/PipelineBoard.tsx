@@ -224,13 +224,17 @@ export function PipelineBoard({
   customers,
   workspace,
   inquiries,
+  scoutReady,
 }: {
   leads: Lead[];
   customers: Customer[];
   workspace: LeadWorkspace;
   inquiries: LeadInquiry[];
+  scoutReady: boolean;
 }) {
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  // The lead just accepted from the inbox gets its first reply drafted on open.
+  const [autoDraftId, setAutoDraftId] = useState<string | null>(null);
   // Resolve from props each render so a refresh after any drawer action
   // shows the updated lead, timeline, and tasks.
   const openLead = openLeadId ? leads.find((l) => l.id === openLeadId) ?? null : null;
@@ -245,7 +249,13 @@ export function PipelineBoard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InquiryInbox inquiries={inquiries} onAccepted={setOpenLeadId} />
+      <InquiryInbox
+        inquiries={inquiries}
+        onAccepted={(id) => {
+          setAutoDraftId(id);
+          setOpenLeadId(id);
+        }}
+      />
 
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-[color:var(--color-text-muted)]">
@@ -288,7 +298,10 @@ export function PipelineBoard({
                       lead={l}
                       nextStep={nextStep}
                       openTaskCount={leadTasks.filter((t) => t.status !== "done" && t.id !== nextStep?.id).length}
-                      onOpen={() => setOpenLeadId(l.id)}
+                      onOpen={() => {
+                        setAutoDraftId(null);
+                        setOpenLeadId(l.id);
+                      }}
                     />
                   );
                 })}
@@ -317,7 +330,12 @@ export function PipelineBoard({
           lead={openLead}
           activities={workspace.activitiesByLead[openLead.id] ?? []}
           tasks={workspace.tasksByLead[openLead.id] ?? []}
-          onClose={() => setOpenLeadId(null)}
+          onClose={() => {
+            setOpenLeadId(null);
+            setAutoDraftId(null);
+          }}
+          scoutReady={scoutReady}
+          autoDraft={autoDraftId === openLead.id}
         />
       ) : null}
     </div>
