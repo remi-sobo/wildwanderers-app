@@ -19,6 +19,7 @@ import {
   ArrowRightLeft,
   Plus,
   Check,
+  Sparkles,
 } from "lucide-react";
 import {
   updateLead,
@@ -31,6 +32,8 @@ import { addTask, setTaskDone, setNextStep } from "@/lib/tasks/actions";
 import { formatMoney } from "@/lib/business/format";
 import type { Lead, LeadStage, LeadActivity } from "@/lib/data/business";
 import type { Task } from "@/lib/data/tasks";
+import { FirstReplyPanel } from "@/components/coach/FirstReplyPanel";
+import { parseFirstReply } from "@/lib/business/first-reply";
 
 const STAGES: { value: LeadStage; label: string }[] = [
   { value: "new", label: "New" },
@@ -77,11 +80,15 @@ export function LeadDrawer({
   activities,
   tasks,
   onClose,
+  scoutReady,
+  autoDraft = false,
 }: {
   lead: Lead;
   activities: LeadActivity[];
   tasks: Task[];
   onClose: () => void;
+  scoutReady: boolean;
+  autoDraft?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -113,6 +120,9 @@ export function LeadDrawer({
   const [lostReason, setLostReason] = useState("");
 
   const closed = lead.stage === "won" || lead.stage === "lost";
+  // Activities arrive newest first, so the first ai_draft is the latest.
+  const latestDraftRow = activities.find((a) => a.kind === "ai_draft");
+  const latestDraft = latestDraftRow?.content ? parseFirstReply(latestDraftRow.content) : null;
   const nextStep =
     tasks.find((t) => t.is_next_step && (t.status === "open" || t.status === "in_progress")) ?? null;
   const otherTasks = tasks.filter((t) => t.id !== nextStep?.id);
@@ -362,6 +372,16 @@ export function LeadDrawer({
             </section>
           ) : null}
 
+          {!closed ? (
+            <FirstReplyPanel
+              leadId={lead.id}
+              email={lead.email}
+              initial={latestDraft}
+              scoutReady={scoutReady}
+              autoDraft={autoDraft}
+            />
+          ) : null}
+
           {/* Details */}
           <section className="mt-6">
             <h3 className={sectionHead}>Details</h3>
@@ -557,8 +577,9 @@ export function LeadDrawer({
               <ul className="mt-4 flex flex-col gap-3">
                 {activities.map((a) => {
                   const isStage = a.kind === "stage_change";
+                  const isDraft = a.kind === "ai_draft";
                   const found = TOUCH_KINDS.find((k) => k.value === a.kind);
-                  const Icon = isStage ? ArrowRightLeft : found?.icon ?? StickyNote;
+                  const Icon = isStage ? ArrowRightLeft : isDraft ? Sparkles : found?.icon ?? StickyNote;
                   return (
                     <li key={a.id} className="flex gap-3">
                       <span
@@ -572,7 +593,7 @@ export function LeadDrawer({
                       </span>
                       <div className="min-w-0">
                         <p
-                          className={`text-[13.5px] leading-[1.5] ${
+                          className={`text-[13.5px] leading-[1.5] ${isDraft ? "whitespace-pre-line " : ""}${
                             isStage
                               ? "text-[color:var(--color-text-muted)]"
                               : "text-[color:var(--color-text)]"
@@ -581,7 +602,8 @@ export function LeadDrawer({
                           {a.content || (found?.label ?? a.kind)}
                         </p>
                         <p className="text-[11.5px] text-[color:var(--color-text-faint)]">
-                          {isStage ? "Stage" : found?.label ?? a.kind} · {shortDateTime(a.created_at)}
+                          {isStage ? "Stage" : isDraft ? "Scout draft, not sent" : found?.label ?? a.kind} ·{" "}
+                          {shortDateTime(a.created_at)}
                         </p>
                       </div>
                     </li>
