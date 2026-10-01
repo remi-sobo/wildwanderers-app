@@ -172,7 +172,7 @@ export type Customer = {
 export type LeadActivity = {
   id: string;
   lead_id: string;
-  kind: "call" | "text" | "email" | "in_person" | "note" | "stage_change";
+  kind: "call" | "text" | "email" | "in_person" | "note" | "stage_change" | "ai_draft";
   content: string | null;
   created_at: string;
 };
