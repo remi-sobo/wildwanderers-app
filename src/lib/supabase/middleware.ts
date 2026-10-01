@@ -1,8 +1,9 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Paths reachable without a session.
-const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth"];
+// Paths reachable without a session. The inquiry alert endpoint is called
+// server-to-server by the marketing site and checks its own shared secret.
+const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth", "/api/inquiries/alert"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some(
