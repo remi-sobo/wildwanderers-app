@@ -8,7 +8,8 @@ import { addLead, addCustomerToRoster, type LeadInput } from "@/lib/business/act
 import { formatMoney } from "@/lib/business/format";
 import { LeadDrawer } from "@/components/coach/LeadDrawer";
 import { TaskQuickAdd } from "@/components/tasks/TaskQuickAdd";
-import type { Lead, LeadStage, Customer, LeadWorkspace } from "@/lib/data/business";
+import { InquiryInbox } from "@/components/coach/InquiryInbox";
+import type { Lead, LeadStage, Customer, LeadWorkspace, LeadInquiry } from "@/lib/data/business";
 import type { Task } from "@/lib/data/tasks";
 
 const STAGES: { value: LeadStage; label: string }[] = [
@@ -222,10 +223,12 @@ export function PipelineBoard({
   leads,
   customers,
   workspace,
+  inquiries,
 }: {
   leads: Lead[];
   customers: Customer[];
   workspace: LeadWorkspace;
+  inquiries: LeadInquiry[];
 }) {
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   // Resolve from props each render so a refresh after any drawer action
@@ -242,6 +245,8 @@ export function PipelineBoard({
 
   return (
     <div className="flex flex-col gap-5">
+      <InquiryInbox inquiries={inquiries} onAccepted={setOpenLeadId} />
+
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-[color:var(--color-text-muted)]">
           {leads.length === 0 ? "No leads yet" : `${leads.length} ${leads.length === 1 ? "lead" : "leads"}`}
@@ -252,7 +257,8 @@ export function PipelineBoard({
       {leads.length === 0 ? (
         <div className="rounded-2xl border border-[color:var(--border-hair)] bg-card p-6 text-[14px] leading-[1.55] text-[color:var(--color-text-muted)] shadow-[var(--shadow-card)]">
           Add your first lead and it moves through the pipeline here, from new to
-          won. Website inquiries will feed in automatically in a later pass.
+          won. Free consult requests from the website land above for you to
+          accept.
         </div>
       ) : (
         activeStages.map((stage) => {

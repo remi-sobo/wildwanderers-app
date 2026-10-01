@@ -337,3 +337,29 @@ export async function getFinance(): Promise<FinanceData> {
   return { offerings, customers, revenue, expenses, revenueMtdCents, expensesMtdCents };
 }
 
+
+// ── Website inquiries (the speed-to-lead inbox) ─────────────
+// Staged free-consult inquiries from the marketing site, waiting on Gabe's
+// accept or dismiss. Owner RLS scopes the read. `message` is the visitor's
+// own words and may carry health context: shown to the owner here, never
+// logged, never sent anywhere else.
+export type LeadInquiry = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  interest: string;
+  message: string | null;
+  preferred_times: string[] | null;
+  created_at: string;
+};
+
+export async function getNewInquiries(): Promise<LeadInquiry[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lead_inquiries")
+    .select("id, name, email, phone, interest, message, preferred_times, created_at")
+    .eq("status", "new")
+    .order("created_at", { ascending: true });
+  return (data ?? []) as LeadInquiry[];
+}
