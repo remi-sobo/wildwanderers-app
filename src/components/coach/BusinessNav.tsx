@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GitBranch, Wallet, Target } from "lucide-react";
+import { LayoutDashboard, GitBranch, Mail, Wallet, Target } from "lucide-react";
 
 const TABS = [
   { href: "/business", label: "Dashboard", icon: LayoutDashboard },
   { href: "/business/pipeline", label: "Pipeline", icon: GitBranch },
+  { href: "/business/popup", label: "Pop-up list", icon: Mail },
   { href: "/business/finance", label: "Finance", icon: Wallet },
   { href: "/business/goals", label: "Goals", icon: Target },
 ];

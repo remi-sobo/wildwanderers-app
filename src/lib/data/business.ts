@@ -363,3 +363,25 @@ export async function getNewInquiries(): Promise<LeadInquiry[]> {
     .order("created_at", { ascending: true });
   return (data ?? []) as LeadInquiry[];
 }
+
+// ── Subscriber lists (the pop-up and the library) ───────────
+// Read-only view of library_subscribers by the door they signed up through:
+// 'saturday' is the pop-up form, 'trailhead' the library signup. Owner RLS
+// (owner_manages_subscribers) scopes the read to the owner's org.
+export type SubscriberSource = "saturday" | "trailhead";
+
+export type Subscriber = {
+  id: string;
+  email: string;
+  created_at: string;
+};
+
+export async function getSubscribers(source: SubscriberSource): Promise<Subscriber[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("library_subscribers")
+    .select("id, email, created_at")
+    .eq("source", source)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as Subscriber[];
+}
