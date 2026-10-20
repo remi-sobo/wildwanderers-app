@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Paths reachable without a session. The inquiry alert endpoint is called
 // server-to-server by the marketing site and checks its own shared secret.
-const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth", "/api/inquiries/alert"];
+// The pop-up waiver page is opened from a QR by guests with no account.
+const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth", "/api/inquiries/alert", "/popup/sign"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some(
