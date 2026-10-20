@@ -1,7 +1,8 @@
 # Spec: Pop-up roll call (attendance, bring-a-friend, waivers, walk-ups)
 
-Status: **draft, not approved.** No code until Gabe and Remi sign off on the
-open decisions at the bottom.
+Status: **approved 2026-10-19, built.** Decisions resolved at the bottom.
+The uploaded waiver changed the model in three places, noted under
+"What the waiver changed".
 
 ## Problem statement
 
@@ -46,104 +47,78 @@ a pop-up day, attendance, referrals, or an adult waiver.
   waiver signed.
 - Bring-a-friend eligibility, derived, not typed in.
 - Name and phone kept on `library_subscribers` (both optional).
-- An adult pop-up waiver in the `forms` catalog, versioned.
+- The pop-up waiver in the `forms` catalog, versioned, signed on paper or on
+  the guest's own phone through a QR.
 
 **Out (v1):**
 - Payments and Stripe. Gabe takes payment however he does today; the app only
   tells him who is free.
-- Guests signing the waiver on their own phone (QR to a signing page). Good
-  v2, see decisions.
 - RSVP tracking from the pre-Saturday email.
 - Offline mode. See failure modes.
 - Converting a guest to a client or lead. One tap later, not now.
 
-## Data model
+## What the waiver changed
 
-All new tables carry `org_id`, RLS on from the migration that creates them.
+Gabe's waiver (Participation Agreement and Release of Liability, Saturday
+Pop-Up Workouts) says:
+- **Valid for all 2026 pop-up sessions.** A signature belongs to the person
+  for the season, not to one visit, so waivers are their own table.
+- **Ages 10 and up; under 18 signed by a parent or guardian**, who must be
+  present. A parent's email can carry several kids, so a person who comes is
+  a `popup_guests` row keyed by email and name, not a `library_subscribers`
+  row (one per email).
+- **Emergency contact and a photo yes or no** are part of the form.
 
-### `library_subscribers` (alter)
-- `name text` (nullable). The pop-up form starts saving it.
-- `phone text` (nullable). Same.
-- `added_by uuid references profiles(id)` (nullable). Set when Gabe adds a
-  walk-up by hand, so the list can tell a self-signup from a manual add.
-- `email_opt_in boolean not null default true`. False for a walk-up who came
-  but did not say yes to the email list; sends skip them (decision 6).
-- `email` stays `not null`. See decision 1 for guests with no email.
+## Data model (as built)
 
-### `popup_days` (new)
-`id, org_id, starts_at timestamptz, ends_at timestamptz, location text,
-notes text, created_by, created_at`. One row per Saturday. Gabe creates them
-(or we seed the four published dates: Oct 24, Nov 7, Nov 21, Dec 5, 8:00 to
-9:30am, from the live site copy, not invented). Location stays private here
-the same as on the site: owner-only.
+Migrations `20261019000001_popup_waiver_kind.sql` (the enum value) and
+`20261019000002_popup_roll_call.sql` (everything else).
 
-### `popup_attendance` (new)
-One row per person per day.
-- `popup_day_id`, `subscriber_id` (references `library_subscribers`),
-  unique `(popup_day_id, subscriber_id)`.
-- `arrived_at timestamptz` (present when set; untapping clears the row).
-- `brought_by uuid references library_subscribers(id)` (nullable): "came with
-  so-and-so." A friend points at the person who brought them.
-- `waiver_form_id`, `waiver_version int`, `waiver_signed_at timestamptz`,
-  `waiver_signed_name text`: the acknowledgement, in the
-  `form_acknowledgements` shape (who, which version, when). Lives on the
-  attendance row in v1 because the guest has no `participants` record.
-- `free_session boolean not null default false`: Gabe confirms the comp.
-- `marked_by`, `created_at`, `updated_at`.
+- `library_subscribers` gains `name`, `phone`, `added_by`. It stays the email
+  list: a walk-up or a self-signer joins it only on a yes. anon's insert is
+  narrowed to `(org_id, email, source, name, phone)`.
+- `forms` gains `valid_through date`. Seeded: kind `popup_waiver`, Gabe's text
+  verbatim, version 1, valid through 2026-12-31 (Wild Wanderers org only).
+- `popup_days`: `starts_at, ends_at, location, notes, sign_token` (the QR
+  link). Seeded with the four published Saturdays, 8:00 to 9:30am Pacific.
+  Location left empty for Gabe.
+- `popup_guests`: `full_name, email (required), phone, age_if_minor (10 to
+  17), subscriber_id` (an adult's own list row, never a kid's).
+- `popup_waivers`: guest, form and version, `signed_via` (`self` or
+  `paper`), signed name, guardian name and relationship, emergency contact,
+  `photo_ok`, IP and user agent for a self signature. Unique per guest per
+  version: a new version re-prompts.
+- `popup_attendance`: day, guest, `brought_by` (another guest),
+  `free_session`. Unique per guest per day.
+- Bring-a-friend: friends = present rows that day with `brought_by` = this
+  guest. Two or more shows "session free"; Gabe taps to confirm the comp.
 
-### `forms` (seed)
-Add `form_kind` value `'popup_waiver'` and seed one row: title
-"Pop-up waiver", body a **labeled placeholder** ("Gabe's waiver text goes
-here, not yet provided"), version 1, required. No waiver language is written
-by us.
+## RLS (as built, verified on a local replay of every migration)
 
-### Derived: bring-a-friend
-Eligible on a day = count of present rows that day with
-`brought_by = this person` is 2 or more. Computed in the query, never stored.
-The roster shows the count ("brought 1", "brought 2, free"). Gabe taps
-"Free today" to set `free_session`, so the derived number suggests and he
-decides.
+- All four `popup_*` tables: owner-only `for all`, org-scoped. anon has no
+  table grants. A coach, a client, and another org's owner read zero rows.
+- A same-org trigger on guests, waivers, and attendance refuses any
+  reference across orgs (verified: a forged insert raises 42501).
+- Public signing is two SECURITY DEFINER functions: `popup_waiver_for_token`
+  (returns only the waiver text and the day's start, never the location) and
+  `sign_popup_waiver` (validates every field, refuses under 10, requires a
+  guardian for 10 to 17, marks the guest here when the day is open). Roster
+  views write `popup.roll.view` to `audit_events`.
 
-## RLS
+## Surfaces (as built)
 
-- `popup_days`, `popup_attendance`: owner-only, `for all`, `org_id =
-  get_user_org() and get_user_role() = 'owner'`, the
-  `owner_manages_subscribers` shape. Coaches get nothing until Gabe asks.
-  Anon and clients reach zero rows.
-- `brought_by` must point at a subscriber in the same org: a check in the
-  write path (server action) and a trigger, so a forged id cannot cross orgs.
-- `library_subscribers`: no policy change. The owner already has `for all`.
-  Anon's insert grant stays column-limited by the policy; the marketing form
-  gains `name` and `phone` in its insert.
-- Waiver fields are personal data. Audit access via `audit_events` on roster
-  reads, the same as body data.
-
-## Surfaces
-
-### `/business/popup` (existing, grows)
-Three tabs: **Pop-up list**, **Library list** (both as shipped), and
-**Pop-up days**. Days lists upcoming and past Saturdays with "12 came, 3 free"
-for the past ones. Name shows beside email in both lists once collected.
-
-### `/business/popup/[day]` (new): roll call, phone-first
-- Header: date, "8 here of 23 on the list", waiver count "6 of 8 signed".
-- Search box at the top (type a few letters of a name or email).
-- One row per person on the pop-up list, alphabetical by name, then email.
-  Each row, 44px targets:
-  - **Here** toggle (big, left).
-  - **Waiver** chip: "Waiver signed" (fern) or "Needs waiver" (amber). Tap
-    opens a sheet: show the waiver text and version, type the signed name,
-    confirm. Copy on the chip never frames the person; it is the paperwork.
-  - **Came with** chip: pick who brought them from people marked here.
-  - **Friends** badge, read-only: "Brought 2, session free" with a
-    "Free today" tap.
-- Present people float to the top.
-- **Add someone** button (amber, the one action color), sticky at the bottom:
-  name, email, phone (optional), "They said yes to the email list" checkbox,
-  "Came with" picker. Saves a `library_subscribers` row (`source
-  'saturday'`, `added_by` Gabe) and marks them here in one step. If the
-  email is already on the list, it reuses that row and marks them here,
-  keeping their original source.
+- `/business/popup`: tabs Pop-up list, Library list, Pop-up days. Lists show
+  the name beside the email. Pop-up days shows the next one with a big Take
+  roll button, the season, and an add-a-day form.
+- `/business/popup/[day]`: roll call. Counts (here, on the list, waivers on
+  file), the waiver QR sheet, Add someone (top and bottom), search, Here and
+  Not here yet sections. One 56px Here toggle per row; tap a row for came
+  with, the free session, the waiver on file (emergency contact with a tap to
+  call), or "They signed the paper copy".
+- `/popup/sign/[token]`: public, no account. The waiver text, the form's
+  fields, a typed-name signature, an unticked opt-in for the pop-up email.
+  The link works until 12 hours after the day ends; signing within two hours
+  of the session also checks the guest in.
 
 ## Build order (one commit each)
 
@@ -180,23 +155,20 @@ attendance number is invented.
 - **Waiver version changes mid-season.** A new version shows "Needs waiver"
   again for everyone; old signatures are never carried forward (Ring 7 rule).
 
-## Open decisions (need Gabe)
+## Decisions (resolved 2026-10-19)
 
-1. **Walk-up with no email.** `email` is required today. Options: (a) require
-   an email at the table (it is a mailing list, and it is how the next
-   Saturday's spot is shared); (b) allow name-only guests, which means making
-   `email` nullable. **Recommend (a).**
-2. **Is the free session that same day, or the next one?** The site says
-   "Bring two friends and yours is free," which reads as same day. Confirm.
-3. **Does a friend count if they were already on the list?** Or only new
-   people? Recommend: anyone who came with them that day.
-4. **The waiver itself.** Paper or in the app? If in the app, Gabe needs to
-   supply the waiver text; we do not write it. Has he had it reviewed, and
-   does the insurance for the pop-ups require a particular form? The app
-   will not imply a waiver has been legally reviewed.
-5. **Guests sign on their own phone (QR at the table)?** Faster on a busy
-   morning and gives a real signature, but it means a public signing page
-   with anon writes. v2 unless he wants it now.
-6. **Adding a walk-up to the email list.** Recommend only with the "said yes"
-   box ticked; without it, they are recorded for the day but not sent the
-   weekly note.
+1. Email is required for every walk-up and signer.
+2. The free session is the same day.
+3. Anyone who came with them that day counts as a friend.
+4. The waiver is on paper at the table and in the app. Text is Gabe's.
+5. Guests sign on their own phone through the QR. Built in v1.
+6. A walk-up joins the email list only when they said yes.
+7. Sarah gets an owner login in the same org; the screen stays owner-only.
+
+## Flags
+
+- The waiver title carries an em dash, against the voice rule. It is Gabe's
+  signed legal document, so it is stored exactly as the paper copy reads.
+- The app does not claim the waiver has been reviewed by an attorney.
+- Deploy order: apply the migration before the marketing site's pop-up form
+  starts writing name and phone, or that form's inserts fail.
