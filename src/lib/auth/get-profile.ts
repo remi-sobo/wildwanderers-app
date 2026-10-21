@@ -42,8 +42,10 @@ export const getSessionProfile = cache(async (): Promise<SessionProfile | null> 
 });
 
 // Where a role belongs. Owner and coach share the coach shell, a parent gets
-// the family view, everyone else lands on the client home.
-export function surfaceForRole(role: Role | undefined): string {
+// the family view, everyone else lands on the client home. An owner on the
+// owner HQ layout (lib/flags) lands on Today.
+export function surfaceForRole(role: Role | undefined, opts?: { ownerHq?: boolean }): string {
+  if (role === "owner" && opts?.ownerHq) return "/today";
   if (role === "owner" || role === "coach") return "/program";
   if (role === "parent") return "/family";
   return "/home";

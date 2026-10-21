@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { NavItem, NavSection } from "./nav";
-import { mobileNavForRole, sectionsForRole } from "./nav";
+import { mobileNavForRole, ownerHqMobileNav, ownerHqSections, sectionsForRole } from "./nav";
+import { surfaceForRole } from "@/lib/auth/get-profile";
 
 // The regression lock for the classic navigation. These are the menus
 // every role has in production today. The owner HQ layout is additive
@@ -111,5 +112,49 @@ describe("classic mobile tabs and More", () => {
       tabs: ["/family", "/messages", "/from-your-coach", "/trailhead"],
       more: ["/settings"],
     });
+  });
+});
+
+describe("owner HQ layout", () => {
+  it("phone: Today, Week, Business, Messages and no More sheet", () => {
+    const m = ownerHqMobileNav();
+    expect(m.tabs.map((i) => [i.href, i.label])).toEqual([
+      ["/today", "Today"],
+      ["/schedule", "Week"],
+      ["/business", "Business"],
+      ["/messages", "Messages"],
+    ]);
+    expect(m.more).toEqual([]);
+  });
+
+  it("desktop: the same four, then Shortcuts to existing routes", () => {
+    expect(sections(ownerHqSections())).toEqual([
+      [null, [
+        ["/today", "Today", null],
+        ["/schedule", "Week", null],
+        ["/business", "Business", null],
+        ["/messages", "Messages", null],
+      ]],
+      ["Shortcuts", [
+        ["/program", "Clients", null],
+        ["/boys", "Dads & Kids", null],
+        ["/business/popup", "Pop-up days", null],
+        ["/tasks", "Tasks", null],
+        ["/schedule", "Schedule", null],
+        ["/business/pipeline", "Leads", null],
+        ["/business/numbers", "Numbers", null],
+      ]],
+    ]);
+  });
+});
+
+describe("landing", () => {
+  it("only a flagged owner lands on Today", () => {
+    expect(surfaceForRole("owner", { ownerHq: true })).toBe("/today");
+    expect(surfaceForRole("owner", { ownerHq: false })).toBe("/program");
+    expect(surfaceForRole("owner")).toBe("/program");
+    expect(surfaceForRole("coach", { ownerHq: true })).toBe("/program");
+    expect(surfaceForRole("parent", { ownerHq: true })).toBe("/family");
+    expect(surfaceForRole("client", { ownerHq: true })).toBe("/home");
   });
 });
