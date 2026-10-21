@@ -4,6 +4,16 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Advisor, Phase 2 on branch, 2026-10-21: the advisor role with no org,
+relationships and shares managed by the owner, private and shared
+advisor items, a masked advisor_tasks() projection, and retry-safe
+advisor_assign_task(). Routing no longer lets any role fall through to
+the client home. Owner: Advisor access in Settings, From your advisor
+on /tasks, Share with your advisor in the task drawer. Advisor: /advisor
+Work (Mine, the owner's, Waiting on). SQL tests prove zero reads of
+every existing table and the masking. See specs/advisor.md. Next:
+Calls (Phase 3).
+
 Owner HQ, Phase 0 and 1 on branch, 2026-10-21 (not merged, not deployed):
 the approved redesign's owner layout behind OWNER_HQ (off by default).
 Flag on, the owner gets Today, Week, Business, Messages on phone and
