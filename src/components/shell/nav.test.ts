@@ -120,7 +120,7 @@ describe("owner HQ layout", () => {
     const m = ownerHqMobileNav();
     expect(m.tabs.map((i) => [i.href, i.label])).toEqual([
       ["/today", "Today"],
-      ["/schedule", "Week"],
+      ["/week", "Week"],
       ["/business", "Business"],
       ["/messages", "Messages"],
     ]);
@@ -131,7 +131,7 @@ describe("owner HQ layout", () => {
     expect(sections(ownerHqSections())).toEqual([
       [null, [
         ["/today", "Today", null],
-        ["/schedule", "Week", null],
+        ["/week", "Week", null],
         ["/business", "Business", null],
         ["/messages", "Messages", null],
       ]],

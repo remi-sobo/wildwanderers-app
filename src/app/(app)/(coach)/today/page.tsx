@@ -5,6 +5,7 @@ import { getOwnerHq } from "@/lib/flags/owner-hq";
 import { getTaskList } from "@/lib/data/tasks";
 import { getScheduleBlocks, getBlockTaskLinks } from "@/lib/data/schedule";
 import { getSessionsAroundNow } from "@/lib/data/sessions";
+import { getPicks } from "@/lib/data/week";
 import { TodayView } from "@/components/coach/TodayView";
 
 // Today: the owner's landing under the owner HQ layout. Anyone else, or
@@ -14,12 +15,13 @@ export default async function TodayPage() {
   const { active } = await getOwnerHq(profile.role);
   if (!active) redirect(surfaceForRole(profile.role));
 
-  const [tasks, blocks, links, sessions] = await Promise.all([
+  const [tasks, blocks, links, sessions, picks] = await Promise.all([
     getTaskList(),
     getScheduleBlocks(),
     getBlockTaskLinks(),
     getSessionsAroundNow(),
+    getPicks(),
   ]);
 
-  return <TodayView tasks={tasks} blocks={blocks} links={links} sessions={sessions} />;
+  return <TodayView tasks={tasks} blocks={blocks} links={links} sessions={sessions} picks={picks} />;
 }

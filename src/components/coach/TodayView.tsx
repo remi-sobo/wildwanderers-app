@@ -18,6 +18,9 @@ import type { SessionRow } from "@/lib/data/sessions";
 import { RECURS, formatRange, formatMinutes, weekStartKey } from "@/lib/schedule/blocks";
 import { localDayKey } from "@/lib/hq/business-home";
 import { buildAgenda, dueLabel, nextUp, selectTodayTasks, type AgendaItem } from "@/lib/hq/today";
+import { addDays } from "@/lib/hq/week";
+import type { DayPick, WeekPick } from "@/lib/data/week";
+import { MyThree } from "@/components/coach/MyThree";
 
 function TaskRow({
   task,
@@ -130,11 +133,13 @@ export function TodayView({
   blocks,
   links,
   sessions,
+  picks,
 }: {
   tasks: TaskListItem[];
   blocks: ScheduleBlock[];
   links: BlockTaskLink[];
   sessions: SessionRow[];
+  picks: { days: DayPick[]; weeks: WeekPick[] };
 }) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
@@ -205,6 +210,13 @@ export function TodayView({
       </section>
 
       <div className="flex flex-col gap-4">
+        <MyThree
+          tasks={tasks}
+          todayKey={todayKey}
+          todayIds={picks.days.filter((p) => p.on_date === todayKey).map((p) => p.task_id)}
+          yesterdayIds={picks.days.filter((p) => p.on_date === addDays(todayKey, -1)).map((p) => p.task_id)}
+          fiveIds={weekKey ? picks.weeks.filter((p) => p.week_start === weekKey).map((p) => p.task_id) : []}
+        />
         <section
           aria-labelledby="today-pinned"
           className="rounded-[18px] border border-[color:var(--border-hair)] bg-card px-4 py-3 shadow-[var(--shadow-card)]"
