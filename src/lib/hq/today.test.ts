@@ -74,5 +74,6 @@ describe("dueLabel", () => {
   it("labels today and overdue", () => {
     expect(dueLabel("2026-10-21", "2026-10-21")).toEqual({ text: "Due today", overdue: false });
     expect(dueLabel("2026-10-16", "2026-10-21")).toEqual({ text: "Overdue, was Oct 16", overdue: true });
+    expect(dueLabel("2026-10-24", "2026-10-21")).toEqual({ text: "Due Oct 24", overdue: false });
   });
 });
