@@ -3,9 +3,12 @@ import { getMyOrg, getOrgCoaches, type Org, type OrgCoach } from "@/lib/data/org
 import { getMyScheduleSettings } from "@/lib/data/schedule";
 import { OrgSettings } from "@/components/settings/OrgSettings";
 import { ScheduleSettingsCard } from "@/components/settings/ScheduleSettingsCard";
+import { LayoutCard } from "@/components/settings/LayoutCard";
+import { getOwnerHq } from "@/lib/flags/owner-hq";
 
 export default async function SettingsPage() {
   const session = await getSessionProfile();
+  const ownerHq = await getOwnerHq(session?.profile?.role);
   const name =
     [session?.profile?.first_name, session?.profile?.last_name].filter(Boolean).join(" ").trim() || "You";
   const isOwner = session?.profile?.role === "owner";
@@ -33,6 +36,8 @@ export default async function SettingsPage() {
           {session?.profile?.role ? <span className="capitalize"> · {session.profile.role}</span> : null}
         </p>
       </section>
+
+      {ownerHq.offered ? <LayoutCard active={ownerHq.active} /> : null}
 
       {scheduleSettings ? <ScheduleSettingsCard settings={scheduleSettings} /> : null}
 
