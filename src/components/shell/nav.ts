@@ -193,8 +193,7 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
 // old links keep working. The classic menus above are unchanged.
 
 const HQ_TODAY: NavItem = { href: "/today", label: "Today", icon: Sun };
-// Week opens the Schedule until the planned /week page exists.
-const HQ_WEEK: NavItem = { href: "/schedule", label: "Week", icon: CalendarRange };
+const HQ_WEEK: NavItem = { href: "/week", label: "Week", icon: CalendarRange };
 const HQ_BUSINESS: NavItem = { href: "/business", label: "Business", icon: Briefcase };
 const HQ_DESTINATIONS: NavItem[] = [HQ_TODAY, HQ_WEEK, HQ_BUSINESS, MESSAGES];
 
