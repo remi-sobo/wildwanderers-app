@@ -1,14 +1,27 @@
 import { requireOwner } from "@/lib/auth/require-owner";
+import { getOwnerHq } from "@/lib/flags/owner-hq";
 import { BusinessNav } from "@/components/coach/BusinessNav";
 
 // The Business sub-shell. Owner-only, so a coach who reaches a /business URL is
-// sent back to Program. Every business page gets the sub-nav.
+// sent back to Program. Every business page gets the sub-nav. Under the owner
+// HQ layout /business is the launchpad with its own header, and every other
+// business page gets a way back to it above the same sub-nav.
 export default async function BusinessLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireOwner();
+  const { profile } = await requireOwner();
+  const { active: hq } = await getOwnerHq(profile.role);
+
+  if (hq) {
+    return (
+      <div className="flex flex-col gap-6">
+        <BusinessNav hq />
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
