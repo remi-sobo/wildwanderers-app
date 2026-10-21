@@ -4,6 +4,18 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Owner HQ, Phase 0 and 1 on branch, 2026-10-21 (not merged, not deployed):
+the approved redesign's owner layout behind OWNER_HQ (off by default).
+Flag on, the owner gets Today, Week, Business, Messages on phone and
+desktop, a Business launchpad with editable Quick access, Numbers at
+/business/numbers, and Today reading real pinned and due tasks plus the
+day's blocks and sessions. Flag off is the production app unchanged,
+locked by nav tests for all four roles. Also new: vitest (npm test), a
+local Postgres access-test harness (npm run test:rls), and a profiles
+guard migration so nobody can set their own role or org (not applied).
+See specs/owner-hq.md. Next: review, then Phase 2 (advisor role and
+RLS).
+
 Schedule shipped, 2026-08-31 (design_handoff_schedule): Gabe's recurring
 work week as a time grid at /schedule, staff nav. Template-week model:
 schedule_blocks (grp ties one event across days, day 0 Monday, minutes
