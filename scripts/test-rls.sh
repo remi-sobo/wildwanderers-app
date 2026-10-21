@@ -46,7 +46,11 @@ trap cleanup EXIT
 run "'$PG_BIN/initdb' -D '$DATA' -U postgres --auth=trust" >/dev/null
 run "'$PG_BIN/pg_ctl' -D '$DATA' -o '-p $PORT -k $WORK -c listen_addresses=' -l '$WORK/log' -w start" >/dev/null
 
-PSQL=(psql -X -q -v ON_ERROR_STOP=1 -h "$WORK" -p "$PORT" -U postgres -d postgres)
+PSQL=(psql -X -q -v ON_ERROR_STOP=1 -h "$WORK" -p "$PORT" -U postgres -d ww_template)
+
+# Migrations go into a template once; every test file gets a fresh copy,
+# so fixtures in one file never collide with another.
+psql -X -q -h "$WORK" -p "$PORT" -U postgres -d postgres -c "create database ww_template" >/dev/null
 
 "${PSQL[@]}" -f "$ROOT/supabase/tests/_supabase_stub.sql" >/dev/null
 for f in "$ROOT"/supabase/migrations/*.sql; do
@@ -66,9 +70,12 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
 done
 
 status=0
+i=0
 for t in "$ROOT"/supabase/tests/*.test.sql; do
   name="$(basename "$t")"
-  if "${PSQL[@]}" -f "$t" 2>"$WORK/err"; then
+  i=$((i + 1))
+  psql -X -q -h "$WORK" -p "$PORT" -U postgres -d postgres -c "create database ww_test_$i template ww_template" >/dev/null
+  if psql -X -q -v ON_ERROR_STOP=1 -h "$WORK" -p "$PORT" -U postgres -d "ww_test_$i" -f "$t" 2>"$WORK/err"; then
     echo "ok    $name"
   else
     echo "FAIL  $name" >&2
