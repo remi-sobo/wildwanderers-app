@@ -4,6 +4,8 @@ import { getMyScheduleSettings } from "@/lib/data/schedule";
 import { OrgSettings } from "@/components/settings/OrgSettings";
 import { ScheduleSettingsCard } from "@/components/settings/ScheduleSettingsCard";
 import { LayoutCard } from "@/components/settings/LayoutCard";
+import { AdvisorAccessCard } from "@/components/settings/AdvisorAccessCard";
+import { getAdvisorAccess, type AdvisorAccess } from "@/lib/data/advisor-owner";
 import { getOwnerHq } from "@/lib/flags/owner-hq";
 
 export default async function SettingsPage() {
@@ -18,6 +20,7 @@ export default async function SettingsPage() {
     ? await Promise.all([getMyOrg(), getOrgCoaches()])
     : [null, []];
   const scheduleSettings = isStaff ? await getMyScheduleSettings() : null;
+  const advisorAccess: AdvisorAccess | null = isOwner ? await getAdvisorAccess() : null;
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
@@ -42,6 +45,8 @@ export default async function SettingsPage() {
       {scheduleSettings ? <ScheduleSettingsCard settings={scheduleSettings} /> : null}
 
       {isOwner && org ? <OrgSettings org={org} coaches={coaches} /> : null}
+
+      {advisorAccess ? <AdvisorAccessCard access={advisorAccess} /> : null}
     </div>
   );
 }

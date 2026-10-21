@@ -8,13 +8,14 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { X, Check, Pin, Send } from "lucide-react";
+import { X, Check, Pin, Send, Handshake } from "lucide-react";
 import {
   updateTask,
   setTaskDone,
   toggleTaskPin,
   addTaskComment,
 } from "@/lib/tasks/actions";
+import { setTaskSharedWithAdvisor } from "@/lib/advisor/owner-actions";
 import { PROGRAMS, PROGRAM_LABEL } from "@/lib/tasks/programs";
 import type { TaskBucket, TaskListItem, TaskComment, StaffOption } from "@/lib/data/tasks";
 
@@ -43,12 +44,15 @@ export function TaskDrawer({
   comments,
   staff,
   onClose,
+  advisorSharing = false,
 }: {
   task: TaskListItem;
   buckets: TaskBucket[];
   comments: TaskComment[];
   staff: StaffOption[];
   onClose: () => void;
+  /** Owner with an active advisor and the tasks share on. */
+  advisorSharing?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -169,6 +173,26 @@ export function TaskDrawer({
               <Pin size={13} fill={task.pin_today ? "currentColor" : "none"} aria-hidden="true" />
               {task.pin_today ? "Pinned for today" : "Pin for today"}
             </button>
+            {advisorSharing ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => setTaskSharedWithAdvisor(task.id, !task.shared_with_advisor))}
+                aria-pressed={task.shared_with_advisor}
+                title={task.link ? "Your advisor sees this only as a client task, with no details." : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors max-md:min-h-[44px] ${
+                  task.shared_with_advisor
+                    ? "border-forest bg-forest/10 text-forest"
+                    : "border-[color:var(--border-strong)] text-ink hover:bg-inset"
+                } disabled:opacity-50`}
+              >
+                <Handshake size={13} aria-hidden="true" />
+                {task.shared_with_advisor ? "Shared with your advisor" : "Share with your advisor"}
+              </button>
+            ) : null}
+            {task.kind === "assignment" ? (
+              <span className="text-[12.5px] font-semibold text-bark">From your advisor</span>
+            ) : null}
             {task.link ? (
               <Link
                 href={task.link.href}
