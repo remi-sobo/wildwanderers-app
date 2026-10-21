@@ -4,6 +4,13 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Advisor Calls, Phase 3 on branch, 2026-10-22: paste a call transcript,
+propose items with their source quotes through the AI chokepoint,
+review in four groups, and send once (advisor_send_call). Transcripts
+are kept 90 days (hidden on expiry, then purged), only the advisor
+deletes, and the owner never reads transcripts or proposals. Prep the
+next call drafts an agenda from real work. See specs/advisor-calls.md.
+
 Advisor, Phase 2 on branch, 2026-10-21: the advisor role with no org,
 relationships and shares managed by the owner, private and shared
 advisor items, a masked advisor_tasks() projection, and retry-safe
