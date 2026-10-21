@@ -114,11 +114,11 @@ export function nextUp(agenda: AgendaItem[], now: Date): AgendaItem | null {
   );
 }
 
-/** "Due today" or "Overdue, was Oct 16". */
+/** "Due today", "Due Oct 24" (a pinned task may be due later), or "Overdue, was Oct 16". */
 export function dueLabel(due: string, todayKey: string): { text: string; overdue: boolean } {
   const key = due.slice(0, 10);
-  if (key >= todayKey) return { text: "Due today", overdue: false };
+  if (key === todayKey) return { text: "Due today", overdue: false };
   const [y, mo, d] = key.split("-").map(Number);
   const when = new Date(y, mo - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return { text: `Overdue, was ${when}`, overdue: true };
+  return key > todayKey ? { text: `Due ${when}`, overdue: false } : { text: `Overdue, was ${when}`, overdue: true };
 }
