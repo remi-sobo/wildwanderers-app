@@ -9,7 +9,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { acceptSuggestion, declineSuggestion } from "@/lib/advisor/owner-actions";
-import type { FromAdvisorTask } from "@/lib/data/advisor-owner";
+import type { FromAdvisorTask, SharedAdvisorItem } from "@/lib/data/advisor-owner";
 
 function dueText(due: string | null): string | null {
   if (!due) return null;
@@ -17,13 +17,13 @@ function dueText(due: string | null): string | null {
   return `Due ${new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }
 
-export function FromAdvisor({ items }: { items: FromAdvisorTask[] }) {
+export function FromAdvisor({ items, shared = [] }: { items: FromAdvisorTask[]; shared?: SharedAdvisorItem[] }) {
   const router = useRouter();
   const [, start] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && shared.length === 0) return null;
 
   function act(id: string, fn: () => Promise<{ error: string | null }>) {
     setBusy(id);
@@ -92,6 +92,21 @@ export function FromAdvisor({ items }: { items: FromAdvisorTask[] }) {
                   Not saved. {errors[t.id]}
                 </p>
               ) : null}
+            </li>
+          );
+        })}
+        {shared.map((s) => {
+          const due = dueText(s.due_date);
+          return (
+            <li key={s.id} className="border-t border-[color:var(--border-hair)] py-3 first:border-t-0">
+              <p className="text-[12px] font-semibold text-bark">
+                {s.kind === "question" ? "Question" : "Ready for you"} · {s.advisor_name}
+              </p>
+              <p className="text-[15px] font-semibold text-forest-deep">{s.title}</p>
+              {s.notes ? <p className="mt-0.5 whitespace-pre-line text-[13px] text-[color:var(--color-text)]">{s.notes}</p> : null}
+              <p className="mt-0.5 text-[12.5px] text-[color:var(--color-text-muted)]">
+                {due ? `${due} · ` : ""}Reply to {s.advisor_name} directly. It clears when they mark it done.
+              </p>
             </li>
           );
         })}

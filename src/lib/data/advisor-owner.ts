@@ -61,3 +61,35 @@ export async function getFromAdvisor(): Promise<FromAdvisorTask[]> {
     }),
   );
 }
+
+export type SharedAdvisorItem = {
+  id: string;
+  kind: "deliverable" | "question";
+  title: string;
+  notes: string | null;
+  due_date: string | null;
+  advisor_name: string;
+};
+
+// What an advisor shared that is waiting on the owner: deliverables they
+// marked ready, and open questions. Owner RLS returns shared rows only;
+// private work never reaches this query. Read only for the owner; each
+// clears when the advisor marks it done or delivered.
+export async function getSharedAdvisorItems(): Promise<SharedAdvisorItem[]> {
+  const supabase = await createClient();
+  const [{ data: rows }, { data: rels }] = await Promise.all([
+    supabase
+      .from("advisor_items")
+      .select("id, kind, title, notes, due_date, stage, advisor_id")
+      .eq("status", "open")
+      .or("and(kind.eq.deliverable,stage.eq.ready),kind.eq.question")
+      .order("created_at", { ascending: false }),
+    supabase.from("advisor_relationships").select("advisor_id, advisor_name"),
+  ]);
+  const names = new Map(
+    ((rels ?? []) as { advisor_id: string; advisor_name: string }[]).map((r) => [r.advisor_id, r.advisor_name]),
+  );
+  return ((rows ?? []) as (SharedAdvisorItem & { advisor_id: string; stage: string | null })[]).map(
+    ({ advisor_id, stage: _stage, ...r }) => ({ ...r, advisor_name: names.get(advisor_id) || "Your advisor" }),
+  );
+}

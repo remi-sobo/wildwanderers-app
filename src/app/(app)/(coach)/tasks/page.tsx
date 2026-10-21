@@ -1,5 +1,5 @@
 import { getTaskList, getAllTaskComments, getStaffOptions, getTaskBuckets } from "@/lib/data/tasks";
-import { getAdvisorAccess, getFromAdvisor } from "@/lib/data/advisor-owner";
+import { getAdvisorAccess, getFromAdvisor, getSharedAdvisorItems } from "@/lib/data/advisor-owner";
 import { getSessionProfile } from "@/lib/auth/get-profile";
 import { runTaskSweep } from "@/lib/tasks/actions";
 import { TasksBoard } from "@/components/coach/TasksBoard";
@@ -14,13 +14,14 @@ export default async function TasksPage() {
   await runTaskSweep();
   const session = await getSessionProfile();
   const isOwner = session?.profile?.role === "owner";
-  const [tasks, buckets, commentsByTask, staff, access, fromAdvisor] = await Promise.all([
+  const [tasks, buckets, commentsByTask, staff, access, fromAdvisor, sharedItems] = await Promise.all([
     getTaskList(),
     getTaskBuckets(),
     getAllTaskComments(),
     getStaffOptions(),
     isOwner ? getAdvisorAccess() : Promise.resolve(null),
     isOwner ? getFromAdvisor() : Promise.resolve([]),
+    isOwner ? getSharedAdvisorItems() : Promise.resolve([]),
   ]);
   const advisorSharing = Boolean(access && access.shares.tasks && access.advisors.some((a) => a.active));
 
@@ -32,7 +33,7 @@ export default async function TasksPage() {
           What needs doing.
         </h1>
       </div>
-      <FromAdvisor items={fromAdvisor} />
+      <FromAdvisor items={fromAdvisor} shared={sharedItems} />
       <TasksBoard
         tasks={tasks}
         buckets={buckets}
