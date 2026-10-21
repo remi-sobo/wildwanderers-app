@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GitBranch, Mail, Wallet, Target } from "lucide-react";
+import { ChevronLeft, LayoutDashboard, GitBranch, Mail, Wallet, Target, ChartColumn } from "lucide-react";
 
 const TABS = [
   { href: "/business", label: "Dashboard", icon: LayoutDashboard },
@@ -12,12 +12,19 @@ const TABS = [
   { href: "/business/goals", label: "Goals", icon: Target },
 ];
 
+// Under the owner HQ layout /business is the launchpad, so the dashboard
+// tab becomes Numbers at its own address. Every other tab is unchanged.
+const HQ_TABS = [{ href: "/business/numbers", label: "Numbers", icon: ChartColumn }, ...TABS.slice(1)];
+
 // The Business sub-nav. A pill row across the top of every business page.
-export function BusinessNav() {
+// With hq on it hides on the launchpad itself and leads with a way back.
+export function BusinessNav({ hq = false }: { hq?: boolean }) {
   const pathname = usePathname();
-  return (
+  if (hq && pathname === "/business") return null;
+  const tabs = hq ? HQ_TABS : TABS;
+  const pills = (
     <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const active = t.href === "/business" ? pathname === "/business" : pathname.startsWith(t.href);
         const Icon = t.icon;
         return (
@@ -35,6 +42,19 @@ export function BusinessNav() {
           </Link>
         );
       })}
+    </div>
+  );
+  if (!hq) return pills;
+  return (
+    <div className="flex flex-col gap-3">
+      <Link
+        href="/business"
+        className="inline-flex min-h-[44px] w-fit items-center gap-1 text-[14px] font-semibold text-forest md:min-h-0"
+      >
+        <ChevronLeft size={17} strokeWidth={2} aria-hidden="true" />
+        Business
+      </Link>
+      {pills}
     </div>
   );
 }
