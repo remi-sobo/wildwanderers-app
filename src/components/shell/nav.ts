@@ -4,8 +4,11 @@ import {
   BookOpen,
   Briefcase,
   CalendarDays,
+  CalendarRange,
+  ChartColumn,
   Footprints,
   ClipboardCheck,
+  GitBranch,
   ClipboardList,
   Dumbbell,
   House,
@@ -13,7 +16,10 @@ import {
   MessageCircle,
   NotebookPen,
   Settings,
+  Sun,
+  Tent,
   TrendingUp,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/auth/get-profile";
@@ -30,7 +36,12 @@ export type NavItem = {
   /** Short label for the bottom tab bar, where space is tight. */
   short?: string;
 };
-export type NavSection = { label?: string; items: NavItem[] };
+export type NavSection = {
+  label?: string;
+  items: NavItem[];
+  /** Smaller rows with no hints, for a long list of shortcuts. */
+  compact?: boolean;
+};
 export type MobileNavSplit = { tabs: NavItem[]; more: NavItem[] };
 
 const MESSAGES: NavItem = { href: "/messages", label: "Messages", icon: MessageCircle };
@@ -146,4 +157,35 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
     tabs: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, MESSAGES],
     more: [CLIENT_HOMEWORK, CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
   };
+}
+
+// ── Owner HQ layout (behind the owner_hq flag, see lib/flags) ──
+// Four destinations on both phone and desktop; the desktop rail adds a
+// Shortcuts list. Everything else is one tap away on the Business
+// launchpad. Every href is an existing route; nothing is renamed, so
+// old links keep working. The classic menus above are unchanged.
+
+const HQ_TODAY: NavItem = { href: "/today", label: "Today", icon: Sun };
+// Week opens the Schedule until the planned /week page exists.
+const HQ_WEEK: NavItem = { href: "/schedule", label: "Week", icon: CalendarRange };
+const HQ_BUSINESS: NavItem = { href: "/business", label: "Business", icon: Briefcase };
+const HQ_DESTINATIONS: NavItem[] = [HQ_TODAY, HQ_WEEK, HQ_BUSINESS, MESSAGES];
+
+const HQ_SHORTCUTS: NavItem[] = [
+  { href: "/program", label: "Clients", icon: Users },
+  { href: "/boys", label: "Dads & Kids", icon: Backpack },
+  { href: "/business/popup", label: "Pop-up days", icon: Tent },
+  { href: "/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/schedule", label: "Schedule", icon: CalendarDays },
+  { href: "/business/pipeline", label: "Leads", icon: GitBranch },
+  { href: "/business/numbers", label: "Numbers", icon: ChartColumn },
+];
+
+export function ownerHqSections(): NavSection[] {
+  return [{ items: HQ_DESTINATIONS }, { label: "Shortcuts", items: HQ_SHORTCUTS, compact: true }];
+}
+
+// No More sheet: the launchpad holds the rest of the map.
+export function ownerHqMobileNav(): MobileNavSplit {
+  return { tabs: HQ_DESTINATIONS, more: [] };
 }
