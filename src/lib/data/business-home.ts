@@ -51,6 +51,7 @@ export async function getBusinessHome(): Promise<BusinessHomeData> {
       .from("business_tasks")
       .select("due_date")
       .in("status", ["open", "in_progress"])
+      .neq("kind", "suggestion")
       .not("due_date", "is", null),
     supabase
       .from("popup_days")

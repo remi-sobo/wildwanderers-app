@@ -163,11 +163,14 @@ export function TasksBoard({
   buckets,
   commentsByTask,
   staff,
+  advisorSharing = false,
 }: {
   tasks: TaskListItem[];
   buckets: TaskBucket[];
   commentsByTask: Record<string, TaskComment[]>;
   staff: StaffOption[];
+  /** Owner with an active advisor and the tasks share on (specs/advisor.md). */
+  advisorSharing?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -648,6 +651,7 @@ export function TasksBoard({
           comments={commentsByTask[openTask.id] ?? []}
           staff={staff}
           onClose={() => setOpenTaskId(null)}
+          advisorSharing={advisorSharing}
         />
       ) : null}
     </div>

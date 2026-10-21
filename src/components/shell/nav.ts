@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   GitBranch,
   ClipboardList,
+  Handshake,
   Dumbbell,
   House,
   ListChecks,
@@ -126,10 +127,18 @@ const PARENT_SECTIONS: NavSection[] = [
   { items: [SETTINGS] },
 ];
 
+// An advisor works with the owner on the business: their own workspace and
+// their account, nothing of the coaching side. Calls and Overview arrive
+// with their screens.
+const ADVISOR_WORK: NavItem = { href: "/advisor", label: "Work", icon: Handshake, hint: "Your work and shared work" };
+const ADVISOR_SECTIONS: NavSection[] = [{ label: "Advisor", items: [ADVISOR_WORK] }, { items: [SETTINGS] }];
+
 export function sectionsForRole(role: Role): NavSection[] {
   if (role === "owner" || role === "coach") return coachSections(role);
   if (role === "parent") return PARENT_SECTIONS;
-  return CLIENT_SECTIONS;
+  if (role === "client") return CLIENT_SECTIONS;
+  if (role === "advisor") return ADVISOR_SECTIONS;
+  return [{ items: [SETTINGS] }];
 }
 
 // The bottom bar carries the daily loop; everything else lives one tap away
@@ -153,10 +162,14 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
       more: [SETTINGS],
     };
   }
-  return {
-    tabs: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, MESSAGES],
-    more: [CLIENT_HOMEWORK, CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
-  };
+  if (role === "client") {
+    return {
+      tabs: [CLIENT_HOME, CLIENT_TRAINING, CLIENT_LOG, MESSAGES],
+      more: [CLIENT_HOMEWORK, CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
+    };
+  }
+  if (role === "advisor") return { tabs: [ADVISOR_WORK, SETTINGS], more: [] };
+  return { tabs: [SETTINGS], more: [] };
 }
 
 // ── Owner HQ layout (behind the owner_hq flag, see lib/flags) ──
