@@ -4,6 +4,15 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
+Week, Phase 4a on branch, 2026-10-22: My three on Today (up to three
+real tasks for the local day, separate from pins, From yesterday to
+pick again) and This Week's Five at /week (a suggested five to edit,
+From last week to carry or let go, the rest of the week's due tasks).
+day_focus and week_plans point at business_tasks, caps in the schema,
+replaced through invoker functions so RLS checks every pick. The HQ
+Week tab opens /week. See specs/week.md. Next: one-day schedule
+overrides (4b).
+
 Advisor Calls, Phase 3 on branch, 2026-10-22: paste a call transcript,
 propose items with their source quotes through the AI chokepoint,
 review in four groups, and send once (advisor_send_call). Transcripts
