@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/lib/auth/get-profile";
 import { Contours } from "@/components/brand/Contours";
-import { ownerHqSections, sectionsForRole } from "./nav";
+import { activeHref, ownerHqSections, sectionsForRole } from "./nav";
 import { SignOutButton } from "./SignOutButton";
 
 function initials(name: string) {
@@ -67,7 +67,7 @@ export function Sidebar({
             {section.compact ? (
               <ul className="flex flex-col gap-px">
                 {section.items.map((item) => {
-                  const active = current.startsWith(item.href);
+                  const active = activeHref(section.items, current) === item.href;
                   const Icon = item.icon;
                   return (
                     <li key={item.href}>
@@ -88,7 +88,7 @@ export function Sidebar({
             ) : (
             <ul className="flex flex-col gap-1">
               {section.items.map((item) => {
-                const active = current.startsWith(item.href);
+                const active = activeHref(section.items, current) === item.href;
                 const Icon = item.icon;
                 return (
                   <li key={item.href}>
