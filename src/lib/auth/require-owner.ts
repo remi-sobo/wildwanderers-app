@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { getSessionProfile, type Profile } from "./get-profile";
+import { getSessionProfile, surfaceForRole, type Profile } from "./get-profile";
 
-// Guards the Business switch. Only the owner passes; a coach is sent to Program,
-// a client to their home, anyone signed out to login. Business is Gabe's back
+// Guards the Business switch. Only the owner passes; everyone else goes to their
+// own surface, anyone signed out to login. Business is Gabe's back
 // office and never opens to another role.
 export async function requireOwner(): Promise<{
   userId: string;
@@ -14,7 +14,7 @@ export async function requireOwner(): Promise<{
 
   const { profile } = session;
   if (profile.role !== "owner") {
-    redirect(profile.role === "coach" ? "/program" : "/home");
+    redirect(surfaceForRole(profile.role));
   }
   return { userId: session.userId, email: session.email, profile };
 }
