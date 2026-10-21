@@ -39,3 +39,20 @@ export async function getMyNextSession(): Promise<SessionRow | null> {
     .maybeSingle();
   return (data as SessionRow | null) ?? null;
 }
+
+// Staff: booked sessions in a window around now, for the owner HQ Today
+// page, which keeps only those on the viewer's local today. RLS scopes
+// the read (staff see their org's sessions).
+export async function getSessionsAroundNow(): Promise<SessionRow[]> {
+  const supabase = await createClient();
+  const from = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const to = new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("sessions")
+    .select("id, title, kind, start_at, end_at, location, notes, client_id")
+    .eq("is_cancelled", false)
+    .gte("start_at", from)
+    .lte("start_at", to)
+    .order("start_at", { ascending: true });
+  return (data as SessionRow[] | null) ?? [];
+}

@@ -14,6 +14,7 @@ const TITLES: Record<string, { title: string; context: string }> = {
   "/trailhead": { title: "Trailhead Library", context: "Reads, links, and the weekly challenge" },
   "/alongside": { title: "Alongside", context: "Share your own week" },
   "/from-your-coach": { title: "Alongside", context: "From your coach" },
+  "/today": { title: "Today", context: "" },
   "/home": { title: "Home", context: "" },
   "/training": { title: "Training", context: "" },
   "/homework": { title: "Homework", context: "" },
