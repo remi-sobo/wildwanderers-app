@@ -266,6 +266,8 @@ export type CallItemPatch = {
   state?: "proposed" | "accepted" | "removed";
   send_as?: "assignment" | "suggestion";
   keep_private?: boolean;
+  /** "Not the same": drop a wrong match so the item sends on its own. */
+  unlink?: boolean;
 };
 
 export async function updateCallItem(id: string, sessionId: string, patch: CallItemPatch): Promise<CallResult> {
@@ -298,6 +300,10 @@ export async function updateCallItem(id: string, sessionId: string, patch: CallI
     row.send_as = patch.send_as;
   }
   if (patch.keep_private !== undefined) row.keep_private = Boolean(patch.keep_private);
+  if (patch.unlink) {
+    row.match_task_id = null;
+    row.flag = null;
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -166,7 +166,20 @@ export function CallReview({
                 </select>
               </label>
             ) : null}
-            {i.section === "owner" && i.owner === "owner" && !i.keep_private ? (
+            {i.match_task_id ? (
+              <span className="flex items-center gap-2 text-[12.5px] text-[color:var(--color-text-muted)]">
+                Links to the existing task, nothing new is sent.
+                <button
+                  type="button"
+                  disabled={busy === i.id}
+                  onClick={() => patch(i, { unlink: true })}
+                  className="min-h-[36px] font-semibold text-forest max-md:min-h-[44px]"
+                >
+                  Not the same
+                </button>
+              </span>
+            ) : null}
+            {i.section === "owner" && i.owner === "owner" && !i.keep_private && !i.match_task_id ? (
               <div role="radiogroup" aria-label="Send as" className="flex gap-1">
                 {(["assignment", "suggestion"] as const).map((k) => (
                   <button
