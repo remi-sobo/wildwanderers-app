@@ -12,7 +12,8 @@ desktop, a Business launchpad with editable Quick access, Numbers at
 day's blocks and sessions. Flag off is the production app unchanged,
 locked by nav tests for all four roles. Also new: vitest (npm test), a
 local Postgres access-test harness (npm run test:rls), and a profiles
-guard migration so nobody can set their own role or org (not applied).
+guard migration so nobody can set their own role or org (the gap was
+live; applied to production 2026-10-21 and verified).
 See specs/owner-hq.md. Next: review, then Phase 2 (advisor role and
 RLS).
 

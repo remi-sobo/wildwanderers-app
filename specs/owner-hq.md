@@ -113,9 +113,11 @@ Regression, any layout:
 
 ## Findings recorded, not changed here
 
-- `profiles` role and org self-assignment: fixed by migration
-  `20261021000001_profiles_guard_privileged.sql` (not yet applied anywhere;
-  see `supabase/tests/README.md` for the live check).
+- `profiles` role and org self-assignment: confirmed live in production
+  (authenticated held UPDATE on `role` and `org_id`, no guard). Fixed by
+  `20261021000001_profiles_guard_privileged.sql`, applied to production on
+  2026-10-21 and verified there: a real client's self-promotion is refused
+  inside a rolled-back transaction.
 - Reopening and re-completing a recurring task spawns a second next task.
 - `generate_tasks()` is security definer and lets a coach trigger org-wide
   inserts.
