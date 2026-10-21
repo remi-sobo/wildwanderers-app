@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { getMyOrg } from "@/lib/data/org";
+import { getOwnerHq } from "@/lib/flags/owner-hq";
 import { orgThemeStyle } from "@/lib/brand/theme";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { MobileNav } from "@/components/shell/MobileNav";
@@ -18,6 +19,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const [{ profile, email }, org] = await Promise.all([requireUser(), getMyOrg()]);
+  const { active: hq } = await getOwnerHq(profile.role);
   const displayName =
     [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim() ||
     "Your workspace";
@@ -35,6 +37,7 @@ export default async function AppLayout({
         email={email}
         orgName={org?.name ?? "Wild Wanderers"}
         orgLogoUrl={org?.logo_url ?? undefined}
+        hq={hq}
       />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <TopBar
@@ -46,7 +49,7 @@ export default async function AppLayout({
           {children}
         </main>
       </div>
-      <MobileNav role={profile.role} displayName={displayName} email={email} />
+      <MobileNav role={profile.role} displayName={displayName} email={email} hq={hq} />
     </div>
   );
 }

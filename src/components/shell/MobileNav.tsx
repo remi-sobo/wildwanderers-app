@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ellipsis, X } from "lucide-react";
 import type { Role } from "@/lib/auth/get-profile";
-import { mobileNavForRole } from "./nav";
+import { mobileNavForRole, ownerHqMobileNav } from "./nav";
 import { SignOutButton } from "./SignOutButton";
 
 function initials(name: string) {
@@ -21,15 +21,18 @@ export function MobileNav({
   role,
   displayName,
   email,
+  hq = false,
 }: {
   role: Role;
   displayName: string;
   email: string | null;
+  /** The owner HQ layout (owner only, flag-gated by the caller). */
+  hq?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const { tabs, more } = mobileNavForRole(role);
+  const { tabs, more } = hq ? ownerHqMobileNav() : mobileNavForRole(role);
 
   // The sheet never outlives a navigation, and Escape always closes it.
   useEffect(() => setOpen(false), [pathname]);
@@ -163,6 +166,7 @@ export function MobileNav({
               </li>
             );
           })}
+          {more.length > 0 ? (
           <li className="min-w-0 flex-1">
             <button
               type="button"
@@ -186,6 +190,7 @@ export function MobileNav({
               </span>
             </button>
           </li>
+          ) : null}
         </ul>
       </nav>
     </>

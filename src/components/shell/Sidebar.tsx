@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/lib/auth/get-profile";
 import { Contours } from "@/components/brand/Contours";
-import { sectionsForRole } from "./nav";
+import { ownerHqSections, sectionsForRole } from "./nav";
 import { SignOutButton } from "./SignOutButton";
 
 function initials(name: string) {
@@ -23,6 +23,7 @@ export function Sidebar({
   orgName = "Wild Wanderers",
   orgLogoUrl = "/brand/mark-bone.png",
   activePath,
+  hq = false,
 }: {
   role: Role;
   displayName: string;
@@ -30,10 +31,12 @@ export function Sidebar({
   orgName?: string;
   orgLogoUrl?: string;
   activePath?: string;
+  /** The owner HQ layout (owner only, flag-gated by the caller). */
+  hq?: boolean;
 }) {
   const pathname = usePathname();
   const current = activePath ?? pathname;
-  const sections = sectionsForRole(role);
+  const sections = hq ? ownerHqSections() : sectionsForRole(role);
 
   return (
     <aside className="sticky top-0 z-20 hidden h-dvh w-[248px] shrink-0 flex-col self-start overflow-hidden bg-chrome text-bone md:flex">
@@ -61,6 +64,28 @@ export function Sidebar({
             {section.label ? (
               <p className="eyebrow px-3 pb-2 text-[10px] text-bone/45">{section.label}</p>
             ) : null}
+            {section.compact ? (
+              <ul className="flex flex-col gap-px">
+                {section.items.map((item) => {
+                  const active = current.startsWith(item.href);
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={`flex items-center gap-2.5 rounded-[10px] px-3 py-[7px] text-[13px] transition-colors ${
+                          active ? "bg-bone/[0.08] text-bone" : "text-bone/80 hover:bg-bone/[0.05]"
+                        }`}
+                      >
+                        <Icon size={16} strokeWidth={1.75} aria-hidden="true" className="text-bone/70" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
             <ul className="flex flex-col gap-1">
               {section.items.map((item) => {
                 const active = current.startsWith(item.href);
@@ -106,6 +131,7 @@ export function Sidebar({
                 );
               })}
             </ul>
+            )}
           </div>
         ))}
       </nav>
