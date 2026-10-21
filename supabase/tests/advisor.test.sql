@@ -223,6 +223,15 @@ do $$ begin
     assert false, '6: item in an unrelated org must fail';
   exception when insufficient_privilege then null; end;
   assert (select count(*) from advisor_items) = 2, '6: advisor sees their two';
+  -- The same request sent twice (a retry) makes one row.
+  insert into advisor_items (org_id, title, request_key) values
+    ('a0000000-0000-0000-0000-00000000000a', 'Retried note', '30000000-0000-0000-0000-000000000001')
+    on conflict (request_key) do nothing;
+  insert into advisor_items (org_id, title, request_key) values
+    ('a0000000-0000-0000-0000-00000000000a', 'Retried note', '30000000-0000-0000-0000-000000000001')
+    on conflict (request_key) do nothing;
+  assert (select count(*) from advisor_items where request_key = '30000000-0000-0000-0000-000000000001') = 1, '6: retry makes one item';
+  delete from advisor_items where request_key = '30000000-0000-0000-0000-000000000001';
 end $$;
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
