@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ellipsis, X } from "lucide-react";
 import type { Role } from "@/lib/auth/get-profile";
-import { mobileNavForRole, ownerHqMobileNav } from "./nav";
+import { activeHref, mobileNavForRole, ownerHqMobileNav } from "./nav";
 import { SignOutButton } from "./SignOutButton";
 
 function initials(name: string) {
@@ -50,7 +50,8 @@ export function MobileNav({
     };
   }, [open]);
 
-  const moreActive = more.some((item) => pathname.startsWith(item.href));
+  const current = activeHref([...tabs, ...more], pathname);
+  const moreActive = more.some((item) => item.href === current);
 
   return (
     <>
@@ -82,7 +83,7 @@ export function MobileNav({
             <nav className="px-3 pb-2">
               <ul className="flex flex-col">
                 {more.map((item) => {
-                  const active = pathname.startsWith(item.href);
+                  const active = item.href === current;
                   const Icon = item.icon;
                   return (
                     <li key={item.href}>
@@ -140,7 +141,7 @@ export function MobileNav({
       >
         <ul className="flex items-stretch">
           {tabs.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = item.href === current;
             const Icon = item.icon;
             return (
               <li key={item.href} className="min-w-0 flex-1">

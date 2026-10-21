@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NavItem, NavSection } from "./nav";
-import { mobileNavForRole, ownerHqMobileNav, ownerHqSections, sectionsForRole } from "./nav";
+import { activeHref, mobileNavForRole, ownerHqMobileNav, ownerHqSections, sectionsForRole } from "./nav";
 import { surfaceForRole } from "@/lib/auth/get-profile";
 
 // The regression lock for the classic navigation. These are the menus
@@ -160,13 +160,13 @@ describe("landing", () => {
 });
 
 describe("advisor and unknown roles never fall through", () => {
-  it("advisor gets only Work and Settings", () => {
+  it("advisor gets only Work, Calls and Settings", () => {
     expect(sections(sectionsForRole("advisor"))).toEqual([
-      ["Advisor", [["/advisor", "Work", null]]],
+      ["Advisor", [["/advisor", "Work", null], ["/advisor/calls", "Calls", null]]],
       [null, [["/settings", "Settings", null]]],
     ]);
     const m = mobileNavForRole("advisor");
-    expect(m.tabs.map((i) => i.href)).toEqual(["/advisor", "/settings"]);
+    expect(m.tabs.map((i) => i.href)).toEqual(["/advisor", "/advisor/calls", "/settings"]);
     expect(m.more).toEqual([]);
   });
 
@@ -180,5 +180,22 @@ describe("advisor and unknown roles never fall through", () => {
   it("an unknown role sees only Settings, never the client menu", () => {
     expect(sections(sectionsForRole("nope" as never))).toEqual([[null, [["/settings", "Settings", null]]]]);
     expect(mobileNavForRole("nope" as never)).toEqual({ tabs: [expect.objectContaining({ href: "/settings" })], more: [] });
+  });
+});
+
+describe("activeHref", () => {
+  const items = (hrefs: string[]) => hrefs.map((href) => ({ href, label: href, icon: (() => null) as never }));
+
+  it("picks the longest href the path sits under", () => {
+    expect(activeHref(items(["/home", "/homework"]), "/homework")).toBe("/homework");
+    expect(activeHref(items(["/home", "/homework"]), "/home")).toBe("/home");
+    expect(activeHref(items(["/advisor", "/advisor/calls"]), "/advisor/calls/abc")).toBe("/advisor/calls");
+    expect(activeHref(items(["/advisor", "/advisor/calls"]), "/advisor")).toBe("/advisor");
+    expect(activeHref(items(["/business"]), "/business/pipeline")).toBe("/business");
+  });
+
+  it("needs a slash boundary and returns null off the menu", () => {
+    expect(activeHref(items(["/program"]), "/programs")).toBeNull();
+    expect(activeHref(items(["/program"]), "/settings")).toBeNull();
   });
 });

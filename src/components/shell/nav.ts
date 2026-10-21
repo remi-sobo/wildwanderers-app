@@ -11,6 +11,7 @@ import {
   GitBranch,
   ClipboardList,
   Handshake,
+  Phone,
   Dumbbell,
   House,
   ListChecks,
@@ -44,6 +45,19 @@ export type NavSection = {
   compact?: boolean;
 };
 export type MobileNavSplit = { tabs: NavItem[]; more: NavItem[] };
+
+// The one item a path belongs to: the longest href it sits under, so
+// /homework lights Homework and not Home, and /advisor/calls lights Calls
+// and not Work. A path is under an href when it equals it or continues
+// with a slash.
+export function activeHref(items: NavItem[], path: string): string | null {
+  let best: string | null = null;
+  for (const { href } of items) {
+    const under = path === href || path.startsWith(`${href}/`);
+    if (under && (!best || href.length > best.length)) best = href;
+  }
+  return best;
+}
 
 const MESSAGES: NavItem = { href: "/messages", label: "Messages", icon: MessageCircle };
 const SETTINGS: NavItem = { href: "/settings", label: "Settings", icon: Settings };
@@ -127,11 +141,11 @@ const PARENT_SECTIONS: NavSection[] = [
   { items: [SETTINGS] },
 ];
 
-// An advisor works with the owner on the business: their own workspace and
-// their account, nothing of the coaching side. Calls and Overview arrive
-// with their screens.
+// An advisor works with the owner on the business: Work, Calls and their
+// account, nothing of the coaching side.
 const ADVISOR_WORK: NavItem = { href: "/advisor", label: "Work", icon: Handshake, hint: "Your work and shared work" };
-const ADVISOR_SECTIONS: NavSection[] = [{ label: "Advisor", items: [ADVISOR_WORK] }, { items: [SETTINGS] }];
+const ADVISOR_CALLS: NavItem = { href: "/advisor/calls", label: "Calls", icon: Phone, hint: "Transcripts to actions" };
+const ADVISOR_SECTIONS: NavSection[] = [{ label: "Advisor", items: [ADVISOR_WORK, ADVISOR_CALLS] }, { items: [SETTINGS] }];
 
 export function sectionsForRole(role: Role): NavSection[] {
   if (role === "owner" || role === "coach") return coachSections(role);
@@ -168,7 +182,7 @@ export function mobileNavForRole(role: Role): MobileNavSplit {
       more: [CLIENT_HOMEWORK, CLIENT_PROGRESS, FROM_YOUR_COACH, TRAILHEAD_READER, SETTINGS],
     };
   }
-  if (role === "advisor") return { tabs: [ADVISOR_WORK, SETTINGS], more: [] };
+  if (role === "advisor") return { tabs: [ADVISOR_WORK, ADVISOR_CALLS, SETTINGS], more: [] };
   return { tabs: [SETTINGS], more: [] };
 }
 
