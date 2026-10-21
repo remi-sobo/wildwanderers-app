@@ -158,3 +158,27 @@ describe("landing", () => {
     expect(surfaceForRole("client", { ownerHq: true })).toBe("/home");
   });
 });
+
+describe("advisor and unknown roles never fall through", () => {
+  it("advisor gets only Work and Settings", () => {
+    expect(sections(sectionsForRole("advisor"))).toEqual([
+      ["Advisor", [["/advisor", "Work", null]]],
+      [null, [["/settings", "Settings", null]]],
+    ]);
+    const m = mobileNavForRole("advisor");
+    expect(m.tabs.map((i) => i.href)).toEqual(["/advisor", "/settings"]);
+    expect(m.more).toEqual([]);
+  });
+
+  it("advisor lands on the advisor workspace, an unknown role on no access", () => {
+    expect(surfaceForRole("advisor")).toBe("/advisor");
+    expect(surfaceForRole("advisor", { ownerHq: true })).toBe("/advisor");
+    expect(surfaceForRole(undefined)).toBe("/no-access");
+    expect(surfaceForRole("nope" as never)).toBe("/no-access");
+  });
+
+  it("an unknown role sees only Settings, never the client menu", () => {
+    expect(sections(sectionsForRole("nope" as never))).toEqual([[null, [["/settings", "Settings", null]]]]);
+    expect(mobileNavForRole("nope" as never)).toEqual({ tabs: [expect.objectContaining({ href: "/settings" })], more: [] });
+  });
+});

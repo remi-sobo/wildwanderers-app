@@ -32,6 +32,9 @@ export type Task = {
   is_next_step: boolean;
   recur: TaskRecur;
   source_type: string | null;
+  /** task, or work an advisor assigned or suggested (specs/advisor.md). */
+  kind: "task" | "assignment" | "suggestion";
+  shared_with_advisor: boolean;
   created_at: string;
 };
 
@@ -57,7 +60,8 @@ export type StaffOption = { id: string; name: string };
 
 const TASK_COLUMNS =
   "id, title, description, category, priority, due_date, pin_today, status, program, bucket_id, " +
-  "lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, created_at";
+  "lead_id, client_id, customer_id, program_id, assigned_to, is_next_step, recur, source_type, kind, " +
+  "shared_with_advisor, created_at";
 
 export type TaskBucket = {
   id: string;
@@ -94,7 +98,8 @@ function personName(v: JoinedPerson): string | null {
 }
 
 // Every task the caller can see (RLS decides), newest links resolved to a
-// display chip. A coach's task on a lead or customer resolves no name (those
+// display chip. An advisor's suggestion stays out until the owner accepts
+// it (it shows in From your advisor instead). A coach's task on a lead or customer resolves no name (those
 // tables are owner-only); the chip degrades to the bare kind.
 export async function getTaskList(): Promise<TaskListItem[]> {
   const supabase = await createClient();
@@ -105,6 +110,7 @@ export async function getTaskList(): Promise<TaskListItem[]> {
        assigned:profiles!business_tasks_assigned_to_fkey(first_name, last_name)`,
     )
     .neq("status", "cancelled")
+    .neq("kind", "suggestion")
     .order("due_date", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
