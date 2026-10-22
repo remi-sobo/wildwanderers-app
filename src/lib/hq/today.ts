@@ -2,7 +2,8 @@
 // today's agenda from the recurring schedule blocks plus booked sessions.
 // No server imports; it ships in the client bundle and is unit tested.
 
-import type { BlockType, BlockRecur } from "@/lib/schedule/blocks";
+import { weekStartKey, type BlockType, type BlockRecur } from "@/lib/schedule/blocks";
+import { occurrencesForWeek, type BlockOverride } from "@/lib/schedule/occurrences";
 
 type TodayTaskInput = {
   id: string;
@@ -58,6 +59,7 @@ type BlockInput = {
   location: string | null;
   block_type: BlockType;
   recur: BlockRecur;
+  anchor_week?: string | null;
 };
 type SessionInput = {
   id: string;
@@ -72,23 +74,34 @@ const sameLocalDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /**
- * Today's blocks (the weekly template, as the Schedule grid shows it) and
- * today's booked sessions, in time order. Missing sources simply add
- * nothing; nothing here claims a gap is free time.
+ * Today's blocks (where the Schedule grid shows them this week, one-day
+ * moves and repeats included) and today's booked sessions, in time
+ * order. Missing sources simply add nothing; nothing here claims a gap
+ * is free time.
  */
-export function buildAgenda(blocks: BlockInput[], sessions: SessionInput[], now: Date): AgendaItem[] {
+export function buildAgenda(
+  blocks: BlockInput[],
+  sessions: SessionInput[],
+  now: Date,
+  overrides: BlockOverride[] = [],
+): AgendaItem[] {
   const day = weekdayIndex(now);
-  const items: AgendaItem[] = blocks
-    .filter((b) => b.day === day)
-    .map((b) => ({
+  const week = occurrencesForWeek(
+    blocks.map((b) => ({ ...b, anchor_week: b.anchor_week ?? null })),
+    overrides,
+    weekStartKey(now),
+  );
+  const items: AgendaItem[] = week
+    .filter((o) => o.day === day)
+    .map((o) => ({
       kind: "block" as const,
-      id: b.id,
-      start: b.start_min,
-      end: b.end_min,
-      title: b.title,
-      location: b.location,
-      blockType: b.block_type,
-      recur: b.recur,
+      id: o.block.id,
+      start: o.start,
+      end: o.end,
+      title: o.block.title,
+      location: o.block.location,
+      blockType: o.block.block_type,
+      recur: o.block.recur,
     }));
   for (const s of sessions) {
     const start = new Date(s.start_at);

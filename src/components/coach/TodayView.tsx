@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Check, Pin } from "lucide-react";
 import { setTaskDone, toggleTaskPin } from "@/lib/tasks/actions";
 import type { TaskListItem } from "@/lib/data/tasks";
-import type { ScheduleBlock, BlockTaskLink } from "@/lib/data/schedule";
+import type { ScheduleBlock, BlockTaskLink, BlockOverrideRow } from "@/lib/data/schedule";
 import type { SessionRow } from "@/lib/data/sessions";
 import { RECURS, formatRange, formatMinutes, weekStartKey } from "@/lib/schedule/blocks";
 import { localDayKey } from "@/lib/hq/business-home";
@@ -132,12 +132,14 @@ export function TodayView({
   tasks,
   blocks,
   links,
+  overrides,
   sessions,
   picks,
 }: {
   tasks: TaskListItem[];
   blocks: ScheduleBlock[];
   links: BlockTaskLink[];
+  overrides: BlockOverrideRow[];
   sessions: SessionRow[];
   picks: { days: DayPick[]; weeks: WeekPick[] };
 }) {
@@ -159,7 +161,10 @@ export function TodayView({
     () => (todayKey ? selectTodayTasks(tasks, todayKey) : { pinned: [], due: [] }),
     [tasks, todayKey],
   );
-  const agenda = useMemo(() => (now ? buildAgenda(blocks, sessions, now) : []), [blocks, sessions, now]);
+  const agenda = useMemo(
+    () => (now ? buildAgenda(blocks, sessions, now, overrides) : []),
+    [blocks, sessions, now, overrides],
+  );
   const next = now ? nextUp(agenda, now) : null;
 
   const taskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
