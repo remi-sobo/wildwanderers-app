@@ -20,22 +20,16 @@ The prototype HTML is not in the repo. It came in
 | Profiles guard (security) | #21 |
 | Phase 2: advisor role, access, Work, From your advisor | #22 |
 | Phase 3: Calls, transcripts to reviewed actions | #23 |
+| Week (4a): My three and This Week's Five | #24 |
 
 ## Now
 
-1. **Week (4a): My three and This Week's Five.** Migration applied to
-   production on 2026-10-22, by hand in the SQL editor. The PR is open.
+2. **Week (4b): one-day schedule overrides.** See
+   `specs/schedule-overrides.md`. Its migration goes to production before
+   the PR merges.
 
 ## Next
 
-2. **Week (4b): one-day schedule overrides.**
-   - A drag on the Schedule grid moves "just this day" by default, with an
-     explicit "every week" option.
-   - A `schedule_block_overrides` table, plus an anchor date so non-weekly
-     blocks recur correctly.
-   - A `hold` block kind for busy time.
-   - A clash check that names the session it hits.
-   - Test: a one-off Thursday move leaves next Thursday unchanged.
 3. **Customer fitness**, added 2026-10-22. Phases from
    `customer-fitness-handoff.md` §13, one PR each:
    1. Client Today and Progress: weekly content from the Library, plan
