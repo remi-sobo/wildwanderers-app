@@ -25,8 +25,8 @@ The prototype HTML is not in the repo. It came in
 ## Now
 
 2. **Week (4b): one-day schedule overrides.** See
-   `specs/schedule-overrides.md`. Its migration goes to production before
-   the PR merges.
+   `specs/schedule-overrides.md`. Migration applied to production on
+   2026-10-22 (through the Supabase connection) and checked. The PR is open.
 
 ## Next
 
