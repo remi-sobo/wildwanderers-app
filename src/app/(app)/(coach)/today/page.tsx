@@ -3,7 +3,7 @@ import { requireOwnerOrCoach } from "@/lib/auth/require-owner-or-coach";
 import { surfaceForRole } from "@/lib/auth/get-profile";
 import { getOwnerHq } from "@/lib/flags/owner-hq";
 import { getTaskList } from "@/lib/data/tasks";
-import { getScheduleBlocks, getBlockTaskLinks } from "@/lib/data/schedule";
+import { getScheduleBlocks, getBlockTaskLinks, getBlockOverrides } from "@/lib/data/schedule";
 import { getSessionsAroundNow } from "@/lib/data/sessions";
 import { getPicks } from "@/lib/data/week";
 import { TodayView } from "@/components/coach/TodayView";
@@ -15,13 +15,14 @@ export default async function TodayPage() {
   const { active } = await getOwnerHq(profile.role);
   if (!active) redirect(surfaceForRole(profile.role));
 
-  const [tasks, blocks, links, sessions, picks] = await Promise.all([
+  const [tasks, blocks, links, overrides, sessions, picks] = await Promise.all([
     getTaskList(),
     getScheduleBlocks(),
     getBlockTaskLinks(),
+    getBlockOverrides(),
     getSessionsAroundNow(),
     getPicks(),
   ]);
 
-  return <TodayView tasks={tasks} blocks={blocks} links={links} sessions={sessions} picks={picks} />;
+  return <TodayView tasks={tasks} blocks={blocks} links={links} overrides={overrides} sessions={sessions} picks={picks} />;
 }

@@ -2,7 +2,7 @@
 // shared by server readers and client components. Keep this module free
 // of server imports; it ships in the client bundle.
 
-export type BlockType = "client" | "group" | "ww" | "admin" | "personal" | "travel";
+export type BlockType = "client" | "group" | "ww" | "admin" | "personal" | "travel" | "hold";
 export type BlockRecur = "weekly" | "biweekly" | "monthly" | "once";
 
 export const BLOCK_TYPES: { key: BlockType; label: string; color: string }[] = [
@@ -12,6 +12,8 @@ export const BLOCK_TYPES: { key: BlockType; label: string; color: string }[] = [
   { key: "admin", label: "Work block", color: "#6b4a2e" },
   { key: "personal", label: "Personal", color: "#4e7c74" },
   { key: "travel", label: "Travel", color: "#9c9482" },
+  // Busy time that is not a session. Drawn hatched on the grid.
+  { key: "hold", label: "Busy hold", color: "#7a6a58" },
 ];
 
 // The earthy palette Settings may recolor a type from.

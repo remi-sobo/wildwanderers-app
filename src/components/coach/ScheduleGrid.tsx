@@ -9,14 +9,21 @@
 // block (completion goes through the task system), and an expired work
 // block's open tasks roll to the top of the next one. Monday resets the
 // links; the blocks persist.
+//
+// Phase 4b (specs/schedule-overrides.md): the grid shows one dated week
+// at a time. Dragging or resizing a repeating block moves just that day
+// by default, with "Every week" one tap away, and a move or a new block
+// names anything it overlaps. Busy holds draw hatched.
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   createBlock,
   updateGroup,
   moveBlock,
+  moveForDay,
+  clearDayMove,
   setGroupDays,
   deleteGroup,
   linkTaskToBlock,
@@ -33,7 +40,8 @@ import {
   weekStartKey,
   type BlockType,
 } from "@/lib/schedule/blocks";
-import type { ScheduleBlock, BlockTaskLink, ScheduleSettings } from "@/lib/data/schedule";
+import { addDayKey, clashesAt, occurrencesForWeek, type Occurrence } from "@/lib/schedule/occurrences";
+import type { ScheduleBlock, BlockTaskLink, BlockOverrideRow, ScheduleSettings } from "@/lib/data/schedule";
 import type { TaskListItem } from "@/lib/data/tasks";
 
 const HOUR_H = 56;
@@ -51,8 +59,20 @@ const PRIORITY_PILL: Record<string, string> = {
 type Draft = { day: number; start: number; end: number };
 type DragState =
   | { kind: "create"; day: number; anchor: number; draft: Draft }
-  | { kind: "move"; id: string; grabOffset: number; day: number; start: number; len: number; moved: boolean }
-  | { kind: "resize"; id: string; day: number; start: number; end: number; moved: boolean };
+  | { kind: "move"; id: string; onDate: string; grabOffset: number; day: number; start: number; len: number; moved: boolean }
+  | { kind: "resize"; id: string; onDate: string; day: number; start: number; end: number; moved: boolean };
+
+type Occ = Occurrence<ScheduleBlock>;
+
+// After a one-day move: what moved, where it was before (to undo), and
+// where it went (for "Every week").
+type MoveToast = {
+  blockId: string;
+  onDate: string;
+  label: string;
+  spot: { day: number; start: number; end: number };
+  previous: { new_date: string; start_min: number; end_min: number } | null;
+};
 
 type EditorState = {
   blockId: string;
@@ -66,6 +86,9 @@ type EditorState = {
   end_min: number;
   days: number[];
   confirmDelete: boolean;
+  // The occurrence it was opened from, for "Moved for Thu only".
+  onDate: string | null;
+  movedForDay: boolean;
 };
 
 function snap(min: number): number {
@@ -74,45 +97,58 @@ function snap(min: number): number {
 
 // Overlapping blocks share the column: chains of overlap form a
 // cluster, greedy lanes inside it, equal widths (the prototype's
-// layout, kept verbatim).
-function layoutDay(blocks: ScheduleBlock[]): { b: ScheduleBlock; lane: number; lanes: number }[] {
-  const sorted = [...blocks].sort((a, b) => a.start_min - b.start_min || a.end_min - b.end_min);
-  const out: { b: ScheduleBlock; lane: number; lanes: number }[] = [];
-  let cluster: ScheduleBlock[] = [];
+// layout, kept verbatim, now over this week's occurrences).
+function layoutDay(items: Occ[]): { o: Occ; lane: number; lanes: number }[] {
+  const sorted = [...items].sort((a, b) => a.start - b.start || a.end - b.end);
+  const out: { o: Occ; lane: number; lanes: number }[] = [];
+  let cluster: Occ[] = [];
   let clusterEnd = -1;
   const flush = () => {
     if (cluster.length === 0) return;
     const laneEnds: number[] = [];
-    const placed = cluster.map((b) => {
-      let lane = laneEnds.findIndex((end) => end <= b.start_min);
+    const placed = cluster.map((o) => {
+      let lane = laneEnds.findIndex((end) => end <= o.start);
       if (lane < 0) {
         lane = laneEnds.length;
         laneEnds.push(0);
       }
-      laneEnds[lane] = b.end_min;
-      return { b, lane };
+      laneEnds[lane] = o.end;
+      return { o, lane };
     });
     for (const p of placed) out.push({ ...p, lanes: laneEnds.length });
     cluster = [];
     clusterEnd = -1;
   };
-  for (const b of sorted) {
-    if (cluster.length > 0 && b.start_min >= clusterEnd) flush();
-    cluster.push(b);
-    clusterEnd = Math.max(clusterEnd, b.end_min);
+  for (const o of sorted) {
+    if (cluster.length > 0 && o.start >= clusterEnd) flush();
+    cluster.push(o);
+    clusterEnd = Math.max(clusterEnd, o.end);
   }
   flush();
   return out;
 }
 
+function shortDate(key: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function clashText(hits: Occ[]): string | null {
+  if (hits.length === 0) return null;
+  const names = hits.map((h) => `${h.block.title}, ${formatRange(h.start, h.end)}`);
+  return `This overlaps ${names.join(" and ")}.`;
+}
+
 export function ScheduleGrid({
   blocks,
   links,
+  overrides,
   settings,
   tasks,
 }: {
   blocks: ScheduleBlock[];
   links: BlockTaskLink[];
+  overrides: BlockOverrideRow[];
   settings: ScheduleSettings;
   tasks: TaskListItem[];
 }) {
@@ -122,9 +158,15 @@ export function ScheduleGrid({
   const [drag, setDrag] = useState<DragState | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toast, setToast] = useState<{ day: number; start: number; end: number } | null>(null);
+  const [moveToast, setMoveToast] = useState<MoveToast | null>(null);
+  const [clash, setClash] = useState<string | null>(null);
   // Set after mount: the viewer's local week and clock, never the server's.
-  const [weekStart, setWeekStart] = useState<string | null>(null);
+  const [currentWeek, setCurrentWeek] = useState<string | null>(null);
   const [nowStamp, setNowStamp] = useState<{ day: number; min: number } | null>(null);
+  // 0 is this week. One week back is the furthest the readers cover.
+  const [weekOffset, setWeekOffset] = useState(0);
+  const weekStart = currentWeek ? addDayKey(currentWeek, weekOffset * 7) : null;
+  const isCurrentWeek = weekOffset === 0;
   const columnsRef = useRef<HTMLDivElement>(null);
   const rolloverBusy = useRef(false);
   // Mirrors drag for the pointer-up handler: side effects must not run
@@ -139,7 +181,7 @@ export function ScheduleGrid({
   useEffect(() => {
     const tick = () => {
       const now = new Date();
-      setWeekStart(weekStartKey(now));
+      setCurrentWeek(weekStartKey(now));
       setNowStamp({ day: (now.getDay() + 6) % 7, min: now.getHours() * 60 + now.getMinutes() });
     };
     tick();
@@ -149,6 +191,12 @@ export function ScheduleGrid({
 
   const taskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
   const blockById = useMemo(() => new Map(blocks.map((b) => [b.id, b])), [blocks]);
+  // Where every block sits in the week on screen.
+  const occurrences = useMemo(
+    () => (weekStart ? occurrencesForWeek(blocks, overrides, weekStart) : []),
+    [blocks, overrides, weekStart],
+  );
+  const occByBlock = useMemo(() => new Map(occurrences.map((o) => [o.block.id, o])), [occurrences]);
   const weekLinks = useMemo(
     () => (weekStart ? links.filter((l) => l.week_start === weekStart) : []),
     [links, weekStart],
@@ -166,20 +214,20 @@ export function ScheduleGrid({
 
   // Rollover: an expired work block's open tasks move to the top of the
   // next upcoming work block of the week. Done tasks stay as the record.
+  // This week only, and by where each block sits this week.
   useEffect(() => {
-    if (!weekStart || !nowStamp || rolloverBusy.current) return;
-    const admin = blocks
-      .filter((b) => b.block_type === "admin")
-      .sort((a, b) => a.day - b.day || a.start_min - b.start_min);
+    if (!weekStart || !isCurrentWeek || !nowStamp || rolloverBusy.current) return;
+    const admin = occurrences.filter((o) => o.block.block_type === "admin");
     const expired = admin.filter(
-      (b) => b.day < nowStamp.day || (b.day === nowStamp.day && b.end_min <= nowStamp.min),
+      (o) => o.day < nowStamp.day || (o.day === nowStamp.day && o.end <= nowStamp.min),
     );
-    const next = admin.find(
-      (b) => b.day > nowStamp.day || (b.day === nowStamp.day && b.end_min > nowStamp.min),
+    const nextOcc = admin.find(
+      (o) => o.day > nowStamp.day || (o.day === nowStamp.day && o.end > nowStamp.min),
     );
+    const next = nextOcc?.block;
     if (!next || expired.length === 0) return;
     const moves: string[] = [];
-    for (const b of expired) {
+    for (const { block: b } of expired) {
       for (const l of linksByBlock.get(b.id) ?? []) {
         const t = taskById.get(l.task_id);
         if (t && t.status !== "done" && t.status !== "cancelled") moves.push(l.task_id);
@@ -196,7 +244,7 @@ export function ScheduleGrid({
       rolloverBusy.current = false;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekStart, nowStamp, blocks, linksByBlock]);
+  }, [weekStart, isCurrentWeek, nowStamp, occurrences, linksByBlock]);
 
   function run(fn: () => Promise<{ error: string | null }>, after?: () => void) {
     setError(null);
@@ -212,6 +260,7 @@ export function ScheduleGrid({
 
   function openEditor(b: ScheduleBlock) {
     const days = blocks.filter((x) => x.grp === b.grp).map((x) => x.day).sort((a, z) => a - z);
+    const o = occByBlock.get(b.id);
     setEditor({
       blockId: b.id,
       grp: b.grp,
@@ -224,6 +273,8 @@ export function ScheduleGrid({
       end_min: b.end_min,
       days,
       confirmDelete: false,
+      onDate: o?.onDate ?? null,
+      movedForDay: o?.movedForDay ?? false,
     });
   }
 
@@ -236,6 +287,8 @@ export function ScheduleGrid({
     if (!original) return;
     const originalDays = blocks.filter((x) => x.grp === e.grp).map((x) => x.day).sort((a, z) => a - z);
     const daysChanged = originalDays.join() !== [...e.days].sort((a, z) => a - z).join();
+    // A changed repeat counts from the week on screen.
+    const recurChanged = original.recur !== e.recur;
     start(async () => {
       const res = await updateGroup(e.grp, {
         title: e.title,
@@ -245,6 +298,7 @@ export function ScheduleGrid({
         recur: e.recur,
         start_min: e.start_min,
         end_min: e.end_min,
+        ...(recurChanged ? { anchor_week: e.recur === "weekly" ? null : weekStart } : {}),
       });
       if (res.error) {
         setError(res.error);
@@ -277,7 +331,7 @@ export function ScheduleGrid({
     setDrag({ kind: "create", day: p.day, anchor, draft: { day: p.day, start: anchor, end: anchor + SNAP } });
   }
 
-  function onBlockPointerDown(ev: React.PointerEvent, b: ScheduleBlock) {
+  function onBlockPointerDown(ev: React.PointerEvent, o: Occ) {
     if (ev.button !== 0) return;
     ev.stopPropagation();
     const target = ev.currentTarget as HTMLElement;
@@ -285,19 +339,53 @@ export function ScheduleGrid({
     const withinResize = ev.clientY >= rect.bottom - 7;
     const p = pointFromEvent(ev.clientX, ev.clientY);
     if (!p) return;
+    const id = o.block.id;
     if (withinResize) {
-      setDrag({ kind: "resize", id: b.id, day: b.day, start: b.start_min, end: b.end_min, moved: false });
+      setDrag({ kind: "resize", id, onDate: o.onDate, day: o.day, start: o.start, end: o.end, moved: false });
     } else {
       setDrag({
         kind: "move",
-        id: b.id,
-        grabOffset: p.min - b.start_min,
-        day: b.day,
-        start: b.start_min,
-        len: b.end_min - b.start_min,
+        id,
+        onDate: o.onDate,
+        grabOffset: p.min - o.start,
+        day: o.day,
+        start: o.start,
+        len: o.end - o.start,
         moved: false,
       });
     }
+  }
+
+  // A drop. A one-time block just moves. A repeating one moves for this
+  // day only, and the toast offers "Every week" and "Undo".
+  function dropBlock(id: string, onDate: string, spot: { day: number; start: number; end: number }) {
+    const b = blockById.get(id);
+    const o = occByBlock.get(id);
+    if (!b || !o || !weekStart) return;
+    setMoveToast(null);
+    setClash(null);
+    // Named only once the move has saved, so a failed save warns of nothing.
+    const hits = clashText(clashesAt(occurrences, spot, id));
+    if (b.recur === "once") {
+      run(
+        () => moveBlock(id, { day: spot.day, start_min: spot.start, end_min: spot.end }, { onDate, weekStart }),
+        () => setClash(hits),
+      );
+      return;
+    }
+    const previous = o.movedForDay ? { new_date: o.date, start_min: o.start, end_min: o.end } : null;
+    const backHome = spot.day === b.day && spot.start === b.start_min && spot.end === b.end_min;
+    const newDate = addDayKey(weekStart, spot.day);
+    run(
+      () =>
+        backHome
+          ? clearDayMove(id, onDate)
+          : moveForDay(id, onDate, { new_date: newDate, start_min: spot.start, end_min: spot.end }),
+      () => {
+        setClash(hits);
+        if (!backHome) setMoveToast({ blockId: id, onDate, label: shortDate(onDate), spot, previous });
+      },
+    );
   }
 
   useEffect(() => {
@@ -346,13 +434,13 @@ export function ScheduleGrid({
           }
         });
       } else if (d.kind === "move") {
-        if (d.moved) run(() => moveBlock(d.id, { day: d.day, start_min: d.start, end_min: d.start + d.len }));
+        if (d.moved) dropBlock(d.id, d.onDate, { day: d.day, start: d.start, end: d.start + d.len });
         else {
           const b = blockById.get(d.id);
           if (b) openEditor(b);
         }
       } else if (d.kind === "resize") {
-        if (d.moved) run(() => moveBlock(d.id, { day: d.day, start_min: d.start, end_min: d.end }));
+        if (d.moved) dropBlock(d.id, d.onDate, { day: d.day, start: d.start, end: d.end });
         else {
           const b = blockById.get(d.id);
           if (b) openEditor(b);
@@ -366,7 +454,7 @@ export function ScheduleGrid({
       window.removeEventListener("pointerup", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag != null, settings.default_block_type, settings.default_len_min]);
+  }, [drag != null, settings.default_block_type, settings.default_len_min, occurrences, weekStart]);
 
   function openEditorForCreated(b: ScheduleBlock) {
     setEditor({
@@ -381,14 +469,17 @@ export function ScheduleGrid({
       end_min: b.end_min,
       days: [b.day],
       confirmDelete: false,
+      onDate: weekStart ? addDayKey(weekStart, b.day) : null,
+      movedForDay: false,
     });
+    setClash(clashText(clashesAt(occurrences, { day: b.day, start: b.start_min, end: b.end_min }, b.id)));
     // Travel suggestion, suggest-and-confirm: only after a session-type
-    // block, only when the slot after it is free.
+    // block, only when the slot after it is free this week.
     if (
       ["client", "group", "ww"].includes(b.block_type) &&
       settings.travel_buffer_min > 0 &&
       b.end_min + settings.travel_buffer_min <= gridEnd &&
-      !blocks.some((x) => x.day === b.day && x.start_min < b.end_min + settings.travel_buffer_min && x.end_min > b.end_min)
+      !occurrences.some((x) => x.day === b.day && x.start < b.end_min + settings.travel_buffer_min && x.end > b.end_min)
     ) {
       setToast({ day: b.day, start: b.end_min, end: b.end_min + settings.travel_buffer_min });
     }
@@ -437,25 +528,27 @@ export function ScheduleGrid({
   }
 
   // ── Render helpers ─────────────────────────────────────────
-  function renderBlock(b: ScheduleBlock, lane: number, lanes: number) {
+  function renderBlock(o: Occ, lane: number, lanes: number) {
+    const b = o.block;
     const isDragged = drag && drag.kind !== "create" && drag.id === b.id && drag.moved;
-    const startMin = isDragged ? (drag.kind === "move" ? drag.start : drag.start) : b.start_min;
+    const startMin = isDragged ? drag.start : o.start;
     const endMin = isDragged
       ? drag.kind === "move"
         ? drag.start + drag.len
         : drag.end
-      : b.end_min;
-    const day = isDragged && drag.kind === "move" ? drag.day : b.day;
-    if (day !== b.day && !isDragged) return null;
+      : o.end;
     const top = (startMin - gridStart) * PX_PER_MIN;
     const height = Math.max((endMin - startMin) * PX_PER_MIN, 14);
     const color = typeColor(b.block_type, settings.colors);
-    const recurSuffix = RECURS.find((r) => r.key === b.recur)?.suffix ?? "";
+    const recurSuffix = o.movedForDay
+      ? "· this day only"
+      : RECURS.find((r) => r.key === b.recur)?.suffix ?? "";
     const blockLinks = linksByBlock.get(b.id) ?? [];
+    const tint = `color-mix(in srgb, ${color} 16%, #fdfbf5)`;
     return (
       <div
         key={b.id}
-        onPointerDown={(ev) => onBlockPointerDown(ev, b)}
+        onPointerDown={(ev) => onBlockPointerDown(ev, o)}
         role="button"
         aria-label={`${b.title}, ${formatRange(startMin, endMin)}`}
         className="absolute select-none overflow-hidden"
@@ -464,8 +557,13 @@ export function ScheduleGrid({
           height,
           left: `calc(${(lane / lanes) * 100}% + 2px)`,
           width: `calc(${(1 / lanes) * 100}% - 4px)`,
-          background: `color-mix(in srgb, ${color} 16%, #fdfbf5)`,
+          // A busy hold reads as blocked-out time, hatched.
+          background:
+            b.block_type === "hold"
+              ? `repeating-linear-gradient(135deg, ${tint} 0 6px, color-mix(in srgb, ${color} 26%, #fdfbf5) 6px 8px)`
+              : tint,
           borderLeft: `3px solid ${color}`,
+          outline: o.movedForDay ? `1px dashed ${color}` : undefined,
           borderRadius: 6,
           boxShadow: "0 1px 2px rgba(42,33,24,.08)",
           padding: "4px 8px",
@@ -535,14 +633,14 @@ export function ScheduleGrid({
   }
 
   const byDay = useMemo(() => {
-    const m = new Map<number, ScheduleBlock[]>();
+    const m = new Map<number, Occ[]>();
     for (let d = 0; d < 7; d++) m.set(d, []);
-    for (const b of blocks) {
-      const day = drag && drag.kind === "move" && drag.id === b.id && drag.moved ? drag.day : b.day;
-      m.get(day)?.push(b);
+    for (const o of occurrences) {
+      const day = drag && drag.kind === "move" && drag.id === o.block.id && drag.moved ? drag.day : o.day;
+      m.get(day)?.push(o);
     }
     return m;
-  }, [blocks, drag]);
+  }, [occurrences, drag]);
 
   const hourMarks = useMemo(() => {
     const out: number[] = [];
@@ -565,11 +663,60 @@ export function ScheduleGrid({
           </span>
         ))}
         <span className="ml-auto text-[12px] text-[color:var(--color-text-muted)]">
-          Drag on the grid to add a block. Tap a block to edit it.
+          Drag on the grid to add a block. Moving a block changes just that day unless you choose every week.
         </span>
+      </div>
+      {/* Week stepper: this week, last week, and ahead */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Previous week"
+          disabled={weekOffset <= -1}
+          onClick={() => setWeekOffset((w) => w - 1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-strong)] text-bark transition-colors hover:bg-inset disabled:opacity-40"
+        >
+          <ChevronLeft size={16} aria-hidden="true" />
+        </button>
+        <p className="min-w-[150px] text-center text-[13.5px] font-semibold text-ink" aria-live="polite">
+          {weekStart
+            ? isCurrentWeek
+              ? "This week"
+              : `Week of ${shortDate(weekStart).replace(/^\w+, /, "")}`
+            : ""}
+        </p>
+        <button
+          type="button"
+          aria-label="Next week"
+          onClick={() => setWeekOffset((w) => w + 1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-strong)] text-bark transition-colors hover:bg-inset"
+        >
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
+        {!isCurrentWeek ? (
+          <button
+            type="button"
+            onClick={() => setWeekOffset(0)}
+            className="text-[12.5px] font-semibold text-amber-deep underline-offset-2 hover:underline max-md:min-h-[44px]"
+          >
+            Back to this week
+          </button>
+        ) : null}
       </div>
       {error ? (
         <p role="alert" className="text-[13px] text-[color:var(--color-state-error)]">{error}</p>
+      ) : null}
+      {clash ? (
+        <div role="status" className="flex items-start gap-2 rounded-[10px] border border-state-caution/50 bg-state-caution/10 px-3 py-2 text-[13px] text-ink">
+          <span className="flex-1">{clash}</span>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setClash(null)}
+            className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center text-[color:var(--color-text-muted)] hover:text-ink"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
       ) : null}
 
       {/* The grid */}
@@ -582,10 +729,15 @@ export function ScheduleGrid({
               <div
                 key={d}
                 className={`flex-1 border-l border-[color:var(--border-hair)] py-2 text-center text-[12px] font-semibold uppercase tracking-[0.2em] ${
-                  nowStamp?.day === i ? "text-amber-deep" : "text-bark"
+                  isCurrentWeek && nowStamp?.day === i ? "text-amber-deep" : "text-bark"
                 }`}
               >
                 {d}
+                {weekStart ? (
+                  <span className="ml-1.5 font-[family-name:var(--font-display)] text-[13px] normal-case tracking-normal">
+                    {Number(addDayKey(weekStart, i).slice(8, 10))}
+                  </span>
+                ) : null}
               </div>
             ))}
           </div>
@@ -616,7 +768,7 @@ export function ScheduleGrid({
                       "repeating-linear-gradient(to bottom, transparent 0px, transparent 55px, rgba(42,33,24,0.12) 55px, rgba(42,33,24,0.12) 56px), repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(42,33,24,0.045) 27px, rgba(42,33,24,0.045) 28px)",
                   }}
                 >
-                  {layoutDay(byDay.get(day) ?? []).map(({ b, lane, lanes }) => renderBlock(b, lane, lanes))}
+                  {layoutDay(byDay.get(day) ?? []).map(({ o, lane, lanes }) => renderBlock(o, lane, lanes))}
                   {/* Create draft */}
                   {drag?.kind === "create" && drag.draft.day === day ? (
                     <div
@@ -634,7 +786,7 @@ export function ScheduleGrid({
                     </div>
                   ) : null}
                   {/* Now line */}
-                  {nowStamp?.day === day && nowStamp.min >= gridStart && nowStamp.min <= gridEnd ? (
+                  {isCurrentWeek && nowStamp?.day === day && nowStamp.min >= gridStart && nowStamp.min <= gridEnd ? (
                     <div
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-x-0 z-20"
@@ -791,6 +943,37 @@ export function ScheduleGrid({
                   </select>
                 </label>
               </div>
+              {editor.recur !== "weekly" ? (
+                <p className="-mt-1 text-[12px] text-[color:var(--color-text-muted)]">
+                  {editor.recur === editorBlock?.recur && editorBlock?.anchor_week
+                    ? `Counts from the week of ${shortDate(editorBlock.anchor_week).replace(/^\w+, /, "")}.`
+                    : editor.recur === editorBlock?.recur
+                      ? "Shows every week until you choose the repeat again."
+                      : weekStart
+                        ? `Counts from the week of ${shortDate(weekStart).replace(/^\w+, /, "")}.`
+                        : null}
+                </p>
+              ) : null}
+              {editor.movedForDay && editor.onDate ? (
+                <div className="flex items-center justify-between gap-2 rounded-[10px] bg-inset px-3 py-2 text-[12.5px] text-[color:var(--color-text)]">
+                  <span>
+                    Moved for {shortDate(editor.onDate)} only. The times above are for every week.
+                  </span>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      const id = editor.blockId;
+                      const onDate = editor.onDate as string;
+                      setEditor({ ...editor, movedForDay: false });
+                      run(() => clearDayMove(id, onDate));
+                    }}
+                    className="shrink-0 font-semibold text-amber-deep underline-offset-2 hover:underline max-md:min-h-[44px]"
+                  >
+                    Put it back
+                  </button>
+                </div>
+              ) : null}
 
               {/* Fill this block: Work blocks only */}
               {editor.block_type === "admin" && editorBlock ? (
@@ -881,6 +1064,56 @@ export function ScheduleGrid({
               </div>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {/* After a one-day move */}
+      {moveToast ? (
+        <div
+          role="status"
+          className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[22px] bg-chrome px-5 py-2.5 text-[13px] text-bone shadow-[var(--shadow-card)]"
+        >
+          <span>Moved for {moveToast.label} only.</span>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              const t = moveToast;
+              setMoveToast(null);
+              if (!weekStart) return;
+              run(() =>
+                moveBlock(
+                  t.blockId,
+                  { day: t.spot.day, start_min: t.spot.start, end_min: t.spot.end },
+                  { onDate: t.onDate, weekStart },
+                ),
+              );
+            }}
+            className="rounded-full bg-amber px-3.5 py-1 text-[12.5px] font-semibold text-[#23170c] transition-colors hover:bg-amber-deep"
+          >
+            Every week
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              const t = moveToast;
+              setMoveToast(null);
+              setClash(null);
+              run(() => (t.previous ? moveForDay(t.blockId, t.onDate, t.previous) : clearDayMove(t.blockId, t.onDate)));
+            }}
+            className="text-[12.5px] font-medium text-bone/80 transition-colors hover:text-bone"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setMoveToast(null)}
+            className="-mr-2 flex h-7 w-7 items-center justify-center text-bone/70 hover:text-bone"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
         </div>
       ) : null}
 
