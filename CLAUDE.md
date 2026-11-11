@@ -106,3 +106,13 @@ recharts for graphs, next-pwa for install, Vercel. GitHub under remi-sobo.
 It builds, types pass, RLS covers any new table, no client or org can reach
 another's data, no medical claim or fabricated value shipped, and the change is
 small enough to review and revert.
+
+## Working efficiently
+
+- Match the effort to the job. A small, scoped change needs no plan and no subagents. For anything touching more than three files, list the files and the change in each before editing.
+- Finding code: when the answer needs more than a few file reads, use the built-in Explore agent and ask for paths plus a short summary.
+- Checks: hand lint, types, tests and builds to the `checker` agent. It reports failures only.
+- Review: run the `reviewer` agent once on the diff before opening a PR.
+- `CURRENT.md` is a long running log, newest at the top. At session start read the newest entries under "Status" (about the first 60 lines), plus "Decisions locked" and "Open". For older entries, search the file or ask the `status-lookup` agent.
+- No agent teams or parallel workflows unless Remi asks for them.
+- Keep reports short: what changed, what was verified, what is still open.
