@@ -116,3 +116,7 @@ small enough to review and revert.
 - `CURRENT.md` is a long running log, newest at the top. At session start read the newest entries under "Status" (about the first 60 lines), plus "Decisions locked" and "Open". For older entries, search the file or ask the `status-lookup` agent.
 - No agent teams or parallel workflows unless Remi asks for them.
 - Keep reports short: what changed, what was verified, what is still open.
+
+## Security rules
+
+For any change that touches sign-in, data access, database schema, secrets, dependencies or AI features, follow @SECURITY_RULES.md.
