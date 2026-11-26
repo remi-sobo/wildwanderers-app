@@ -4,7 +4,16 @@ A running log of where the build is. Update it at the end of every work session,
 newest at the top. This is the fast answer to "where are we."
 
 ## Status
-Week, Phase 4a on branch, 2026-10-22: My three on Today (up to three
+Schedule one-day moves, Phase 4b on branch, 2026-10-22: dragging or
+resizing a repeating block moves just that day (schedule_block_overrides),
+with Every week and Undo in the toast. Non-weekly repeats now recur on the
+right weeks (anchor_week; a null anchor keeps the old every-week
+behavior). Adds a hatched Busy hold type, a week stepper with dates, and
+an overlap note that names the block. Today follows one-day moves. See
+specs/schedule-overrides.md. Next: customer fitness, after its open
+decisions (specs/QUEUE.md).
+
+Week, Phase 4a merged (#24) and live, 2026-10-22: My three on Today (up to three
 real tasks for the local day, separate from pins, From yesterday to
 pick again) and This Week's Five at /week (a suggested five to edit,
 From last week to carry or let go, the rest of the week's due tasks).

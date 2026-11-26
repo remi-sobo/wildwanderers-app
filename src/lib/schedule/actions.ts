@@ -22,6 +22,7 @@ async function staffContext() {
 
 function refresh() {
   revalidatePath("/schedule");
+  revalidatePath("/today");
 }
 
 const SAVE_FAILED = "That did not save. Try again.";
@@ -35,6 +36,7 @@ export type NewBlockInput = {
   location?: string;
   description?: string;
   recur?: string;
+  anchor_week?: string | null;
 };
 
 // Create returns the row so the editor can open on it right away.
@@ -56,9 +58,10 @@ export async function createBlock(
       location: input.location?.trim() || null,
       description: input.description?.trim() || null,
       recur: input.recur || "weekly",
+      anchor_week: input.recur && input.recur !== "weekly" ? (input.anchor_week ?? null) : null,
       created_by: ctx.userId,
     })
-    .select("id, grp, day, start_min, end_min, title, location, description, block_type, recur")
+    .select("id, grp, day, start_min, end_min, title, location, description, block_type, recur, anchor_week")
     .single();
   if (error || !data) return { error: SAVE_FAILED };
   refresh();
@@ -73,6 +76,8 @@ export type GroupEditInput = {
   recur: string;
   start_min: number;
   end_min: number;
+  // The Monday a non-weekly repeat counts from. Left out, it stays as is.
+  anchor_week?: string | null;
 };
 
 // Title, location, description, type, times, and recur sync across the
@@ -92,6 +97,7 @@ export async function updateGroup(grp: string, input: GroupEditInput): Promise<S
       recur: input.recur,
       start_min: input.start_min,
       end_min: input.end_min,
+      ...(input.anchor_week !== undefined ? { anchor_week: input.recur === "weekly" ? null : input.anchor_week } : {}),
     })
     .eq("grp", grp);
   if (error) return { error: SAVE_FAILED };
@@ -99,19 +105,79 @@ export async function updateGroup(grp: string, input: GroupEditInput): Promise<S
   return { error: null };
 }
 
-// Drag and resize touch only that day's instance of a group.
+// "Every week": drag and resize move the template row, that day's
+// instance of its group, for every week. The occurrence's own one-day
+// move, if it had one, is folded in. When the block changes weekday,
+// one-day moves from this week on belonged to the old weekday and go.
 export async function moveBlock(
   id: string,
   input: { day: number; start_min: number; end_min: number },
+  occurrence?: { onDate: string; weekStart: string },
 ): Promise<ScheduleResult> {
   const ctx = await staffContext();
   if (!ctx) return { error: "You are signed out." };
   if (input.end_min <= input.start_min) return { error: "End the block after it starts." };
   const supabase = await createClient();
+  const { data: before } = await supabase.from("schedule_blocks").select("day").eq("id", id).maybeSingle();
   const { error } = await supabase
     .from("schedule_blocks")
     .update({ day: input.day, start_min: input.start_min, end_min: input.end_min })
     .eq("id", id);
+  if (error) return { error: SAVE_FAILED };
+  if (occurrence) {
+    const clear = supabase.from("schedule_block_overrides").delete().eq("block_id", id);
+    const { error: clearError } =
+      before && before.day !== input.day
+        ? await clear.gte("on_date", occurrence.weekStart)
+        : await clear.eq("on_date", occurrence.onDate);
+    if (clearError) return { error: SAVE_FAILED };
+  }
+  refresh();
+  return { error: null };
+}
+
+// "Just this day": one dated occurrence moves; the template, and so
+// every other week, stays where it is. A second move of the same
+// occurrence replaces the first.
+export async function moveForDay(
+  blockId: string,
+  onDate: string,
+  input: { new_date: string; start_min: number; end_min: number },
+): Promise<ScheduleResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  if (input.end_min <= input.start_min) return { error: "End the block after it starts." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("schedule_block_overrides").upsert(
+    {
+      org_id: ctx.orgId,
+      block_id: blockId,
+      on_date: onDate,
+      new_date: input.new_date,
+      start_min: input.start_min,
+      end_min: input.end_min,
+      created_by: ctx.userId,
+    },
+    { onConflict: "block_id,on_date" },
+  );
+  if (error) {
+    if (error.code === "23514") return { error: "A one-day move stays inside its own week." };
+    return { error: SAVE_FAILED };
+  }
+  refresh();
+  return { error: null };
+}
+
+// Put a one-day move back where the template has it.
+export async function clearDayMove(blockId: string, onDate: string): Promise<ScheduleResult> {
+  const ctx = await staffContext();
+  if (!ctx) return { error: "You are signed out." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("schedule_block_overrides")
+    .delete()
+    .eq("block_id", blockId)
+    .eq("on_date", onDate);
   if (error) return { error: SAVE_FAILED };
   refresh();
   return { error: null };
@@ -128,7 +194,7 @@ export async function setGroupDays(grp: string, days: number[]): Promise<Schedul
 
   const { data: existing } = await supabase
     .from("schedule_blocks")
-    .select("id, day, start_min, end_min, title, location, description, block_type, recur")
+    .select("id, day, start_min, end_min, title, location, description, block_type, recur, anchor_week")
     .eq("grp", grp);
   if (!existing || existing.length === 0) return { error: SAVE_FAILED };
 
@@ -152,6 +218,7 @@ export async function setGroupDays(grp: string, days: number[]): Promise<Schedul
         description: template.description,
         block_type: template.block_type,
         recur: template.recur,
+        anchor_week: template.anchor_week,
         created_by: ctx.userId,
       })),
     );

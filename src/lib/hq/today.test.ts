@@ -59,6 +59,20 @@ describe("agenda", () => {
     expect(agenda.map((i) => i.id)).toEqual(["wed-early", "s1", "wed-late"]);
   });
 
+  it("follows one-day moves the way the Schedule grid shows them", () => {
+    // Wed 2026-10-21. A Tuesday block moved onto today shows; a Wednesday
+    // block moved to Thursday does not; next week neither move applies.
+    const overrides = [
+      { block_id: "tue", on_date: "2026-10-20", new_date: "2026-10-21", start_min: 480, end_min: 540 },
+      { block_id: "wed", on_date: "2026-10-21", new_date: "2026-10-22", start_min: 600, end_min: 660 },
+    ];
+    const blocks = [block("tue", 1, 600, 660), block("wed", 2, 600, 660)];
+    const agenda = buildAgenda(blocks, [], now, overrides);
+    expect(agenda.map((i) => [i.id, i.start])).toEqual([["tue", 480]]);
+    const nextWed = buildAgenda(blocks, [], new Date(2026, 9, 28, 9, 30), overrides);
+    expect(nextWed.map((i) => [i.id, i.start])).toEqual([["wed", 600]]);
+  });
+
   it("next up skips what started and travel", () => {
     const agenda = buildAgenda(
       [block("done", 2, 390, 450), block("drive", 2, 560, 600, "travel"), block("next", 2, 600, 720)],

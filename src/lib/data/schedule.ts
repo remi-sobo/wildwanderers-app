@@ -15,6 +15,16 @@ export type ScheduleBlock = {
   description: string | null;
   block_type: BlockType;
   recur: BlockRecur;
+  anchor_week: string | null;
+};
+
+export type BlockOverrideRow = {
+  id: string;
+  block_id: string;
+  on_date: string;
+  new_date: string;
+  start_min: number;
+  end_min: number;
 };
 
 export type BlockTaskLink = {
@@ -47,7 +57,7 @@ export async function getScheduleBlocks(): Promise<ScheduleBlock[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("schedule_blocks")
-    .select("id, grp, day, start_min, end_min, title, location, description, block_type, recur")
+    .select("id, grp, day, start_min, end_min, title, location, description, block_type, recur, anchor_week")
     .order("day", { ascending: true })
     .order("start_min", { ascending: true });
   return (data as ScheduleBlock[] | null) ?? [];
@@ -67,6 +77,20 @@ export async function getBlockTaskLinks(): Promise<BlockTaskLink[]> {
     .gte("week_start", sinceKey)
     .order("position", { ascending: true });
   return (data as BlockTaskLink[] | null) ?? [];
+}
+
+// One-day moves for the weeks around now, with the same wide window
+// as the task links so the grid can filter to the viewer's local week.
+export async function getBlockOverrides(): Promise<BlockOverrideRow[]> {
+  const supabase = await createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - 14);
+  const sinceKey = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-${String(since.getDate()).padStart(2, "0")}`;
+  const { data } = await supabase
+    .from("schedule_block_overrides")
+    .select("id, block_id, on_date, new_date, start_min, end_min")
+    .gte("on_date", sinceKey);
+  return (data as BlockOverrideRow[] | null) ?? [];
 }
 
 export async function getMyScheduleSettings(): Promise<ScheduleSettings> {
