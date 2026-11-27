@@ -1,6 +1,9 @@
 -- ============================================================
 -- Wild Wanderers — Demo client showcase data
 --
+-- BEFORE RUNNING: replace owner@example.com below with the owner's real
+-- sign-in email. It is kept out of the repo on purpose.
+--
 -- demo.client@wildwanderers.life is a clearly-labeled demo account so
 -- Gabe can walk the client side and see a fully built-out, mid-plan
 -- client. It is the ONE place we populate sample data. Real client

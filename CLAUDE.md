@@ -6,7 +6,7 @@ business switch. Built for Gabe now, built to scale to other coaches later.
 
 ## Source of truth, in this order
 1. `docs/master-spec.md` — the domain model, the surfaces, the build rings.
-2. `reference/team-esface-migrations/` — the schema we FORK. Read it before
+2. The Team Esface schema we FORK now lives only in the private `remi-sobo/team-esface-` repo (`supabase/migrations/`); it was removed from this repo on 2026-11-27. Older specs still cite `team-esface-migrations/` paths: read them in that repo. Read it before
    writing any migration. Do not invent tables that already exist here.
 3. This file.
 Where these conflict, the higher one wins. Never restyle or re-architect away
