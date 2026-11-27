@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Ridgeline } from "@/components/brand/Ridgeline";
 import { WaiverSignForm } from "@/components/popup/WaiverSignForm";
 
@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 // details stay private. Signing runs through sign_popup_waiver.
 export default async function PopupSignPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const supabase = await createClient();
+  // popup_waiver_for_token is executable by service_role only; it returns
+  // nothing but the waiver text and the day's start time.
+  const supabase = createAdminClient();
   const { data } = await supabase.rpc("popup_waiver_for_token", { p_token: token });
   const form = (data as { starts_at: string; title: string; body: string; version: number; valid_through: string | null }[] | null)?.[0];
 

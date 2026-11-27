@@ -1,12 +1,14 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // The public waiver signing path (the QR at the table). Anyone with a day's
 // link may call it, signed in or not. The rate limit and the honeypot live
 // here; sign_popup_waiver validates everything again in the database, which
-// is the real boundary. Nothing personal is logged or read back.
+// is the real boundary. The RPC is executable by service_role only, so this
+// action is the one way in and the IP and user agent always come from the
+// server's own headers. Nothing personal is logged or read back.
 
 export type SignInput = {
   fullName: string;
@@ -79,7 +81,7 @@ export async function signPopupWaiver(token: string, input: SignInput): Promise<
   const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || h.get("x-real-ip") || "unknown";
   if (rateLimited(ip)) return { ok: false, error: "A few too many tries. Wait a minute and try again." };
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("sign_popup_waiver", {
     p_token: token,
     p_full_name: fullName,
